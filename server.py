@@ -108,6 +108,13 @@ def analyze(payload: dict) -> dict:
     return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "method": method}, "candidates": result[:6]}
 
 class Handler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        # HTML and scripts must refresh after a deployment; the service worker
+        # still provides offline caching under its explicit version.
+        if self.path.split("?", 1)[0].endswith(("/", ".html", ".js", ".css", ".webmanifest")):
+            self.send_header("Cache-Control", "no-store, max-age=0")
+        super().end_headers()
+
     def do_GET(self):
         route = urlparse(self.path).path
         if route == "/api/health": return self.json({"status": "ok", "database": DB.name})
