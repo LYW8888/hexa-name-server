@@ -1,0 +1,11 @@
+{
+  "name": "序名 · 现代东方命名",
+  "short_name": "序名",
+  "description": "结合出生时光、姓氏与家庭心意的命名参考工具",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#17202b",
+  "lang": "zh-CN",
+  "icons": []
+}

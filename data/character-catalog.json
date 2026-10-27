@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1.0",
+  "updated_at": "2026-10-27",
+  "verification_policy": "Every cultural claim must include source and verification_status.",
+  "characters": [
+    {"char":"知","pinyin":"zhi","tones":[1],"elements":["木"],"meaning":"知道、明辨","styles":["classical","bright"],"kangxi_strokes":8,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"衡","pinyin":"heng","tones":[2],"elements":["土"],"meaning":"平衡、持守","styles":["classical","bright"],"kangxi_strokes":16,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"景","pinyin":"jing","tones":[3,4],"elements":["火"],"meaning":"光明、景象、敬意","styles":["classical","bright"],"kangxi_strokes":12,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"和","pinyin":"he","tones":[2,4],"elements":["木"],"meaning":"和谐、从容","styles":["classical","modern"],"kangxi_strokes":8,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"予","pinyin":"yu","tones":[2],"elements":["土"],"meaning":"给予、承接","styles":["modern","classical"],"kangxi_strokes":4,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"安","pinyin":"an","tones":[1],"elements":["土"],"meaning":"安定、平和","styles":["modern","classical"],"kangxi_strokes":6,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"清","pinyin":"qing","tones":[1],"elements":["水"],"meaning":"清澈、清正","styles":["classical","nature"],"kangxi_strokes":11,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"晏","pinyin":"yan","tones":[4],"elements":["土"],"meaning":"安宁、和柔","styles":["classical","nature"],"kangxi_strokes":10,"source":"现代汉语常用义项；经典出处待核验","verification_status":"pending"},
+    {"char":"言","pinyin":"yan","tones":[2,4],"elements":["木"],"meaning":"言语、信守","styles":["modern","classical"],"kangxi_strokes":7,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"川","pinyin":"chuan","tones":[1],"elements":["水"],"meaning":"河流、开阔意象","styles":["modern","nature"],"kangxi_strokes":3,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"昭","pinyin":"zhao","tones":[1],"elements":["火"],"meaning":"明亮、彰显","styles":["classical","bright"],"kangxi_strokes":9,"source":"现代汉语常用义项","verification_status":"demo"},
+    {"char":"宁","pinyin":"ning","tones":[2,4],"elements":["火"],"meaning":"安宁、平静","styles":["classical","modern"],"kangxi_strokes":14,"source":"现代汉语常用义项","verification_status":"demo"}
+  ]
+}
