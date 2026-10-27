@@ -3,3 +3,4 @@
 .method-note{grid-column:1/-1;margin:0;color:#777b7a;font-size:10px;border-top:1px solid #d7d0c4;padding-top:8px}details{margin-top:16px;border-top:1px solid #eeeae3;padding-top:10px;color:var(--muted);font-size:11px}summary{cursor:pointer;color:var(--teal)}details p{margin:7px 0 0}@media(max-width:800px){.method-note{grid-column:1/-1}}
 .footer-button{border:0;background:transparent;color:#8c8d88;padding:0;cursor:pointer;font-size:10px}.footer-button:hover{color:var(--red)}
 .primary:disabled{opacity:.65;cursor:wait;transform:none}
+.form-message{margin:0 0 20px;padding:11px 13px;border:1px solid #d7a39a;background:#fff1ed;color:#843b31;border-radius:6px;font-size:12px}.form-message.success{border-color:#a9c9bd;background:#eef8f3;color:#27644e}.form-message[hidden]{display:none}

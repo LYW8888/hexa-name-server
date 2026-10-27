@@ -51,23 +51,37 @@ def analyze(payload: dict) -> dict:
     surname = str(payload.get("surname", "")).strip()
     if not surname or len(surname) > 2:
         raise ValueError("surname must contain one or two characters")
-    mode = str(payload.get('mode', 'due_date'))
-    birth_date = str(payload.get("date", "")).strip()
-    if not birth_date:
-        raise ValueError('date is required for due_date and born modes')
+    mode = str(payload.get("mode", "due_date"))
+    if mode not in ("due_date", "born"):
+        raise ValueError("mode must be due_date or born")
+    gender = str(payload.get("gender", "unknown"))
+    if gender not in ("male", "female", "unknown"):
+        raise ValueError("gender must be male, female, or unknown")
+
+    # Keep both dates when supplied. `date`/`time` remain accepted for old clients.
+    due_date = str(payload.get("dueDate") or (payload.get("date") if mode == "due_date" else "") or "").strip()
+    due_time = str(payload.get("dueTime") or (payload.get("time") if mode == "due_date" else "") or "12:00").strip()
+    birth_date = str(payload.get("birthDate") or (payload.get("date") if mode == "born" else "") or "").strip()
+    birth_time = str(payload.get("birthTime") or (payload.get("time") if mode == "born" else "") or "").strip()
+
+    if mode == "due_date" and not due_date:
+        raise ValueError("dueDate is required when using due date mode")
+    if mode == "born" and (not birth_date or not birth_time):
+        raise ValueError("birthDate and exact birthTime are required when already born")
+    if birth_date and not birth_time:
+        raise ValueError("birthDate and birthTime must be supplied together")
+    if birth_time and not birth_date:
+        raise ValueError("birthDate and birthTime must be supplied together")
+    if due_date:
+        date.fromisoformat(due_date)  # Future due dates are valid.
     if birth_date:
-        parsed = date.fromisoformat(birth_date)
-        if mode == 'born' and parsed > date.today():
-            raise ValueError("birth date cannot be in the future")
-    if mode not in ('due_date', 'born'):
-        raise ValueError('mode must be due_date or born')
-    gender = str(payload.get('gender', 'unknown'))
-    if gender not in ('male', 'female', 'unknown'):
-        raise ValueError('gender must be male, female, or unknown')
-    if mode == 'born' and not payload.get('time'):
-        raise ValueError('exact birth time is required in born mode')
-    if mode == 'due_date' and not payload.get('time'):
-        payload['time'] = '12:00'
+        parsed_birth = date.fromisoformat(birth_date)
+        if parsed_birth > date.today():
+            raise ValueError("actual birth date cannot be in the future")
+
+    actual_complete = bool(birth_date and birth_time)
+    basis_date = birth_date if actual_complete else due_date
+    basis_time = birth_time if actual_complete else due_time
     length = int(payload.get("length", 2))
     if length not in (1, 2, 3):
         raise ValueError("length must be 1, 2, or 3")
@@ -76,21 +90,22 @@ def analyze(payload: dict) -> dict:
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list):
         styles = []
-    seed = sum(int(x) for x in re.findall(r"\d", birth_date + str(payload.get("time", "")))) + text_score(place) + text_score(parents)
+    seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents)
     primary, support = ELEMENTS[seed % 5], ELEMENTS[(seed + 2) % 5]
-    scenario = '预产期参考' if mode == 'due_date' else '已出生准确时间'
-    effective_time = str(payload.get('time', '') or '')
+    scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     with sqlite3.connect(DB) as conn:
         rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
     exact = [row for row in rows if len(row[0]) == length]
     pool = exact or rows
     result = []
     for given, meaning, element, candidate_styles, base in pool:
-        gender_boost = 2 if gender == 'unknown' or gender in GENDER_BY_GIVEN.get(given, {'unknown'}) else 0
+        gender_boost = 2 if gender == "unknown" or gender in GENDER_BY_GIVEN.get(given, {"unknown"}) else 0
         score = base + (2 if element == primary else 0) + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + (1 if parents and element == support else 0) + gender_boost
         result.append({"name": surname + given, "given": given, "meaning": meaning, "element": element, "score": min(score, 99), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
-    return {"analysis": {"primary": primary, "support": support, "family_signal": bool(parents), "scenario": scenario, "gender": {'male':'男','female':'女','unknown':'未知'}[gender], "time": effective_time, "method": f"演示规则：{scenario}使用 {birth_date or '未填写日期'} {effective_time or '未填写时间'}，并结合出生地与父母姓氏字符线索映射五行意象；性别偏好为{'男' if gender == 'male' else '女' if gender == 'female' else '未知'}。正式版本需要经核验的历法服务。"}, "candidates": result[:6]}
+    gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
+    method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}。正式版本需要经核验的历法服务。"
+    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "method": method}, "candidates": result[:6]}
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):

@@ -5,43 +5,83 @@ const summary = document.querySelector('#summary');
 const cards = document.querySelector('#cards');
 const count = document.querySelector('#savedCount');
 const regenerate = document.querySelector('#regenerate');
+const formMessage = document.querySelector('#formMessage');
 let step = 0;
 let lastRequest = null;
 let saved = JSON.parse(localStorage.getItem('序名收藏') || '[]');
 
-function syncBirthMode() {
-  const mode = document.querySelector('input[name=mode]:checked')?.value || 'due_date';
-  const dateLabel = document.querySelector('#dateLabel');
-  const timeLabel = document.querySelector('#timeLabel');
-  const birthHint = document.querySelector('#birthHint');
-  const time = document.querySelector('input[name=time]');
-  const due = mode === 'due_date';
-  dateLabel.textContent = due ? '预产期日期' : '出生日期';
-  timeLabel.textContent = due ? '预产期参考时间' : '准确出生时间';
-  birthHint.textContent = due ? '预产期模式会使用预产期和 12:00 作为默认参考；出生后请切换到“已出生起名”并填写准确时间。当前原型使用标准时间计算。' : '已出生模式使用出生日期和准确时间；如果时间未知，请选择预产期模式作为参考。当前原型使用标准时间计算。';
-  if (due && !time.value) time.value = '12:00';
-  time.required = !due;
+function showMessage(message, type = 'error') {
+  formMessage.textContent = message;
+  formMessage.className = `form-message ${type}`;
+  formMessage.hidden = !message;
+  if (message) formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-document.querySelectorAll('input[name=mode]').forEach((input) => input.addEventListener('change', syncBirthMode));
+function syncBirthMode() {
+  const mode = document.querySelector('input[name=mode]:checked')?.value || 'due_date';
+  const dueDate = document.querySelector('input[name=dueDate]');
+  const dueTime = document.querySelector('input[name=dueTime]');
+  const birthDate = document.querySelector('input[name=birthDate]');
+  const birthTime = document.querySelector('input[name=birthTime]');
+  const birthHint = document.querySelector('#birthHint');
+  const born = mode === 'born';
+  dueDate.required = !born;
+  dueTime.value = dueTime.value || '12:00';
+  birthDate.required = born;
+  birthTime.required = born;
+  birthHint.textContent = born
+    ? '已出生模式要求填写实际出生日期和准确时间；预产期可以同时保留，用于结果对照。实际出生日期不能晚于今天。'
+    : '预产期可以是未来日期和时间；尚未出生时填写预产期即可，出生日期和准确时间可以之后补充。';
+}
+
+document.querySelectorAll('input[name=mode]').forEach((input) => input.addEventListener('change', () => { showMessage(''); syncBirthMode(); }));
 syncBirthMode();
+
+function validatePanel() {
+  const invalid = [...panels[step].querySelectorAll('input,select,textarea')].find((field) => !field.checkValidity());
+  if (invalid) {
+    showMessage(`请先填写“${invalid.closest('label')?.innerText?.split('\n')[0] || '必填项'}”。`);
+    invalid.focus();
+    return false;
+  }
+  if (step === 1) {
+    const mode = document.querySelector('input[name=mode]:checked')?.value;
+    const birthDate = document.querySelector('input[name=birthDate]').value;
+    const birthTime = document.querySelector('input[name=birthTime]').value;
+    if ((birthDate && !birthTime) || (!birthDate && birthTime)) {
+      showMessage('出生日期和准确出生时间需要同时填写；如果尚未出生，可以都留空。');
+      return false;
+    }
+    if (mode === 'born' && (!birthDate || !birthTime)) {
+      showMessage('已出生起名需要填写出生日期和准确出生时间。');
+      return false;
+    }
+    if (birthDate && new Date(`${birthDate}T00:00:00`) > new Date()) {
+      showMessage('实际出生日期不能晚于今天；预产期可以是未来时间。');
+      return false;
+    }
+  }
+  showMessage('');
+  return true;
+}
+
+document.querySelectorAll('.next').forEach((button) => button.addEventListener('click', () => {
+  if (validatePanel()) setStep(step + 1);
+}));
+document.querySelectorAll('.back').forEach((button) => button.addEventListener('click', () => { showMessage(''); setStep(step - 1); }));
 
 function setStep(next) {
   step = Math.max(0, Math.min(next, panels.length - 1));
   panels.forEach((panel, index) => panel.classList.toggle('active', index === step));
   steps.forEach((item, index) => item.classList.toggle('active', index <= step));
+  if (step === 1) syncBirthMode();
 }
 
-document.querySelectorAll('.next').forEach((button) => button.addEventListener('click', () => {
-  const invalid = [...panels[step].querySelectorAll('input,select,textarea')].find((field) => !field.checkValidity());
-  if (invalid) { invalid.reportValidity(); return; }
-  setStep(step + 1);
-}));
-document.querySelectorAll('.back').forEach((button) => button.addEventListener('click', () => setStep(step - 1)));
-
 function renderSummary(data, analysis) {
+  const due = analysis.due_date ? `预产期 ${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写预产期';
+  const actual = analysis.birth_date ? `出生 ${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写实际出生信息';
   summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${data.surname || '你的姓氏'} · 命名方向</strong><small>${analysis.scenario || '命名参考'} · ${analysis.gender || '未知'} · ${analysis.primary}意象为主，辅以${analysis.support}的气质 · ${data.place || '出生地待补充'} · ${analysis.time || '时间待补充'}</small></div><div class="metric"><b>${analysis.primary}</b><span>主要意象</span></div><div class="metric"><b>${analysis.support}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${analysis.method}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${data.surname || '你的姓氏'} · 命名方向</strong><small>${analysis.scenario || '命名参考'} · ${analysis.gender || '未知'} · ${data.place || '出生地待补充'}<br>${due} · ${actual}</small></div><div class="metric"><b>${analysis.primary}</b><span>主要意象</span></div><div class="metric"><b>${analysis.support}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${analysis.method}</p>`;
 }
 
 function renderCards(data, analysis) {
@@ -60,35 +100,42 @@ function renderCards(data, analysis) {
 async function requestAnalysis(data) {
   try {
     const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (!response.ok) throw new Error('analysis request failed');
     const payload = await response.json();
-    if (!payload.analysis) throw new Error('analysis response incomplete');
+    if (!response.ok) throw new Error(payload.error || '分析请求未通过校验');
+    if (!payload.analysis) throw new Error('分析结果不完整');
     return payload.analysis;
   } catch (error) {
-    return window.NameEngine.analyze(data);
+    if (error instanceof TypeError) return window.NameEngine.analyze(data);
+    throw error;
   }
 }
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (!validatePanel()) return;
   const data = Object.fromEntries(new FormData(form));
-  const birthDate = data.date ? new Date(`${data.date}T00:00:00`) : null;
-  if (birthDate && birthDate > new Date()) { alert('出生日期不能晚于今天。'); return; }
   data.styles = [...document.querySelectorAll('input[name=style]:checked')].map((item) => item.value);
   lastRequest = data;
   const submit = form.querySelector('button[type=submit]');
   const originalLabel = submit.textContent;
   submit.disabled = true;
   submit.textContent = '正在整理…';
-  const analysis = await requestAnalysis(data);
-  submit.disabled = false;
-  submit.textContent = originalLabel;
-  renderSummary(data, analysis);
-  renderCards(data, analysis);
-  document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
+  showMessage('');
+  try {
+    const analysis = await requestAnalysis(data);
+    renderSummary(data, analysis);
+    renderCards(data, analysis);
+    document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    showMessage(error.message || '暂时无法生成方案，请检查出生信息后重试。');
+  } finally {
+    submit.disabled = false;
+    submit.textContent = originalLabel;
+  }
 });
+
 regenerate.addEventListener('click', () => {
-  if (lastRequest) { const analysis = window.NameEngine.analyze(lastRequest); renderCards(lastRequest, analysis); return; }
+  if (lastRequest) { const analysis = window.NameEngine.analyze(lastRequest); renderSummary(lastRequest, analysis); renderCards(lastRequest, analysis); return; }
   document.querySelector('#form').scrollIntoView({ behavior: 'smooth' });
 });
 count.textContent = saved.length;
@@ -96,4 +143,4 @@ count.textContent = saved.length;
 const savedButton = document.querySelector('#savedButton');
 const clearData = document.querySelector('#clearData');
 savedButton?.addEventListener('click', () => document.querySelector('#results').scrollIntoView({ behavior: 'smooth' }));
-clearData?.addEventListener('click', () => { if (!saved.length || window.confirm('清除本地收藏？此操作无法撤销。')) { saved = []; localStorage.removeItem('序名收藏'); count.textContent = '0'; document.querySelectorAll('.save.saved').forEach((button) => { button.classList.remove('saved'); button.textContent = '收藏 ♡'; }); } });
+clearData?.addEventListener('click', () => { saved = []; localStorage.removeItem('序名收藏'); count.textContent = '0'; document.querySelectorAll('.save.saved').forEach((button) => { button.classList.remove('saved'); button.textContent = '收藏 ♡'; }); showMessage('本地收藏已清除。', 'success'); });

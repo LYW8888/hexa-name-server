@@ -16,15 +16,22 @@
   ];
   function digits(value) { return [...(value || '')].filter((x) => /\d/.test(x)).reduce((a, x) => a + Number(x), 0); }
   function textScore(value) { return [...(value || '')].reduce((sum, char) => sum + char.codePointAt(0), 0); }
-  function birthAnalysis(date, time, place, parents, mode, gender) {
-    const effectiveTime = time || (mode === 'due_date' ? '12:00' : '');
-    const sum = digits(`${date || ''}${effectiveTime}`) + textScore(place) + textScore(parents);
+  function birthAnalysis(data) {
+    const mode = data.mode || 'due_date';
+    const dueDate = data.dueDate || '';
+    const dueTime = data.dueTime || '12:00';
+    const birthDate = data.birthDate || '';
+    const birthTime = data.birthTime || '';
+    const actualComplete = Boolean(birthDate && birthTime);
+    const basisDate = actualComplete ? birthDate : dueDate;
+    const basisTime = actualComplete ? birthTime : dueTime;
+    const sum = digits(`${basisDate}${basisTime}`) + textScore(data.place) + textScore(data.parents);
     const primary = elements[sum % elements.length];
     const support = elements[(sum + 2) % elements.length];
-    const family = parents ? '已纳入父母姓氏线索' : '未填写父母姓氏';
-    const scenario = mode === 'due_date' ? '预产期参考' : '已出生准确时间';
-    const genderLabel = gender === 'male' ? '男' : gender === 'female' ? '女' : '未知';
-    return { primary, support, family, scenario, gender: genderLabel, time: effectiveTime, method: `演示规则：${scenario}使用 ${date || '未填写日期'} ${effectiveTime || '未填写时间'}，并结合出生地与父母姓氏字符线索映射五行意象；${family}；性别偏好为${genderLabel}。正式版本应替换为经核验的历法排盘服务。` };
+    const family = data.parents ? '已纳入父母姓氏线索' : '未填写父母姓氏';
+    const scenario = actualComplete ? (mode === 'born' ? '已出生准确时间' : '预产期参考 + 已出生信息') : '预产期参考';
+    const genderLabel = data.gender === 'male' ? '男' : data.gender === 'female' ? '女' : '未知';
+    return { primary, support, family, scenario, gender: genderLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}。正式版本应替换为经核验的历法服务。` };
   }
   function candidates(data, analysis) {
     const desiredLength = Number(data.length || 2);
@@ -40,5 +47,5 @@
       return { ...profile, score: Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost, 99), rank: index + 1, fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
     }).sort((a, b) => b.score - a.score).slice(0, 6);
   }
-  window.NameEngine = { analyze: (data) => birthAnalysis(data.date, data.time, data.place, data.parents, data.mode, data.gender), candidates };
+  window.NameEngine = { analyze: birthAnalysis, candidates };
 }());
