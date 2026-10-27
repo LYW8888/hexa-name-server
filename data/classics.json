@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.1.0",
+  "title": "传统象意参考索引",
+  "source_policy": "These mappings are cultural reference data. They are not deterministic predictions and require source review before production.",
+  "sources": [
+    {
+      "id": "zhouyi-shuogua",
+      "title": "《周易·说卦传》",
+      "status": "pending",
+      "note": "用于八卦与自然意象的索引，正式上线前应固定版本、校对原文和整理授权信息。"
+    }
+  ],
+  "bagua": [
+    {"name":"乾","image":"天","keywords":["健","刚健"],"element":"金","source_id":"zhouyi-shuogua"},
+    {"name":"坤","image":"地","keywords":["厚","承载"],"element":"土","source_id":"zhouyi-shuogua"},
+    {"name":"震","image":"雷","keywords":["动","发动"],"element":"木","source_id":"zhouyi-shuogua"},
+    {"name":"巽","image":"风","keywords":["入","渐进"],"element":"木","source_id":"zhouyi-shuogua"},
+    {"name":"坎","image":"水","keywords":["流行","守正"],"element":"水","source_id":"zhouyi-shuogua"},
+    {"name":"离","image":"火","keywords":["明","文明"],"element":"火","source_id":"zhouyi-shuogua"},
+    {"name":"艮","image":"山","keywords":["止","安定"],"element":"土","source_id":"zhouyi-shuogua"},
+    {"name":"兑","image":"泽","keywords":["悦","和悦"],"element":"金","source_id":"zhouyi-shuogua"}
+  ],
+  "yin_yang_policy": {
+    "status": "pending",
+    "rule": "候选名笔画奇偶仅作为传统数理参考，阳/阴标签不能替代完整命理排盘。"
+  },
+  "five_elements_policy": {
+    "status": "pending",
+    "rule": "字的五行归类必须绑定统一字典、版本和复核记录；当前原型仅使用演示归类。"
+  }
+}

@@ -10,7 +10,7 @@
 python3 server.py
 ```
 
-访问 `http://localhost:4173`。服务器同时提供 `/api/health`、`/api/catalog` 和 `/api/analyze` 接口。
+访问 `http://localhost:4173`。服务器同时提供 `/api/health`、`/api/catalog`、`/api/classics` 和 `/api/analyze` 接口。
 
 ## 当前能力
 

@@ -14,6 +14,20 @@
     { given: '景和安', pinyin: 'JǐNG HÉ ĀN', meaning: '有光明、有和意，也有安定的落点。', tags: ['火', '和雅', '安定'], styles: ['classical', 'bright'], genders: ['unknown', 'female', 'male'], score: 88, source: '按字面义项组合，经典出处待人工核验。' },
     { given: '清晏宁', pinyin: 'QĪNG YÀN NÍNG', meaning: '清澈、安宁而坚定，温柔中有力量。', tags: ['水', '从容', '笃定'], styles: ['classical', 'nature'], genders: ['unknown', 'female'], score: 87, source: '按字面义项组合，经典出处待人工核验。' }
   ];
+  const classical = {
+    '知衡': { gua: '巽', guaMeaning: '巽为风，取渐入、通达之象', strokes: 24 },
+    '景和': { gua: '离', guaMeaning: '离为火，取明亮、依附之象', strokes: 20 },
+    '予安': { gua: '坤', guaMeaning: '坤为地，取厚重、承载之象', strokes: 10 },
+    '清晏': { gua: '坎', guaMeaning: '坎为水，取流行、守正之象', strokes: 21 },
+    '言川': { gua: '坎', guaMeaning: '坎为水，取流动、深思之象', strokes: 10 },
+    '昭宁': { gua: '离', guaMeaning: '离为火，取明亮、文明之象', strokes: 23 },
+    '安': { gua: '坤', guaMeaning: '坤为地，取安厚、承载之象', strokes: 6 },
+    '澄': { gua: '坎', guaMeaning: '坎为水，取澄明、流行之象', strokes: 16 },
+    '知行': { gua: '震', guaMeaning: '震为雷，取发动、实践之象', strokes: 14 },
+    '景和安': { gua: '离', guaMeaning: '离为火，取光明、和合之象', strokes: 26 },
+    '清晏宁': { gua: '坎', guaMeaning: '坎为水，取清明、安宁之象', strokes: 35 }
+  };
+  profiles.forEach((profile) => Object.assign(profile, classical[profile.given] || {}));
   function digits(value) { return [...(value || '')].filter((x) => /\d/.test(x)).reduce((a, x) => a + Number(x), 0); }
   function textScore(value) { return [...(value || '')].reduce((sum, char) => sum + char.codePointAt(0), 0); }
   function birthAnalysis(data) {
@@ -44,7 +58,9 @@
       const styleBoost = selectedStyles.some((style) => profile.styles.includes(style)) ? 2 : 0;
       const familyBoost = data.parents && profile.tags.includes(analysis.support) ? 1 : 0;
       const genderBoost = gender === 'unknown' || profile.genders.includes(gender) ? 2 : 0;
-      return { ...profile, score: Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost, 99), rank: index + 1, fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
+      const polarity = profile.strokes % 2 === 0 ? '阴' : '阳';
+      const element = profile.tags[0];
+      return { ...profile, elementEvidence: `五行参考：${element}（候选字库归类，正式版本需按统一字典复核）`, guaEvidence: `《周易·说卦传》八卦象意参考：${profile.gua}卦，${profile.guaMeaning}。此处为象意参考，不是卦辞断语。`, yinyangEvidence: `阴阳参考：候选名笔画合计 ${profile.strokes} 画，按传统奇偶数理标为${polarity}；笔画版本需在正式字库中确认。`, score: Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost, 99), rank: index + 1, fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
     }).sort((a, b) => b.score - a.score).slice(0, 6);
   }
   window.NameEngine = { analyze: birthAnalysis, candidates };
