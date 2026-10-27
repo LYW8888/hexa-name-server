@@ -1,2 +1,2 @@
-# my-new-rwpo
+# hexa-name-server
 Created from GitHub Copilot task
