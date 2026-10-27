@@ -53,6 +53,8 @@ def analyze(payload: dict) -> dict:
         raise ValueError("surname must contain one or two characters")
     mode = str(payload.get('mode', 'due_date'))
     birth_date = str(payload.get("date", "")).strip()
+    if not birth_date:
+        raise ValueError('date is required for due_date and born modes')
     if birth_date:
         parsed = date.fromisoformat(birth_date)
         if mode == 'born' and parsed > date.today():
@@ -62,6 +64,8 @@ def analyze(payload: dict) -> dict:
     gender = str(payload.get('gender', 'unknown'))
     if gender not in ('male', 'female', 'unknown'):
         raise ValueError('gender must be male, female, or unknown')
+    if mode == 'born' and not payload.get('time'):
+        raise ValueError('exact birth time is required in born mode')
     if mode == 'due_date' and not payload.get('time'):
         payload['time'] = '12:00'
     length = int(payload.get("length", 2))

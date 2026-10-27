@@ -25,6 +25,12 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["scenario"], "已出生准确时间")
         self.assertEqual(result["analysis"]["time"], "08:30")
         self.assertEqual(result["analysis"]["gender"], "男")
+    def test_born_time_is_required(self):
+        with self.assertRaises(ValueError):
+            server.analyze({"mode":"born", "surname":"林", "date":"2024-04-16", "length":2, "gender":"unknown"})
+    def test_date_is_required(self):
+        with self.assertRaises(ValueError):
+            server.analyze({"mode":"due_date", "surname":"林", "length":2, "gender":"unknown"})
     def test_future_born_date_rejected(self):
         with self.assertRaises(ValueError):
             server.analyze({"mode":"born", "surname":"林", "date":"2999-01-01", "time":"08:30", "length":2, "gender":"female"})
