@@ -122,6 +122,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.json(json.loads((DATA / "character-catalog.json").read_text(encoding="utf-8")))
         if route == "/api/classics":
             return self.json(json.loads((DATA / "classics.json").read_text(encoding="utf-8")))
+        if route == "/api/product":
+            return self.json(json.loads((DATA / "product.json").read_text(encoding="utf-8")))
         return super().do_GET()
     def do_POST(self):
         if urlparse(self.path).path != "/api/analyze":

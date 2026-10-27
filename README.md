@@ -10,7 +10,7 @@
 python3 server.py
 ```
 
-访问 `http://localhost:4173`。服务器同时提供 `/api/health`、`/api/catalog`、`/api/classics` 和 `/api/analyze` 接口。
+访问 `http://localhost:4173`。服务器同时提供 `/api/health`、`/api/catalog`、`/api/classics`、`/api/product` 和 `/api/analyze` 接口。
 
 ## 当前能力
 
@@ -54,3 +54,8 @@ curl -s -X POST http://localhost:4173/api/analyze -H "Content-Type: application/
 - **性别**：支持男、女、未知；未知不会施加性别倾向，男/女会参与候选排序。
 
 预产期和实际出生信息可以同时保存。预产期用于保留原始计划，实际出生日期和准确时间一旦填写，会成为主要计算依据；预产期未来日期不会触发出生日期错误。表单错误会显示在页面内，不再使用浏览器原生弹窗。
+
+
+## 可盈利产品路径
+
+免费层提供 3 个候选和基础依据，完整命名报告提供更多候选、评分明细、音形检查和下载能力，家庭方案提供多轮筛选和人工咨询入口。当前项目只展示权益和转化流程，支付服务需要在确认价格、退款和隐私条款后接入。

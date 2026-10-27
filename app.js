@@ -6,6 +6,8 @@ const cards = document.querySelector('#cards');
 const count = document.querySelector('#savedCount');
 const regenerate = document.querySelector('#regenerate');
 const formMessage = document.querySelector('#formMessage');
+const upgradePanel = document.querySelector('#upgradePanel');
+const planGrid = document.querySelector('#planGrid');
 let step = 0;
 let lastRequest = null;
 let saved = JSON.parse(localStorage.getItem('序名收藏') || '[]');
@@ -86,7 +88,11 @@ function renderSummary(data, analysis) {
 
 function renderCards(data, analysis) {
   const list = window.NameEngine.candidates(data, analysis);
-  cards.innerHTML = list.map((item) => `<article class="card"><span class="rank">0${item.rank} / SHORTLIST</span><h3>${item.fullName}</h3><div class="pinyin">${data.surname || '林'} · ${item.pinyin}</div><p class="meaning">${item.meaning}</p><div class="chips">${item.tags.map((tag) => `<span>${tag}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${item.elementEvidence}</p><p>${item.guaEvidence}</p><p>${item.yinyangEvidence}</p><p>${item.source}</p><p>${item.analysis}</p></details><div class="card-foot"><span class="score">${item.score} <small>/ 100</small></span><button class="save ${saved.includes(item.fullName) ? 'saved' : ''}" data-name="${item.fullName}" type="button">${saved.includes(item.fullName) ? '已收藏' : '收藏 ♡'}</button></div></article>`).join('');
+  const freeCount = 3;
+  const freeList = list.slice(0, freeCount);
+  cards.innerHTML = freeList.map((item) => `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${item.fullName}</h3><div class="pinyin">${data.surname || '林'} · ${item.pinyin}</div><p class="meaning">${item.meaning}</p><div class="chips">${item.tags.map((tag) => `<span>${tag}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${item.elementEvidence}</p><p>${item.guaEvidence}</p><p>${item.yinyangEvidence}</p><p>${item.source}</p><p>${item.analysis}</p></details><div class="card-foot"><span class="score">${item.score} <small>/ 100</small></span><button class="save ${saved.includes(item.fullName) ? 'saved' : ''}" data-name="${item.fullName}" type="button">${saved.includes(item.fullName) ? '已收藏' : '收藏 ♡'}</button></div></article>`).join('');
+  upgradePanel.hidden = false;
+  upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个免费候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
     const name = button.dataset.name;
     saved = saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name];
@@ -95,6 +101,22 @@ function renderCards(data, analysis) {
     button.textContent = saved.includes(name) ? '已收藏' : '收藏 ♡';
     count.textContent = saved.length;
   }));
+}
+
+function renderPlans(product) {
+  const plans = product.plans || [];
+  planGrid.innerHTML = plans.map((plan, index) => `<article class="plan ${index === 1 ? 'featured' : ''}">${index === 1 ? '<span class="plan-badge">MOST CHOSEN</span>' : ''}<h3>${plan.name}</h3><div class="plan-price">${plan.price}</div><p>${plan.description}</p><ul>${plan.benefits.map((benefit) => `<li>${benefit}</li>`).join('')}</ul><button class="${index === 0 ? 'secondary' : 'primary'} plan-action" type="button" data-plan="${plan.id}">${index === 0 ? '当前免费' : '了解方案'}</button></article>`).join('');
+  planGrid.querySelectorAll('.plan-action').forEach((button) => button.addEventListener('click', () => showMessage(product.payment_status || '支付服务即将接入，方案权益已准备好。', 'success')));
+}
+
+async function loadProduct() {
+  try {
+    const response = await fetch('/api/product');
+    if (!response.ok) throw new Error('product api unavailable');
+    renderPlans(await response.json());
+  } catch (error) {
+    try { const response = await fetch('./data/product.json'); renderPlans(await response.json()); } catch (fallbackError) { /* Product cards are optional for a static preview. */ }
+  }
 }
 
 async function requestAnalysis(data) {
@@ -139,6 +161,7 @@ regenerate.addEventListener('click', () => {
   document.querySelector('#form').scrollIntoView({ behavior: 'smooth' });
 });
 count.textContent = saved.length;
+loadProduct();
 
 const savedButton = document.querySelector('#savedButton');
 const clearData = document.querySelector('#clearData');
