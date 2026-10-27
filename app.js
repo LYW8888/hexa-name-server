@@ -12,11 +12,11 @@ let step = 0;
 let lastRequest = null;
 let saved = JSON.parse(localStorage.getItem('序名收藏') || '[]');
 
-function showMessage(message, type = 'error') {
+function showMessage(message, type = 'error', scroll = true) {
   formMessage.textContent = message;
   formMessage.className = `form-message ${type}`;
   formMessage.hidden = !message;
-  if (message) formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (message && scroll) formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function syncBirthMode() {
@@ -90,7 +90,7 @@ function renderCards(data, analysis) {
   const list = window.NameEngine.candidates(data, analysis);
   const freeCount = 3;
   const freeList = list.slice(0, freeCount);
-  cards.innerHTML = freeList.map((item) => `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${item.fullName}</h3><div class="pinyin">${data.surname || '林'} · ${item.pinyin}</div><p class="meaning">${item.meaning}</p><div class="chips">${item.tags.map((tag) => `<span>${tag}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${item.elementEvidence}</p><p>${item.guaEvidence}</p><p>${item.yinyangEvidence}</p><p>${item.source}</p><p>${item.analysis}</p></details><div class="card-foot"><span class="score">${item.score} <small>/ 100</small></span><button class="save ${saved.includes(item.fullName) ? 'saved' : ''}" data-name="${item.fullName}" type="button">${saved.includes(item.fullName) ? '已收藏' : '收藏 ♡'}</button></div></article>`).join('');
+  cards.innerHTML = freeList.map((item) => `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${item.fullName}</h3><div class="pinyin">${data.surname || '林'} · ${item.pinyin}</div><p class="meaning">${item.meaning}</p><div class="chips">${item.tags.map((tag) => `<span>${tag}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${item.elementEvidence}</p><p>${item.guaEvidence}</p><p>${item.yinyangEvidence}</p><p>${item.scoreEvidence}</p><p>${item.source}</p><p>${item.analysis}</p></details><div class="card-foot"><span class="score">${item.score} <small>/ 100</small></span><button class="save ${saved.includes(item.fullName) ? 'saved' : ''}" data-name="${item.fullName}" type="button">${saved.includes(item.fullName) ? '已收藏' : '收藏 ♡'}</button></div></article>`).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个免费候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
@@ -106,7 +106,7 @@ function renderCards(data, analysis) {
 function renderPlans(product) {
   const plans = product.plans || [];
   planGrid.innerHTML = plans.map((plan, index) => `<article class="plan ${index === 1 ? 'featured' : ''}">${index === 1 ? '<span class="plan-badge">MOST CHOSEN</span>' : ''}<h3>${plan.name}</h3><div class="plan-price">${plan.price}</div><p>${plan.description}</p><ul>${plan.benefits.map((benefit) => `<li>${benefit}</li>`).join('')}</ul><button class="${index === 0 ? 'secondary' : 'primary'} plan-action" type="button" data-plan="${plan.id}">${index === 0 ? '当前免费' : '了解方案'}</button></article>`).join('');
-  planGrid.querySelectorAll('.plan-action').forEach((button) => button.addEventListener('click', () => showMessage(product.payment_status || '支付服务即将接入，方案权益已准备好。', 'success')));
+  planGrid.querySelectorAll('.plan-action').forEach((button) => button.addEventListener('click', () => showMessage(product.payment_status || '支付服务即将接入，方案权益已准备好。', 'success', false)));
 }
 
 async function loadProduct() {
