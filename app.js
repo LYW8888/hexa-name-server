@@ -9,6 +9,23 @@ let step = 0;
 let lastRequest = null;
 let saved = JSON.parse(localStorage.getItem('序名收藏') || '[]');
 
+function syncBirthMode() {
+  const mode = document.querySelector('input[name=mode]:checked')?.value || 'due_date';
+  const dateLabel = document.querySelector('#dateLabel');
+  const timeLabel = document.querySelector('#timeLabel');
+  const birthHint = document.querySelector('#birthHint');
+  const time = document.querySelector('input[name=time]');
+  const due = mode === 'due_date';
+  dateLabel.textContent = due ? '预产期日期' : '出生日期';
+  timeLabel.textContent = due ? '预产期参考时间' : '准确出生时间';
+  birthHint.textContent = due ? '预产期模式会使用预产期和 12:00 作为默认参考；出生后请切换到“已出生起名”并填写准确时间。当前原型使用标准时间计算。' : '已出生模式使用出生日期和准确时间；如果时间未知，请选择预产期模式作为参考。当前原型使用标准时间计算。';
+  if (due && !time.value) time.value = '12:00';
+  time.required = !due;
+}
+
+document.querySelectorAll('input[name=mode]').forEach((input) => input.addEventListener('change', syncBirthMode));
+syncBirthMode();
+
 function setStep(next) {
   step = Math.max(0, Math.min(next, panels.length - 1));
   panels.forEach((panel, index) => panel.classList.toggle('active', index === step));
@@ -24,7 +41,7 @@ document.querySelectorAll('.back').forEach((button) => button.addEventListener('
 
 function renderSummary(data, analysis) {
   summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${data.surname || '你的姓氏'} · 命名方向</strong><small>${analysis.primary}意象为主，辅以${analysis.support}的气质 · ${data.place || '出生地待补充'}</small></div><div class="metric"><b>${analysis.primary}</b><span>主要意象</span></div><div class="metric"><b>${analysis.support}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${analysis.method}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${data.surname || '你的姓氏'} · 命名方向</strong><small>${analysis.scenario || '命名参考'} · ${analysis.gender || '未知'} · ${analysis.primary}意象为主，辅以${analysis.support}的气质 · ${data.place || '出生地待补充'} · ${analysis.time || '时间待补充'}</small></div><div class="metric"><b>${analysis.primary}</b><span>主要意象</span></div><div class="metric"><b>${analysis.support}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${analysis.method}</p>`;
 }
 
 function renderCards(data, analysis) {

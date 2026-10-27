@@ -28,6 +28,13 @@ CANDIDATES = (
     ("清晏宁", "清澈、安宁而坚定，温柔中有力量。", "水", "classical,nature", 87),
 )
 
+GENDER_BY_GIVEN = {
+    '知衡': {'unknown', 'male'}, '景和': {'unknown', 'male', 'female'}, '予安': {'unknown', 'female'},
+    '清晏': {'unknown', 'female'}, '言川': {'unknown', 'male'}, '昭宁': {'unknown', 'female'},
+    '安': {'unknown', 'male', 'female'}, '澄': {'unknown', 'male', 'female'}, '知行': {'unknown', 'male'},
+    '景和安': {'unknown', 'male', 'female'}, '清晏宁': {'unknown', 'female'}
+}
+
 def init_db() -> None:
     DATA.mkdir(exist_ok=True)
     with sqlite3.connect(DB) as conn:
@@ -44,11 +51,19 @@ def analyze(payload: dict) -> dict:
     surname = str(payload.get("surname", "")).strip()
     if not surname or len(surname) > 2:
         raise ValueError("surname must contain one or two characters")
+    mode = str(payload.get('mode', 'due_date'))
     birth_date = str(payload.get("date", "")).strip()
     if birth_date:
         parsed = date.fromisoformat(birth_date)
-        if parsed > date.today():
+        if mode == 'born' and parsed > date.today():
             raise ValueError("birth date cannot be in the future")
+    if mode not in ('due_date', 'born'):
+        raise ValueError('mode must be due_date or born')
+    gender = str(payload.get('gender', 'unknown'))
+    if gender not in ('male', 'female', 'unknown'):
+        raise ValueError('gender must be male, female, or unknown')
+    if mode == 'due_date' and not payload.get('time'):
+        payload['time'] = '12:00'
     length = int(payload.get("length", 2))
     if length not in (1, 2, 3):
         raise ValueError("length must be 1, 2, or 3")
@@ -59,16 +74,19 @@ def analyze(payload: dict) -> dict:
         styles = []
     seed = sum(int(x) for x in re.findall(r"\d", birth_date + str(payload.get("time", "")))) + text_score(place) + text_score(parents)
     primary, support = ELEMENTS[seed % 5], ELEMENTS[(seed + 2) % 5]
+    scenario = '预产期参考' if mode == 'due_date' else '已出生准确时间'
+    effective_time = str(payload.get('time', '') or '')
     with sqlite3.connect(DB) as conn:
         rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
     exact = [row for row in rows if len(row[0]) == length]
     pool = exact or rows
     result = []
     for given, meaning, element, candidate_styles, base in pool:
-        score = base + (2 if element == primary else 0) + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + (1 if parents and element == support else 0)
+        gender_boost = 2 if gender == 'unknown' or gender in GENDER_BY_GIVEN.get(given, {'unknown'}) else 0
+        score = base + (2 if element == primary else 0) + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + (1 if parents and element == support else 0) + gender_boost
         result.append({"name": surname + given, "given": given, "meaning": meaning, "element": element, "score": min(score, 99), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
-    return {"analysis": {"primary": primary, "support": support, "family_signal": bool(parents), "method": "演示规则：出生日期/时间数字和、出生地与父母姓氏字符线索共同映射五行意象。正式版本需要经核验的历法服务。"}, "candidates": result[:6]}
+    return {"analysis": {"primary": primary, "support": support, "family_signal": bool(parents), "scenario": scenario, "gender": {'male':'男','female':'女','unknown':'未知'}[gender], "time": effective_time, "method": f"演示规则：{scenario}使用 {birth_date or '未填写日期'} {effective_time or '未填写时间'}，并结合出生地与父母姓氏字符线索映射五行意象；性别偏好为{'男' if gender == 'male' else '女' if gender == 'female' else '未知'}。正式版本需要经核验的历法服务。"}, "candidates": result[:6]}
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
