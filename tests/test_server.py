@@ -55,6 +55,13 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["requested_candidate_count"], 11)
         self.assertEqual(result["analysis"]["candidate_count"], len(result["candidates"]))
         self.assertLess(result["analysis"]["candidate_count"], 11)
+    def test_rename_purpose_uses_born_flow_and_is_labeled(self):
+        result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "candidateCount":2, "gender":"unknown"})
+        self.assertEqual(result["analysis"]["purpose"], "成人改名")
+        self.assertEqual(result["analysis"]["scenario"], "已出生准确时间")
+    def test_rename_purpose_rejects_due_date_flow(self):
+        with self.assertRaisesRegex(ValueError, "rename purpose"):
+            server.analyze({"purpose":"rename", "mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "gender":"unknown"})
 
 if __name__ == "__main__":
     unittest.main()

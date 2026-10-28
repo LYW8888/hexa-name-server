@@ -32,6 +32,8 @@
   function textScore(value) { return [...(value || '')].reduce((sum, char) => sum + char.codePointAt(0), 0); }
   function birthAnalysis(data) {
     const mode = data.mode || 'due_date';
+    const purpose = data.purpose || 'newborn';
+    const purposeLabel = purpose === 'rename' ? '成人改名' : '新生儿起名';
     const dueDate = data.dueDate || '';
     const dueTime = data.dueTime || '12:00';
     const birthDate = data.birthDate || '';
@@ -45,7 +47,7 @@
     const family = data.parents ? '已纳入父母姓氏线索' : '未填写父母姓氏';
     const scenario = actualComplete ? (mode === 'born' ? '已出生准确时间' : '预产期参考 + 已出生信息') : '预产期参考';
     const genderLabel = data.gender === 'male' ? '男' : data.gender === 'female' ? '女' : '未知';
-    return { primary, support, family, scenario, gender: genderLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}。正式版本应替换为经核验的历法服务。` };
+    return { primary, support, family, purpose: purposeLabel, scenario, gender: genderLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}；用途为${purposeLabel}。正式版本应替换为经核验的历法服务。` };
   }
   function countForLength(length) {
     return profiles.filter((item) => [...item.given].length === Number(length)).length;

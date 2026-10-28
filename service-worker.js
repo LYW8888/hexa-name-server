@@ -1,5 +1,5 @@
-const CACHE = 'xuming-mvp-v10';
-const ASSETS = ['./', './index.html', './styles.css?v=2026-10-27-10', './engine.js?v=2026-10-27-10', './app.js?v=2026-10-27-10', './manifest.webmanifest', './data/character-catalog.json', './data/classics.json', './data/product.json'];
+const CACHE = 'xuming-mvp-v11';
+const ASSETS = ['./', './index.html', './styles.css?v=2026-10-27-11', './engine.js?v=2026-10-27-11', './app.js?v=2026-10-27-11', './manifest.webmanifest', './data/character-catalog.json', './data/classics.json', './data/product.json'];
 self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', (event) => {

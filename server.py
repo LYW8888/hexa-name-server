@@ -54,6 +54,11 @@ def analyze(payload: dict) -> dict:
     mode = str(payload.get("mode", "due_date"))
     if mode not in ("due_date", "born"):
         raise ValueError("mode must be due_date or born")
+    purpose = str(payload.get("purpose", "newborn"))
+    if purpose not in ("newborn", "rename"):
+        raise ValueError("purpose must be newborn or rename")
+    if purpose == "rename" and mode != "born":
+        raise ValueError("rename purpose requires born mode")
     gender = str(payload.get("gender", "unknown"))
     if gender not in ("male", "female", "unknown"):
         raise ValueError("gender must be male, female, or unknown")
@@ -114,6 +119,7 @@ def analyze(payload: dict) -> dict:
     seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents)
     primary, support = ELEMENTS[seed % 5], ELEMENTS[(seed + 2) % 5]
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
+    purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
     with sqlite3.connect(DB) as conn:
         rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
     exact = [row for row in rows if len(row[0]) == length]
@@ -130,8 +136,8 @@ def analyze(payload: dict) -> dict:
         result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
-    method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}。正式版本需要经核验的历法服务。"
-    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "method": method}, "candidates": result[:effective_count]}
+    method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}。正式版本需要经核验的历法服务。"
+    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "method": method}, "candidates": result[:effective_count]}
 
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
