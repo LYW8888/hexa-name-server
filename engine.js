@@ -51,18 +51,24 @@
     const desiredLength = Number(data.length || 2);
     const selectedStyles = data.styles || [];
     const gender = data.gender || 'unknown';
+    const meaningText = String(data.meaning || '');
+    const charsText = String(data.chars || '');
+    const avoidMatch = charsText.match(/(?:避开|避開|不要|不取)[：:\s‘“"']*([^，,；;\s]+)/);
+    const avoidText = avoidMatch ? avoidMatch[1] : '';
     const exact = profiles.filter((item) => [...item.given].length === desiredLength);
     const pool = exact.length ? exact : profiles;
-    return pool.map((profile, index) => {
+    return pool.map((profile) => {
       const elementBoost = profile.tags.includes(analysis.primary) ? 2 : 0;
       const styleBoost = selectedStyles.some((style) => profile.styles.includes(style)) ? 2 : 0;
       const familyBoost = data.parents && profile.tags.includes(analysis.support) ? 1 : 0;
       const genderBoost = gender === 'unknown' || profile.genders.includes(gender) ? 2 : 0;
+      const preferenceBoost = [...profile.given].some((char) => meaningText.includes(char) || charsText.includes(`喜欢${char}`) || charsText.includes(`喜歡${char}`)) ? 2 : 0;
+      const avoidPenalty = [...profile.given].some((char) => avoidText.includes(char)) ? -8 : 0;
       const polarity = profile.strokes % 2 === 0 ? '阴' : '阳';
       const element = profile.tags[0];
-      const scoreEvidence = `评分构成：基础 ${profile.score}；${elementBoost ? '五行匹配 +2；' : '五行匹配 +0；'}${styleBoost ? '风格偏好 +2；' : '风格偏好 +0；'}${familyBoost ? '家庭线索 +1；' : '家庭线索 +0；'}${genderBoost ? '性别倾向 +2。' : '性别倾向 +0。'}`;
-      return { ...profile, scoreEvidence, elementEvidence: `五行参考：${element}（候选字库归类，正式版本需按统一字典复核）`, guaEvidence: `《周易·说卦传》八卦象意参考：${profile.gua}卦，${profile.guaMeaning}。此处为象意参考，不是卦辞断语。`, yinyangEvidence: `阴阳参考：候选名笔画合计 ${profile.strokes} 画，按传统奇偶数理标为${polarity}；笔画版本需在正式字库中确认。`, score: Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost, 99), rank: index + 1, fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
-    }).sort((a, b) => b.score - a.score).slice(0, 6);
+      const scoreEvidence = `评分构成：基础 ${profile.score}；${elementBoost ? '五行匹配 +2；' : '五行匹配 +0；'}${styleBoost ? '风格偏好 +2；' : '风格偏好 +0；'}${familyBoost ? '家庭线索 +1；' : '家庭线索 +0；'}${genderBoost ? '性别倾向 +2；' : '性别倾向 +0；'}${preferenceBoost ? '文字偏好 +2；' : '文字偏好 +0；'}${avoidPenalty ? '避用字 -8。' : '避用字 0。'}`;
+      return { ...profile, scoreEvidence, elementEvidence: `五行参考：${element}（候选字库归类，正式版本需按统一字典复核）`, guaEvidence: `《周易·说卦传》八卦象意参考：${profile.gua}卦，${profile.guaMeaning}。此处为象意参考，不是卦辞断语。`, yinyangEvidence: `阴阳参考：候选名笔画合计 ${profile.strokes} 画，按传统奇偶数理标为${polarity}；笔画版本需在正式字库中确认。`, score: Math.max(0, Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost + preferenceBoost + avoidPenalty, 99)), fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
+    }).sort((a, b) => b.score - a.score).slice(0, 6).map((item, index) => ({ ...item, rank: index + 1 }));
   }
   window.NameEngine = { analyze: birthAnalysis, candidates };
 }());

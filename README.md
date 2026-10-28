@@ -20,6 +20,8 @@ python3 server.py
 - 五行参考摘要与候选名字卡片
 - 候选名字收藏（浏览器本地存储）
 - 基础键盘焦点、减少动态效果支持
+- 站内统一反馈提示、可读的字段辅助说明和结果状态
+- “喜欢/避开”文字偏好会参与候选排序，并在评分构成中展示
 
 当前候选数据为演示用本地数据，不应视为完整八字、历法或经典资料库。接入正式服务时，应把历法计算、笔画数据、经典出处和姓名评分拆成独立且可测试的规则模块，并保留来源信息。
 
@@ -31,7 +33,7 @@ python3 server.py
 
 在支持 PWA 的移动浏览器中打开页面后，可使用“添加到主屏幕”。首次访问会缓存本地页面、样式和规则脚本；正式部署时建议通过 HTTPS 提供服务。
 
-收藏数据只保存在当前浏览器的 `localStorage` 中，页面底部提供“清除本地收藏”入口。出生日期、出生地和父母姓氏不会被发送到网络服务；接入后端时应继续遵循最小采集和可删除原则。
+收藏数据只保存在当前浏览器的 `localStorage` 中，页面底部提供“清除本地收藏”入口。出生信息仅提交到当前部署的同源分析接口，不写入收藏；正式上线仍应补充隐私告知、保存周期和删除策略。
 
 ## 算法数据库阶段
 
@@ -42,7 +44,7 @@ python3 server.py
 
 ```bash
 curl -s http://localhost:4173/api/health
-curl -s -X POST http://localhost:4173/api/analyze -H "Content-Type: application/json" -d '{"surname":"林","date":"2024-04-16","time":"08:30","place":"杭州","parents":"沈","length":2,"styles":["classical"]}'
+curl -s -X POST http://localhost:4173/api/analyze -H "Content-Type: application/json" -d '{"mode":"due_date","surname":"林","dueDate":"2099-04-16","dueTime":"12:00","place":"杭州","parents":"沈","length":2,"gender":"unknown","meaning":"清朗安定","chars":"喜欢安，避开伟","styles":["classical"]}'
 ```
 
 提交表单时，浏览器会优先调用同源 `/api/analyze`，取得本地 SQLite 规则层的分析结果；接口不可用时自动回退到浏览器内置演示规则，保证静态预览仍可使用。

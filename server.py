@@ -5,7 +5,7 @@ rule function with a verified calendar/four-pillars provider before production.
 """
 from __future__ import annotations
 import json, os, re, sqlite3
-from datetime import date
+from datetime import date, time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -74,10 +74,18 @@ def analyze(payload: dict) -> dict:
         raise ValueError("birthDate and birthTime must be supplied together")
     if due_date:
         date.fromisoformat(due_date)  # Future due dates are valid.
+        try:
+            time.fromisoformat(due_time)
+        except ValueError as exc:
+            raise ValueError("dueTime must use HH:MM format") from exc
     if birth_date:
         parsed_birth = date.fromisoformat(birth_date)
         if parsed_birth > date.today():
             raise ValueError("actual birth date cannot be in the future")
+        try:
+            time.fromisoformat(birth_time)
+        except ValueError as exc:
+            raise ValueError("birthTime must use HH:MM format") from exc
 
     actual_complete = bool(birth_date and birth_time)
     basis_date = birth_date if actual_complete else due_date
@@ -86,7 +94,11 @@ def analyze(payload: dict) -> dict:
     if length not in (1, 2, 3):
         raise ValueError("length must be 1, 2, or 3")
     place = str(payload.get("place", "")).strip()
+    if not place:
+        raise ValueError("place is required")
     parents = str(payload.get("parents", "")).strip()
+    meaning = str(payload.get("meaning", "")).strip()
+    chars = str(payload.get("chars", "")).strip()
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list):
         styles = []
@@ -97,11 +109,15 @@ def analyze(payload: dict) -> dict:
         rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
     exact = [row for row in rows if len(row[0]) == length]
     pool = exact or rows
+    avoid_match = re.search(r"(?:避开|避開|不要|不取)[：:\s‘“\"']*([^，,；;\s]+)", chars)
+    avoid_text = avoid_match.group(1) if avoid_match else ""
     result = []
-    for given, meaning, element, candidate_styles, base in pool:
+    for given, candidate_meaning, element, candidate_styles, base in pool:
         gender_boost = 2 if gender == "unknown" or gender in GENDER_BY_GIVEN.get(given, {"unknown"}) else 0
-        score = base + (2 if element == primary else 0) + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + (1 if parents and element == support else 0) + gender_boost
-        result.append({"name": surname + given, "given": given, "meaning": meaning, "element": element, "score": min(score, 99), "source_status": "demo"})
+        preference_boost = 2 if any(char in meaning or f"喜欢{char}" in chars or f"喜歡{char}" in chars for char in given) else 0
+        avoid_penalty = -8 if any(char in avoid_text for char in given) else 0
+        score = base + (2 if element == primary else 0) + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + (1 if parents and element == support else 0) + gender_boost + preference_boost + avoid_penalty
+        result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}。正式版本需要经核验的历法服务。"

@@ -8,9 +8,31 @@ const regenerate = document.querySelector('#regenerate');
 const formMessage = document.querySelector('#formMessage');
 const upgradePanel = document.querySelector('#upgradePanel');
 const planGrid = document.querySelector('#planGrid');
+const resultStatus = document.querySelector('#resultStatus');
+const toast = document.querySelector('#toast');
 let step = 0;
 let lastRequest = null;
-let saved = JSON.parse(localStorage.getItem('序名收藏') || '[]');
+let toastTimer;
+let saved = [];
+try {
+  const stored = JSON.parse(localStorage.getItem('序名收藏') || '[]');
+  saved = Array.isArray(stored) ? stored.filter((item) => typeof item === 'string') : [];
+} catch (error) {
+  saved = [];
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+}
+
+function showToast(message, type = 'success') {
+  if (!toast) return;
+  window.clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+  toast.hidden = false;
+  toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3200);
+}
 
 function showMessage(message, type = 'error', scroll = true) {
   formMessage.textContent = message;
@@ -39,10 +61,19 @@ function syncBirthMode() {
 document.querySelectorAll('input[name=mode]').forEach((input) => input.addEventListener('change', () => { showMessage(''); syncBirthMode(); }));
 syncBirthMode();
 
+function labelName(field) {
+  const label = field.closest('label');
+  if (!label) return '必填项';
+  const span = label.querySelector('span');
+  if (span) return span.textContent.trim();
+  const text = [...label.childNodes].find((node) => node.nodeType === 3 && node.textContent.trim());
+  return text?.textContent.trim() || '必填项';
+}
+
 function validatePanel() {
   const invalid = [...panels[step].querySelectorAll('input,select,textarea')].find((field) => !field.checkValidity());
   if (invalid) {
-    showMessage(`请先填写“${invalid.closest('label')?.innerText?.split('\n')[0] || '必填项'}”。`);
+    showMessage(`请先补充“${labelName(invalid)}”。`);
     invalid.focus();
     return false;
   }
@@ -75,7 +106,11 @@ document.querySelectorAll('.back').forEach((button) => button.addEventListener('
 function setStep(next) {
   step = Math.max(0, Math.min(next, panels.length - 1));
   panels.forEach((panel, index) => panel.classList.toggle('active', index === step));
-  steps.forEach((item, index) => item.classList.toggle('active', index <= step));
+  steps.forEach((item, index) => {
+    item.classList.toggle('active', index <= step);
+    if (index === step) item.setAttribute('aria-current', 'step');
+    else item.removeAttribute('aria-current');
+  });
   if (step === 1) syncBirthMode();
 }
 
@@ -83,30 +118,44 @@ function renderSummary(data, analysis) {
   const due = analysis.due_date ? `预产期 ${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写预产期';
   const actual = analysis.birth_date ? `出生 ${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写实际出生信息';
   summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${data.surname || '你的姓氏'} · 命名方向</strong><small>${analysis.scenario || '命名参考'} · ${analysis.gender || '未知'} · ${data.place || '出生地待补充'}<br>${due} · ${actual}</small></div><div class="metric"><b>${analysis.primary}</b><span>主要意象</span></div><div class="metric"><b>${analysis.support}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${analysis.method}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · 命名方向</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(data.place || '出生地待补充')}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
 function renderCards(data, analysis) {
   const list = window.NameEngine.candidates(data, analysis);
-  const freeCount = 3;
-  const freeList = list.slice(0, freeCount);
-  cards.innerHTML = freeList.map((item) => `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${item.fullName}</h3><div class="pinyin">${data.surname || '林'} · ${item.pinyin}</div><p class="meaning">${item.meaning}</p><div class="chips">${item.tags.map((tag) => `<span>${tag}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${item.elementEvidence}</p><p>${item.guaEvidence}</p><p>${item.yinyangEvidence}</p><p>${item.scoreEvidence}</p><p>${item.source}</p><p>${item.analysis}</p></details><div class="card-foot"><span class="score">${item.score} <small>/ 100</small></span><button class="save ${saved.includes(item.fullName) ? 'saved' : ''}" data-name="${item.fullName}" type="button">${saved.includes(item.fullName) ? '已收藏' : '收藏 ♡'}</button></div></article>`).join('');
+  const freeList = list.slice(0, 3);
+  if (!freeList.length) {
+    cards.innerHTML = '<div class="empty-result">暂时没有匹配方案，请调整名的字数或偏好后重试。</div>';
+    upgradePanel.hidden = true;
+    return 0;
+  }
+  cards.innerHTML = freeList.map((item) => {
+    const fullName = escapeHTML(item.fullName);
+    const isSaved = saved.includes(item.fullName);
+    return `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">依据状态：演示规则 / 部分资料待人工核验</small></details><div class="card-foot"><span class="score">${escapeHTML(item.score)} <small>/ 100</small></span><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></article>`;
+  }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个免费候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
     const name = button.dataset.name;
     saved = saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name];
     localStorage.setItem('序名收藏', JSON.stringify(saved));
-    button.classList.toggle('saved', saved.includes(name));
-    button.textContent = saved.includes(name) ? '已收藏' : '收藏 ♡';
+    const nowSaved = saved.includes(name);
+    button.classList.toggle('saved', nowSaved);
+    button.textContent = nowSaved ? '已收藏' : '收藏 ♡';
     count.textContent = saved.length;
+    showToast(nowSaved ? `已收藏${name}` : `已取消收藏${name}`);
   }));
+  return freeList.length;
 }
 
 function renderPlans(product) {
   const plans = product.plans || [];
-  planGrid.innerHTML = plans.map((plan, index) => `<article class="plan ${index === 1 ? 'featured' : ''}">${index === 1 ? '<span class="plan-badge">MOST CHOSEN</span>' : ''}<h3>${plan.name}</h3><div class="plan-price">${plan.price}</div><p>${plan.description}</p><ul>${plan.benefits.map((benefit) => `<li>${benefit}</li>`).join('')}</ul><button class="${index === 0 ? 'secondary' : 'primary'} plan-action" type="button" data-plan="${plan.id}">${index === 0 ? '当前免费' : '了解方案'}</button></article>`).join('');
-  planGrid.querySelectorAll('.plan-action').forEach((button) => button.addEventListener('click', () => showMessage(product.payment_status || '支付服务即将接入，方案权益已准备好。', 'success', false)));
+  planGrid.innerHTML = plans.map((plan, index) => `<article class="plan ${index === 1 ? 'featured' : ''}">${index === 1 ? '<span class="plan-badge">MOST CHOSEN</span>' : ''}<h3>${escapeHTML(plan.name)}</h3><div class="plan-price">${escapeHTML(plan.price)}</div><p>${escapeHTML(plan.description)}</p><ul>${(plan.benefits || []).map((benefit) => `<li>${escapeHTML(benefit)}</li>`).join('')}</ul><button class="${index === 0 ? 'secondary' : 'primary'} plan-action" type="button" data-plan="${escapeHTML(plan.id)}">${index === 0 ? '当前免费' : '了解方案'}</button></article>`).join('');
+  planGrid.querySelectorAll('.plan-action').forEach((button) => button.addEventListener('click', () => {
+    const plan = plans.find((item) => item.id === button.dataset.plan);
+    showToast(plan?.id === 'free_preview' ? '免费预览已经在上方生成，可以先收藏喜欢的名字。' : (product.payment_status || '支付服务即将接入，方案权益已准备好。'), plan?.id === 'free_preview' ? 'success' : 'info');
+  }));
 }
 
 async function loadProduct() {
@@ -146,8 +195,10 @@ form.addEventListener('submit', async (event) => {
   try {
     const analysis = await requestAnalysis(data);
     renderSummary(data, analysis);
-    renderCards(data, analysis);
+    const freeCount = renderCards(data, analysis);
+    resultStatus.textContent = `已生成 ${freeCount} 个免费方向，可展开卡片查看传统依据。`;
     document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
+    showToast('名字方案已生成，先收藏喜欢的方向。');
   } catch (error) {
     showMessage(error.message || '暂时无法生成方案，请检查出生信息后重试。');
   } finally {
@@ -157,13 +208,31 @@ form.addEventListener('submit', async (event) => {
 });
 
 regenerate.addEventListener('click', () => {
-  if (lastRequest) { const analysis = window.NameEngine.analyze(lastRequest); renderSummary(lastRequest, analysis); renderCards(lastRequest, analysis); return; }
+  if (lastRequest) {
+    const analysis = window.NameEngine.analyze(lastRequest);
+    renderSummary(lastRequest, analysis);
+    const freeCount = renderCards(lastRequest, analysis);
+    resultStatus.textContent = `已按当前信息重新整理 ${freeCount} 个方案。`;
+    showToast('已重新整理名字方向。');
+    return;
+  }
   document.querySelector('#form').scrollIntoView({ behavior: 'smooth' });
+  showToast('先完成上方信息，就能生成名字方案。', 'info');
 });
+
 count.textContent = saved.length;
 loadProduct();
 
 const savedButton = document.querySelector('#savedButton');
 const clearData = document.querySelector('#clearData');
-savedButton?.addEventListener('click', () => document.querySelector('#results').scrollIntoView({ behavior: 'smooth' }));
-clearData?.addEventListener('click', () => { saved = []; localStorage.removeItem('序名收藏'); count.textContent = '0'; document.querySelectorAll('.save.saved').forEach((button) => { button.classList.remove('saved'); button.textContent = '收藏 ♡'; }); showMessage('本地收藏已清除。', 'success'); });
+savedButton?.addEventListener('click', () => {
+  document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
+  showToast(saved.length ? `已收藏 ${saved.length} 个名字` : '完成一次生成后，就可以收藏喜欢的名字。', 'info');
+});
+clearData?.addEventListener('click', () => {
+  saved = [];
+  localStorage.removeItem('序名收藏');
+  count.textContent = '0';
+  document.querySelectorAll('.save.saved').forEach((button) => { button.classList.remove('saved'); button.textContent = '收藏 ♡'; });
+  showToast('本地收藏已清除。');
+});
