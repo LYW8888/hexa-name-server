@@ -13,8 +13,11 @@ const toast = document.querySelector('#toast');
 const lengthInput = document.querySelector('select[name=length]');
 const candidateCountInput = document.querySelector('input[name=candidateCount]');
 const candidateCountHint = document.querySelector('#candidateCountHint');
+const downloadReport = document.querySelector('#downloadReport');
 let step = 0;
 let lastRequest = null;
+let lastAnalysis = null;
+let lastCandidates = [];
 let toastTimer;
 let saved = [];
 try {
@@ -140,6 +143,7 @@ function renderSummary(data, analysis) {
 
 function renderCards(data, analysis) {
   const list = window.NameEngine.candidates(data, analysis);
+  lastCandidates = list;
   const freeList = list;
   if (!freeList.length) {
     cards.innerHTML = '<div class="empty-result">暂时没有匹配方案，请调整名的字数或偏好后重试。</div>';
@@ -203,7 +207,11 @@ form.addEventListener('submit', async (event) => {
   if (!validatePanel()) return;
   const data = Object.fromEntries(new FormData(form));
   data.styles = [...document.querySelectorAll('input[name=style]:checked')].map((item) => item.value);
+  data.variant = 0;
   lastRequest = data;
+  lastAnalysis = null;
+  lastCandidates = [];
+  downloadReport.disabled = true;
   const submit = form.querySelector('button[type=submit]');
   const originalLabel = submit.textContent;
   submit.disabled = true;
@@ -211,6 +219,8 @@ form.addEventListener('submit', async (event) => {
   showMessage('');
   try {
     const analysis = await requestAnalysis(data);
+    lastAnalysis = analysis;
+    downloadReport.disabled = false;
     renderSummary(data, analysis);
     const freeCount = renderCards(data, analysis);
     const requestedCount = Number(data.candidateCount || 3);
@@ -227,18 +237,68 @@ form.addEventListener('submit', async (event) => {
 
 regenerate.addEventListener('click', () => {
   if (lastRequest) {
+    lastRequest = { ...lastRequest, variant: (Number(lastRequest.variant) || 0) + 1 };
     const analysis = window.NameEngine.analyze(lastRequest);
+    lastAnalysis = analysis;
+    downloadReport.disabled = false;
     renderSummary(lastRequest, analysis);
     const freeCount = renderCards(lastRequest, analysis);
     const requestedCount = Number(lastRequest.candidateCount || 3);
-    resultStatus.textContent = `已按当前信息重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数的可核验字库仅匹配 ${freeCount} 个。` : ''}`;
-    showToast('已重新整理名字方向。');
+    resultStatus.textContent = `已按第 ${lastRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数的可核验字库仅匹配 ${freeCount} 个。` : ''}`;
+    showToast('已换一组候选方向，可下载当前方案。');
     return;
   }
   document.querySelector('#form').scrollIntoView({ behavior: 'smooth' });
   showToast('先完成上方信息，就能生成名字方案。', 'info');
 });
 
+function downloadReportFile() {
+  if (!lastRequest || !lastCandidates.length) {
+    showToast('先生成名字方案，再下载命名记录。', 'info');
+    return;
+  }
+  const analysis = lastAnalysis || window.NameEngine.analyze(lastRequest);
+  const lines = [
+    '# 序名 · 命名参考方案',
+    '',
+    `姓氏：${lastRequest.surname || '未填写'}`,
+    `场景：${analysis.scenario || '命名参考'}`,
+    `性别：${analysis.gender || '未知'}`,
+    `出生地点：${lastRequest.place || '未填写'}`,
+    `预产期：${analysis.due_date ? `${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写'}`,
+    `出生信息：${analysis.birth_date ? `${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写'}`,
+    `候选数量：${lastCandidates.length}`,
+    '',
+    `说明：${analysis.method || '传统文化参考，不承诺确定性运势结果。'}`,
+    '',
+    '## 候选名字',
+    ''
+  ];
+  lastCandidates.forEach((item, index) => {
+    lines.push(`### ${index + 1}. ${item.fullName}`);
+    lines.push(`- 拼音：${item.pinyin}`);
+    lines.push(`- 寓意：${item.meaning}`);
+    lines.push(`- 标签：${item.tags.join('、')}`);
+    lines.push(`- 评分：${item.score}/100`);
+    lines.push(`- 五行：${item.elementEvidence}`);
+    lines.push(`- 易经象意：${item.guaEvidence}`);
+    lines.push(`- 阴阳：${item.yinyangEvidence}`);
+    lines.push(`- 评分构成：${item.scoreEvidence}`);
+    lines.push(`- 资料状态：演示规则，部分资料待人工核验`);
+    lines.push('');
+  });
+  const blob = new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const safeSurname = String(lastRequest.surname || '方案').replace(/[^\u4e00-\u9fa5A-Za-z0-9_-]/g, '');
+  link.href = url;
+  link.download = `序名-${safeSurname || '方案'}.md`;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('命名方案已下载到本地。');
+}
+
+downloadReport?.addEventListener('click', downloadReportFile);
 count.textContent = saved.length;
 loadProduct();
 
