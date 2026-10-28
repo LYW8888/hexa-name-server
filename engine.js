@@ -1,6 +1,7 @@
 /* 可替换的命名规则层。当前规则是透明的演示实现，不等同于完整八字排盘。 */
 (function () {
   const elements = ['木', '火', '土', '金', '水'];
+  const zoneLabels = { 'Asia/Shanghai': '中国标准时间 UTC+8', 'Asia/Taipei': '台北时间 UTC+8', 'Asia/Hong_Kong': '香港时间 UTC+8' };
   const profiles = [
     { given: '知衡', pinyin: 'ZHĪ HÉNG', meaning: '知其所来，守心而衡；清醒而有分寸。', tags: ['木', '明辨', '端正'], styles: ['classical', 'bright'], genders: ['unknown', 'male'], score: 94, source: '“知”与“衡”取知行与持守之意，出处待人工核验。' },
     { given: '景和', pinyin: 'JǐNG HÉ', meaning: '景是光明与敬意，和是从容与相处。', tags: ['火', '光明', '和雅'], styles: ['classical', 'bright'], genders: ['unknown', 'male', 'female'], score: 92, source: '“景”和“和”为常用汉字义项，经典出处待人工核验。' },
@@ -34,6 +35,8 @@
     const mode = data.mode || 'due_date';
     const purpose = data.purpose || 'newborn';
     const purposeLabel = purpose === 'rename' ? '成人改名' : '新生儿起名';
+    const zone = data.zone || 'Asia/Shanghai';
+    const zoneLabel = zoneLabels[zone] || zone;
     const dueDate = data.dueDate || '';
     const dueTime = data.dueTime || '12:00';
     const birthDate = data.birthDate || '';
@@ -41,13 +44,13 @@
     const actualComplete = Boolean(birthDate && birthTime);
     const basisDate = actualComplete ? birthDate : dueDate;
     const basisTime = actualComplete ? birthTime : dueTime;
-    const sum = digits(`${basisDate}${basisTime}`) + textScore(data.place) + textScore(data.parents);
+    const sum = digits(`${basisDate}${basisTime}`) + textScore(data.place) + textScore(data.parents) + textScore(zone);
     const primary = elements[sum % elements.length];
     const support = elements[(sum + 2) % elements.length];
     const family = data.parents ? '已纳入父母姓氏线索' : '未填写父母姓氏';
     const scenario = actualComplete ? (mode === 'born' ? '已出生准确时间' : '预产期参考 + 已出生信息') : '预产期参考';
     const genderLabel = data.gender === 'male' ? '男' : data.gender === 'female' ? '女' : '未知';
-    return { primary, support, family, purpose: purposeLabel, scenario, gender: genderLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}；用途为${purposeLabel}。正式版本应替换为经核验的历法服务。` };
+    return { primary, support, family, purpose: purposeLabel, scenario, gender: genderLabel, zone, zone_label: zoneLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}；用途为${purposeLabel}；时区为${zoneLabel}。正式版本应替换为经核验的历法服务。` };
   }
   function countForLength(length) {
     return profiles.filter((item) => [...item.given].length === Number(length)).length;

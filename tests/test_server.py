@@ -62,6 +62,14 @@ class ServerRulesTest(unittest.TestCase):
     def test_rename_purpose_rejects_due_date_flow(self):
         with self.assertRaisesRegex(ValueError, "rename purpose"):
             server.analyze({"purpose":"rename", "mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "gender":"unknown"})
+    def test_timezone_is_returned_and_included_in_method(self):
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "zone":"Asia/Taipei", "length":2, "gender":"unknown"})
+        self.assertEqual(result["analysis"]["zone"], "Asia/Taipei")
+        self.assertEqual(result["analysis"]["zone_label"], "台北时间 UTC+8")
+        self.assertIn("台北时间", result["analysis"]["method"])
+    def test_timezone_is_validated(self):
+        with self.assertRaisesRegex(ValueError, "zone"):
+            server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "zone":"UTC", "length":2, "gender":"unknown"})
 
 if __name__ == "__main__":
     unittest.main()

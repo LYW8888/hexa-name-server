@@ -149,8 +149,9 @@ function renderSummary(data, analysis) {
   const due = analysis.due_date ? `预产期 ${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写预产期';
   const actual = analysis.birth_date ? `出生 ${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写实际出生信息';
   const purpose = analysis.purpose || (data.purpose === 'rename' ? '成人改名' : '新生儿起名');
+  const zone = analysis.zone_label || analysis.zone || data.zone || '中国标准时间 UTC+8';
   summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(data.place || '出生地待补充')}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
 function renderCards(data, analysis) {
@@ -278,6 +279,7 @@ function downloadReportFile() {
     `场景：${analysis.scenario || '命名参考'}`,
     `性别：${analysis.gender || '未知'}`,
     `出生地点：${lastRequest.place || '未填写'}`,
+    `时区：${analysis.zone_label || analysis.zone || lastRequest.zone || '中国标准时间 UTC+8'}`,
     `预产期：${analysis.due_date ? `${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写'}`,
     `出生信息：${analysis.birth_date ? `${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写'}`,
     `候选数量：${lastCandidates.length}`,

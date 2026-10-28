@@ -14,6 +14,11 @@ ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 DB = DATA / "naming.sqlite3"
 ELEMENTS = ("木", "火", "土", "金", "水")
+ZONE_LABELS = {
+    "Asia/Shanghai": "中国标准时间 UTC+8",
+    "Asia/Taipei": "台北时间 UTC+8",
+    "Asia/Hong_Kong": "香港时间 UTC+8",
+}
 CANDIDATES = (
     ("知衡", "知其所来，守心而衡；清醒而有分寸。", "木", "classical,bright", 94),
     ("景和", "景是光明与敬意，和是从容与相处。", "火", "classical,bright", 92),
@@ -62,6 +67,10 @@ def analyze(payload: dict) -> dict:
     gender = str(payload.get("gender", "unknown"))
     if gender not in ("male", "female", "unknown"):
         raise ValueError("gender must be male, female, or unknown")
+    zone = str(payload.get("zone", "Asia/Shanghai"))
+    if zone not in ZONE_LABELS:
+        raise ValueError("zone must be Asia/Shanghai, Asia/Taipei, or Asia/Hong_Kong")
+    zone_label = ZONE_LABELS[zone]
 
     # Keep both dates when supplied. `date`/`time` remain accepted for old clients.
     due_date = str(payload.get("dueDate") or (payload.get("date") if mode == "due_date" else "") or "").strip()
@@ -116,7 +125,7 @@ def analyze(payload: dict) -> dict:
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list):
         styles = []
-    seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents)
+    seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents) + text_score(zone)
     primary, support = ELEMENTS[seed % 5], ELEMENTS[(seed + 2) % 5]
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
@@ -136,8 +145,8 @@ def analyze(payload: dict) -> dict:
         result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
-    method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}。正式版本需要经核验的历法服务。"
-    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "method": method}, "candidates": result[:effective_count]}
+    method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}；时区为{zone_label}。正式版本需要经核验的历法服务。"
+    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "method": method}, "candidates": result[:effective_count]}
 
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
