@@ -22,6 +22,7 @@ python3 server.py
 - 基础键盘焦点、减少动态效果支持
 - 站内统一反馈提示、可读的字段辅助说明和结果状态
 - “喜欢/避开”文字偏好会参与候选排序，并在评分构成中展示
+- 名字字数与生成数量分开设置，候选数量支持 1–11 个，并会按当前字数的可核验字库动态收敛
 
 当前候选数据为演示用本地数据，不应视为完整八字、历法或经典资料库。接入正式服务时，应把历法计算、笔画数据、经典出处和姓名评分拆成独立且可测试的规则模块，并保留来源信息。
 
@@ -44,7 +45,7 @@ python3 server.py
 
 ```bash
 curl -s http://localhost:4173/api/health
-curl -s -X POST http://localhost:4173/api/analyze -H "Content-Type: application/json" -d '{"mode":"due_date","surname":"林","dueDate":"2099-04-16","dueTime":"12:00","place":"杭州","parents":"沈","length":2,"gender":"unknown","meaning":"清朗安定","chars":"喜欢安，避开伟","styles":["classical"]}'
+curl -s -X POST http://localhost:4173/api/analyze -H "Content-Type: application/json" -d '{"mode":"due_date","surname":"林","dueDate":"2099-04-16","dueTime":"12:00","place":"杭州","parents":"沈","length":2,"candidateCount":5,"gender":"unknown","meaning":"清朗安定","chars":"喜欢安，避开伟","styles":["classical"]}'
 ```
 
 提交表单时，浏览器会优先调用同源 `/api/analyze`，取得本地 SQLite 规则层的分析结果；接口不可用时自动回退到浏览器内置演示规则，保证静态预览仍可使用。
@@ -60,4 +61,4 @@ curl -s -X POST http://localhost:4173/api/analyze -H "Content-Type: application/
 
 ## 可盈利产品路径
 
-免费层提供 3 个候选和基础依据，完整命名报告提供更多候选、评分明细、音形检查和下载能力，家庭方案提供多轮筛选和人工咨询入口。当前项目只展示权益和转化流程，支付服务需要在确认价格、退款和隐私条款后接入。
+免费层支持自定义候选数量（当前演示字库最多 11 个，具体上限随名字字数变化）和基础依据，完整命名报告提供更多候选、评分明细、音形检查和下载能力，家庭方案提供多轮筛选和人工咨询入口。当前项目只展示权益和转化流程，支付服务需要在确认价格、退款和隐私条款后接入。

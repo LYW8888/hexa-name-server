@@ -10,6 +10,9 @@ const upgradePanel = document.querySelector('#upgradePanel');
 const planGrid = document.querySelector('#planGrid');
 const resultStatus = document.querySelector('#resultStatus');
 const toast = document.querySelector('#toast');
+const lengthInput = document.querySelector('select[name=length]');
+const candidateCountInput = document.querySelector('input[name=candidateCount]');
+const candidateCountHint = document.querySelector('#candidateCountHint');
 let step = 0;
 let lastRequest = null;
 let toastTimer;
@@ -41,6 +44,18 @@ function showMessage(message, type = 'error', scroll = true) {
   if (message && scroll) formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+function syncCandidateCountLimit() {
+  if (!lengthInput || !candidateCountInput || !candidateCountHint) return;
+  const length = Number(lengthInput.value || 2);
+  const available = window.NameEngine?.countForLength?.(length) || 11;
+  const max = Math.max(1, Math.min(11, available));
+  candidateCountInput.max = String(max);
+  const current = Number.parseInt(candidateCountInput.value || '3', 10);
+  if (!Number.isInteger(current) || current < 1) candidateCountInput.value = '1';
+  if (current > max) candidateCountInput.value = String(max);
+  candidateCountHint.textContent = `当前${length === 1 ? '单字名' : length === 2 ? '两字名' : '三字名'}可生成 1–${max} 个，超出数量会按可核验字库收敛。`;
+}
+
 function syncBirthMode() {
   const mode = document.querySelector('input[name=mode]:checked')?.value || 'due_date';
   const dueDate = document.querySelector('input[name=dueDate]');
@@ -60,6 +75,8 @@ function syncBirthMode() {
 
 document.querySelectorAll('input[name=mode]').forEach((input) => input.addEventListener('change', () => { showMessage(''); syncBirthMode(); }));
 syncBirthMode();
+syncCandidateCountLimit();
+lengthInput?.addEventListener('change', syncCandidateCountLimit);
 
 function labelName(field) {
   const label = field.closest('label');
@@ -123,7 +140,7 @@ function renderSummary(data, analysis) {
 
 function renderCards(data, analysis) {
   const list = window.NameEngine.candidates(data, analysis);
-  const freeList = list.slice(0, 3);
+  const freeList = list;
   if (!freeList.length) {
     cards.innerHTML = '<div class="empty-result">暂时没有匹配方案，请调整名的字数或偏好后重试。</div>';
     upgradePanel.hidden = true;
@@ -135,7 +152,7 @@ function renderCards(data, analysis) {
     return `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">依据状态：演示规则 / 部分资料待人工核验</small></details><div class="card-foot"><span class="score">${escapeHTML(item.score)} <small>/ 100</small></span><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
-  upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个免费候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
+  upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
     const name = button.dataset.name;
     saved = saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name];
@@ -196,7 +213,8 @@ form.addEventListener('submit', async (event) => {
     const analysis = await requestAnalysis(data);
     renderSummary(data, analysis);
     const freeCount = renderCards(data, analysis);
-    resultStatus.textContent = `已生成 ${freeCount} 个免费方向，可展开卡片查看传统依据。`;
+    const requestedCount = Number(data.candidateCount || 3);
+    resultStatus.textContent = `已生成 ${freeCount} 个方向，可展开卡片查看传统依据。${freeCount < requestedCount ? `当前字数的可核验字库仅匹配 ${freeCount} 个。` : ''}`;
     document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
     showToast('名字方案已生成，先收藏喜欢的方向。');
   } catch (error) {
@@ -212,7 +230,8 @@ regenerate.addEventListener('click', () => {
     const analysis = window.NameEngine.analyze(lastRequest);
     renderSummary(lastRequest, analysis);
     const freeCount = renderCards(lastRequest, analysis);
-    resultStatus.textContent = `已按当前信息重新整理 ${freeCount} 个方案。`;
+    const requestedCount = Number(lastRequest.candidateCount || 3);
+    resultStatus.textContent = `已按当前信息重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数的可核验字库仅匹配 ${freeCount} 个。` : ''}`;
     showToast('已重新整理名字方向。');
     return;
   }

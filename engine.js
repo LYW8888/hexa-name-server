@@ -47,8 +47,13 @@
     const genderLabel = data.gender === 'male' ? '男' : data.gender === 'female' ? '女' : '未知';
     return { primary, support, family, scenario, gender: genderLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}。正式版本应替换为经核验的历法服务。` };
   }
+  function countForLength(length) {
+    return profiles.filter((item) => [...item.given].length === Number(length)).length;
+  }
   function candidates(data, analysis) {
     const desiredLength = Number(data.length || 2);
+    const requestedCount = Number.parseInt(data.candidateCount ?? data.count ?? 3, 10);
+    const candidateCount = Number.isInteger(requestedCount) && requestedCount >= 1 && requestedCount <= 11 ? requestedCount : 3;
     const selectedStyles = data.styles || [];
     const gender = data.gender || 'unknown';
     const meaningText = String(data.meaning || '');
@@ -68,7 +73,7 @@
       const element = profile.tags[0];
       const scoreEvidence = `评分构成：基础 ${profile.score}；${elementBoost ? '五行匹配 +2；' : '五行匹配 +0；'}${styleBoost ? '风格偏好 +2；' : '风格偏好 +0；'}${familyBoost ? '家庭线索 +1；' : '家庭线索 +0；'}${genderBoost ? '性别倾向 +2；' : '性别倾向 +0；'}${preferenceBoost ? '文字偏好 +2；' : '文字偏好 +0；'}${avoidPenalty ? '避用字 -8。' : '避用字 0。'}`;
       return { ...profile, scoreEvidence, elementEvidence: `五行参考：${element}（候选字库归类，正式版本需按统一字典复核）`, guaEvidence: `《周易·说卦传》八卦象意参考：${profile.gua}卦，${profile.guaMeaning}。此处为象意参考，不是卦辞断语。`, yinyangEvidence: `阴阳参考：候选名笔画合计 ${profile.strokes} 画，按传统奇偶数理标为${polarity}；笔画版本需在正式字库中确认。`, score: Math.max(0, Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost + preferenceBoost + avoidPenalty, 99)), fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
-    }).sort((a, b) => b.score - a.score).slice(0, 6).map((item, index) => ({ ...item, rank: index + 1 }));
+    }).sort((a, b) => b.score - a.score).slice(0, candidateCount).map((item, index) => ({ ...item, rank: index + 1 }));
   }
-  window.NameEngine = { analyze: birthAnalysis, candidates };
+  window.NameEngine = { analyze: birthAnalysis, candidates, countForLength };
 }());

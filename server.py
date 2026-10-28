@@ -90,9 +90,18 @@ def analyze(payload: dict) -> dict:
     actual_complete = bool(birth_date and birth_time)
     basis_date = birth_date if actual_complete else due_date
     basis_time = birth_time if actual_complete else due_time
-    length = int(payload.get("length", 2))
+    try:
+        length = int(payload.get("length", 2))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("length must be 1, 2, or 3") from exc
     if length not in (1, 2, 3):
         raise ValueError("length must be 1, 2, or 3")
+    try:
+        candidate_count = int(payload.get("candidateCount", payload.get("count", 3)))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("candidateCount must be an integer from 1 to 11") from exc
+    if candidate_count < 1 or candidate_count > 11:
+        raise ValueError("candidateCount must be an integer from 1 to 11")
     place = str(payload.get("place", "")).strip()
     if not place:
         raise ValueError("place is required")
@@ -109,6 +118,7 @@ def analyze(payload: dict) -> dict:
         rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
     exact = [row for row in rows if len(row[0]) == length]
     pool = exact or rows
+    effective_count = min(candidate_count, len(pool))
     avoid_match = re.search(r"(?:避开|避開|不要|不取)[：:\s‘“\"']*([^，,；;\s]+)", chars)
     avoid_text = avoid_match.group(1) if avoid_match else ""
     result = []
@@ -121,7 +131,7 @@ def analyze(payload: dict) -> dict:
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}。正式版本需要经核验的历法服务。"
-    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "method": method}, "candidates": result[:6]}
+    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "scenario": scenario, "gender": gender_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "method": method}, "candidates": result[:effective_count]}
 
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):

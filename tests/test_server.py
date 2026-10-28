@@ -43,6 +43,18 @@ class ServerRulesTest(unittest.TestCase):
     def test_place_is_required_for_analysis(self):
         with self.assertRaisesRegex(ValueError, "place"):
             server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "length":2, "gender":"unknown"})
+    def test_candidate_count_is_customizable_end_to_end(self):
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":5, "gender":"unknown"})
+        self.assertEqual(result["analysis"]["candidate_count"], 5)
+        self.assertEqual(len(result["candidates"]), 5)
+    def test_candidate_count_range_is_validated(self):
+        with self.assertRaisesRegex(ValueError, "candidateCount"):
+            server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":12, "gender":"unknown"})
+    def test_candidate_count_reports_available_limit(self):
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":11, "gender":"unknown"})
+        self.assertEqual(result["analysis"]["requested_candidate_count"], 11)
+        self.assertEqual(result["analysis"]["candidate_count"], len(result["candidates"]))
+        self.assertLess(result["analysis"]["candidate_count"], 11)
 
 if __name__ == "__main__":
     unittest.main()
