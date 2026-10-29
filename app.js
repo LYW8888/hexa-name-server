@@ -13,6 +13,8 @@ const toast = document.querySelector('#toast');
 const lengthInput = document.querySelector('select[name=length]');
 const candidateCountInput = document.querySelector('input[name=candidateCount]');
 const candidateCountHint = document.querySelector('#candidateCountHint');
+const currentNameField = document.querySelector('#currentNameField');
+const currentNameInput = document.querySelector('input[name=currentName]');
 const downloadReport = document.querySelector('#downloadReport');
 let step = 0;
 let lastRequest = null;
@@ -68,6 +70,11 @@ function syncBirthMode() {
   const birthHint = document.querySelector('#birthHint');
   const purpose = document.querySelector('input[name=purpose]:checked')?.value || 'newborn';
   const born = mode === 'born';
+  if (currentNameField) {
+    currentNameField.hidden = purpose !== 'rename';
+    currentNameField.setAttribute('aria-hidden', String(purpose !== 'rename'));
+    if (currentNameInput) currentNameInput.disabled = purpose !== 'rename';
+  }
   dueDate.required = !born;
   dueTime.value = dueTime.value || '12:00';
   birthDate.required = born;
@@ -91,6 +98,17 @@ document.querySelectorAll('input[name=purpose]').forEach((input) => input.addEve
 syncBirthMode();
 syncCandidateCountLimit();
 lengthInput?.addEventListener('change', syncCandidateCountLimit);
+
+function getClockInZone(zone) {
+  try {
+    const parts = new Intl.DateTimeFormat('zh-CN', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+    return { date: `${values.year}-${values.month}-${values.day}`, minutes: Number(values.hour) * 60 + Number(values.minute) };
+  } catch (error) {
+    const now = new Date();
+    return { date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`, minutes: now.getHours() * 60 + now.getMinutes() };
+  }
+}
 
 function labelName(field) {
   const label = field.closest('label');
@@ -120,9 +138,18 @@ function validatePanel() {
       showMessage('已出生起名需要填写出生日期和准确出生时间。');
       return false;
     }
-    if (birthDate && new Date(`${birthDate}T00:00:00`) > new Date()) {
+    const zone = document.querySelector('select[name=zone]')?.value || 'Asia/Shanghai';
+    const clock = getClockInZone(zone);
+    if (birthDate && birthDate > clock.date) {
       showMessage('实际出生日期不能晚于今天；预产期可以是未来时间。');
       return false;
+    }
+    if (birthDate && birthDate === clock.date && birthTime) {
+      const [hours, minutes] = birthTime.split(':').map(Number);
+      if (hours * 60 + minutes > clock.minutes) {
+        showMessage('出生时间不能晚于当前时间；预产期可以填写未来时间。');
+        return false;
+      }
     }
   }
   showMessage('');
@@ -150,8 +177,10 @@ function renderSummary(data, analysis) {
   const actual = analysis.birth_date ? `出生 ${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写实际出生信息';
   const purpose = analysis.purpose || (data.purpose === 'rename' ? '成人改名' : '新生儿起名');
   const zone = analysis.zone_label || analysis.zone || data.zone || '中国标准时间 UTC+8';
+  const currentName = analysis.current_name || data.currentName || '';
+  const currentNameNote = currentName ? `现用姓名 ${currentName} · ` : '';
   summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
 function renderCards(data, analysis) {
@@ -202,6 +231,32 @@ async function loadProduct() {
   }
 }
 
+function friendlyError(message) {
+  const text = String(message || '');
+  const rules = [
+    [/surname must contain one or two characters/i, '姓氏需要填写 1–2 个汉字。'],
+    [/mode must be due_date or born/i, '请选择预产期或已出生流程。'],
+    [/purpose must be newborn or rename/i, '请选择新生儿起名或成人改名。'],
+    [/rename purpose requires born mode/i, '成人改名需要使用已出生信息流程。'],
+    [/gender must be male, female, or unknown/i, '性别请选择男、女或未知。'],
+    [/zone must be/i, '请选择列表中的时区。'],
+    [/dueDate is required/i, '预产期流程需要填写预产期日期。'],
+    [/birthDate and exact birthTime are required/i, '已出生流程需要填写出生日期和准确时间。'],
+    [/birthDate and birthTime must be supplied together/i, '出生日期和准确出生时间需要同时填写。'],
+    [/actual birth date cannot be in the future/i, '实际出生日期不能晚于今天。'],
+    [/birthTime cannot be in the future/i, '出生时间不能晚于当前时间。'],
+    [/dueTime must use/i, '预产期时间格式不正确，请重新选择。'],
+    [/birthTime must use/i, '出生时间格式不正确，请重新选择。'],
+    [/length must be/i, '名字字数请选择 1–3 个字。'],
+    [/candidateCount must be/i, '生成数量需要填写 1–11 个整数。'],
+    [/place is required/i, '请填写出生地点，便于生成地域和时区参考。'],
+    [/currentName must be/i, '现用姓名最多填写 20 个字符。'],
+    [/request too large/i, '提交内容过大，请减少文字后重试。'],
+  ];
+  const match = rules.find(([pattern]) => pattern.test(text));
+  return match ? match[1] : (text || '暂时无法生成方案，请稍后重试。');
+}
+
 async function requestAnalysis(data) {
   try {
     const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -241,7 +296,7 @@ form.addEventListener('submit', async (event) => {
     document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
     showToast('名字方案已生成，先收藏喜欢的方向。');
   } catch (error) {
-    showMessage(error.message || '暂时无法生成方案，请检查出生信息后重试。');
+    showMessage(friendlyError(error.message || ''));
   } finally {
     submit.disabled = false;
     submit.textContent = originalLabel;
@@ -276,6 +331,7 @@ function downloadReportFile() {
     '',
     `姓氏：${lastRequest.surname || '未填写'}`,
     `用途：${analysis.purpose || (lastRequest.purpose === 'rename' ? '成人改名' : '新生儿起名')}`,
+    `现用姓名：${analysis.current_name || lastRequest.currentName || '未填写'}`,
     `场景：${analysis.scenario || '命名参考'}`,
     `性别：${analysis.gender || '未知'}`,
     `出生地点：${lastRequest.place || '未填写'}`,

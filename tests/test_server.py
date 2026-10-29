@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 import server
 
 class ServerRulesTest(unittest.TestCase):
@@ -70,6 +71,21 @@ class ServerRulesTest(unittest.TestCase):
     def test_timezone_is_validated(self):
         with self.assertRaisesRegex(ValueError, "zone"):
             server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "zone":"UTC", "length":2, "gender":"unknown"})
+    def test_rename_keeps_current_name_as_context(self):
+        result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "currentName":"林知远", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"unknown"})
+        self.assertEqual(result["analysis"]["current_name"], "林知远")
+        self.assertIn("现用姓名为 林知远", result["analysis"]["method"])
+    def test_current_name_length_is_validated(self):
+        with self.assertRaisesRegex(ValueError, "currentName"):
+            server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "currentName":"名" * 21, "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"unknown"})
+    def test_same_day_future_birth_time_is_rejected(self):
+        class FrozenDateTime(server.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 4, 16, 10, 0, tzinfo=tz)
+        with patch.object(server, "datetime", FrozenDateTime):
+            with self.assertRaisesRegex(ValueError, "birthTime cannot"):
+                server.analyze({"mode":"born", "surname":"林", "birthDate":"2026-04-16", "birthTime":"10:01", "place":"杭州", "length":2, "gender":"unknown"})
 
 if __name__ == "__main__":
     unittest.main()
