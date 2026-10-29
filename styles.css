@@ -13,3 +13,5 @@
 .result-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.secondary:disabled{opacity:.45;cursor:not-allowed;background:transparent}.result-actions .secondary{white-space:nowrap}@media(max-width:800px){.result-actions{width:100%;margin-top:14px}.result-head{display:block}.result-actions .secondary{flex:1}}
 
 .card-tools{display:flex;align-items:center;gap:12px}.copy-name{border:0;background:transparent;color:var(--teal);cursor:pointer;font-size:12px;padding:4px 0}.copy-name:hover{color:var(--ink)}
+
+.demo-notice{margin:0 0 22px;padding:14px 16px;border:1px solid #d9c4a1;border-radius:8px;background:#fbf6eb;color:#6a5638;font-size:12px;line-height:1.7}.demo-notice b{color:#8b4b38;margin-right:6px}

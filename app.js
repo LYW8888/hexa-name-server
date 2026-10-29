@@ -58,7 +58,7 @@ function syncCandidateCountLimit() {
   const current = Number.parseInt(candidateCountInput.value || '3', 10);
   if (!Number.isInteger(current) || current < 1) candidateCountInput.value = '1';
   if (current > max) candidateCountInput.value = String(max);
-  candidateCountHint.textContent = `当前${length === 1 ? '单字名' : length === 2 ? '两字名' : '三字名'}可生成 1–${max} 个，超出数量会按可核验字库收敛。`;
+  candidateCountHint.textContent = `当前${length === 1 ? '单字名' : length === 2 ? '两字名' : '三字名'}可生成 1–${max} 个，候选资料仍待核验。`;
 }
 
 function syncBirthMode() {
@@ -180,7 +180,7 @@ function renderSummary(data, analysis) {
   const currentName = analysis.current_name || data.currentName || '';
   const currentNameNote = currentName ? `现用姓名 ${currentName} · ` : '';
   summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>演示意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>演示辅助</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
 async function copyText(value) {
@@ -218,7 +218,7 @@ function renderCards(data, analysis) {
   cards.innerHTML = freeList.map((item) => {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
-    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">依据状态：演示规则 / 部分资料待人工核验</small></details><div class="card-foot"><span class="score">${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">演示数据：并非四柱排盘或由出生信息起卦，资料待核验</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
@@ -324,7 +324,7 @@ form.addEventListener('submit', async (event) => {
     renderSummary(data, analysis);
     const freeCount = renderCards(data, analysis);
     const requestedCount = Number(data.candidateCount || 3);
-    resultStatus.textContent = `已生成 ${freeCount} 个方向，可展开卡片查看传统依据。${freeCount < requestedCount ? `当前字数的可核验字库仅匹配 ${freeCount} 个。` : ''}`;
+    resultStatus.textContent = `已生成 ${freeCount} 个方向，可展开卡片查看演示意象及资料状态。${freeCount < requestedCount ? `当前字数的演示字库仅匹配 ${freeCount} 个。` : ''}`;
     document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
     showToast('名字方案已生成，先收藏喜欢的方向。');
   } catch (error) {
@@ -344,7 +344,7 @@ regenerate.addEventListener('click', () => {
     renderSummary(lastRequest, analysis);
     const freeCount = renderCards(lastRequest, analysis);
     const requestedCount = Number(lastRequest.candidateCount || 3);
-    resultStatus.textContent = `已按第 ${lastRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数的可核验字库仅匹配 ${freeCount} 个。` : ''}`;
+    resultStatus.textContent = `已按第 ${lastRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数的演示字库仅匹配 ${freeCount} 个。` : ''}`;
     showToast('已换一组候选方向，可下载当前方案。');
     return;
   }
@@ -382,8 +382,8 @@ function downloadReportFile() {
     lines.push(`- 拼音：${item.pinyin}`);
     lines.push(`- 寓意：${item.meaning}`);
     lines.push(`- 标签：${item.tags.join('、')}`);
-    lines.push(`- 评分：${item.score}/100`);
-    lines.push(`- 五行：${item.elementEvidence}`);
+    lines.push(`- 演示评分：${item.score}/100`);
+    lines.push(`- 演示意象：${item.elementEvidence}`);
     lines.push(`- 易经象意：${item.guaEvidence}`);
     lines.push(`- 阴阳：${item.yinyangEvidence}`);
     lines.push(`- 评分构成：${item.scoreEvidence}`);

@@ -71,6 +71,14 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["zone"], "Asia/Taipei")
         self.assertEqual(result["analysis"]["zone_label"], "台北时间 UTC+8")
         self.assertIn("台北时间", result["analysis"]["method"])
+    def test_timezone_names_do_not_change_demo_elements_or_candidates(self):
+        base = {"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "dueTime":"12:00", "place":"杭州", "length":2, "gender":"unknown"}
+        results = [server.analyze({**base, "zone": zone}) for zone in server.ZONE_LABELS]
+        for result in results[1:]:
+            self.assertEqual(result["analysis"]["primary"], results[0]["analysis"]["primary"])
+            self.assertEqual(result["analysis"]["support"], results[0]["analysis"]["support"])
+            self.assertEqual(result["candidates"], results[0]["candidates"])
+        self.assertIn("并非四柱排盘或五行分析", results[0]["analysis"]["method"])
     def test_timezone_is_validated(self):
         with self.assertRaisesRegex(ValueError, "zone"):
             server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "zone":"UTC", "length":2, "gender":"unknown"})

@@ -151,7 +151,7 @@ def analyze(payload: dict) -> dict:
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list):
         styles = []
-    seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents) + text_score(zone)
+    seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents)
     primary, support = ELEMENTS[seed % 5], ELEMENTS[(seed + 2) % 5]
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
@@ -171,7 +171,7 @@ def analyze(payload: dict) -> dict:
         result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
-    method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}；{f"现用姓名为 {current_name}" if current_name else "未填写现用姓名"}；时区为{zone_label}。正式版本需要经核验的历法服务。"
+    method = f"演示规则：将日期、时间中的数字与出生地和父母姓氏的字符数值求和后取模生成示例意象，并非四柱排盘或五行分析；时区仅用于日期校验和展示。以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}；{f"现用姓名为 {current_name}" if current_name else "未填写现用姓名"}；时区为{zone_label}。正式版本需要经核验的历法服务。"
     return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
 
 class Handler(SimpleHTTPRequestHandler):

@@ -73,13 +73,13 @@
     const actualComplete = Boolean(birthDate && birthTime);
     const basisDate = actualComplete ? birthDate : dueDate;
     const basisTime = actualComplete ? birthTime : dueTime;
-    const sum = digits(`${basisDate}${basisTime}`) + textScore(data.place) + textScore(data.parents) + textScore(zone);
+    const sum = digits(`${basisDate}${basisTime}`) + textScore(data.place) + textScore(data.parents);
     const primary = elements[sum % elements.length];
     const support = elements[(sum + 2) % elements.length];
     const family = data.parents ? '已纳入父母姓氏线索' : '未填写父母姓氏';
     const scenario = actualComplete ? (mode === 'born' ? '已出生准确时间' : '预产期参考 + 已出生信息') : '预产期参考';
     const genderLabel = data.gender === 'male' ? '男' : data.gender === 'female' ? '女' : '未知';
-    return { primary, support, family, purpose: purposeLabel, current_name: currentName, scenario, gender: genderLabel, zone, zone_label: zoneLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}；用途为${purposeLabel}；${currentName ? `现用姓名为 ${currentName}` : '未填写现用姓名'}；时区为${zoneLabel}。正式版本应替换为经核验的历法服务。` };
+    return { primary, support, family, purpose: purposeLabel, current_name: currentName, scenario, gender: genderLabel, zone, zone_label: zoneLabel, time: basisTime, due_date: dueDate, due_time: dueDate ? dueTime : '', birth_date: birthDate, birth_time: birthTime, method: `演示规则：将日期、时间中的数字与出生地和父母姓氏的字符数值求和后取模生成示例意象，并非四柱排盘或五行分析；时区仅用于日期校验和展示。以${actualComplete ? '实际出生日期和准确时间' : '预产期和参考时间'}作为主要计算输入；${dueDate ? `预产期为 ${dueDate} ${dueTime}` : '未填写预产期'}；${birthDate ? `出生信息为 ${birthDate} ${birthTime}` : '尚未填写实际出生信息'}；${family}；性别偏好为${genderLabel}；用途为${purposeLabel}；${currentName ? `现用姓名为 ${currentName}` : '未填写现用姓名'}；时区为${zoneLabel}。正式版本应替换为经核验的历法服务。` };
   }
   function countForLength(length) {
     return profiles.filter((item) => [...item.given].length === Number(length)).length;
@@ -107,8 +107,8 @@
       const avoidPenalty = [...profile.given].some((char) => avoidText.includes(char)) ? -8 : 0;
       const polarity = profile.strokes % 2 === 0 ? '阴' : '阳';
       const element = profile.tags[0];
-      const scoreEvidence = `评分构成：基础 ${profile.score}；${elementBoost ? '五行匹配 +2；' : '五行匹配 +0；'}${styleBoost ? '风格偏好 +2；' : '风格偏好 +0；'}${familyBoost ? '家庭线索 +1；' : '家庭线索 +0；'}${genderBoost ? '性别倾向 +2；' : '性别倾向 +0；'}${preferenceBoost ? '文字偏好 +2；' : '文字偏好 +0；'}${avoidPenalty ? '避用字 -8；' : '避用字 0；'}${variantBoost ? `探索轮次 +${variantBoost}。` : '探索轮次 +0。'}`;
-      return { ...profile, scoreEvidence, elementEvidence: `五行参考：${element}（候选字库归类，正式版本需按统一字典复核）`, guaEvidence: `《周易·说卦传》八卦象意参考：${profile.gua}卦，${profile.guaMeaning}。此处为象意参考，不是卦辞断语。`, yinyangEvidence: `阴阳参考：候选名笔画合计 ${profile.strokes} 画，按传统奇偶数理标为${polarity}；笔画版本需在正式字库中确认。`, score: Math.max(0, Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost + preferenceBoost + avoidPenalty + variantBoost, 99)), fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
+      const scoreEvidence = `评分构成：基础 ${profile.score}；${elementBoost ? '演示意象匹配 +2；' : '演示意象匹配 +0；'}${styleBoost ? '风格偏好 +2；' : '风格偏好 +0；'}${familyBoost ? '家庭线索 +1；' : '家庭线索 +0；'}${genderBoost ? '性别倾向 +2；' : '性别倾向 +0；'}${preferenceBoost ? '文字偏好 +2；' : '文字偏好 +0；'}${avoidPenalty ? '避用字 -8；' : '避用字 0；'}${variantBoost ? `探索轮次 +${variantBoost}。` : '探索轮次 +0。'}`;
+      return { ...profile, scoreEvidence, elementEvidence: `演示字库意象分类：${element}；归类尚未核验，不代表生辰五行。`, guaEvidence: `演示库人工关联的八卦象意：${profile.gua}卦，${profile.guaMeaning}。并非依出生信息起卦；《周易·说卦传》来源及释义待核验。`, yinyangEvidence: `演示笔画奇偶参考：候选名暂记 ${profile.strokes} 画，按奇偶标为${polarity}；笔画和对应规则均待核验，不能用于判断运势。`, score: Math.max(0, Math.min(profile.score + elementBoost + styleBoost + familyBoost + genderBoost + preferenceBoost + avoidPenalty + variantBoost, 99)), fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
     }).sort((a, b) => b.score - a.score).slice(0, candidateCount).map((item, index) => ({ ...item, rank: index + 1 }));
   }
   window.NameEngine = { analyze: birthAnalysis, candidates, countForLength };
