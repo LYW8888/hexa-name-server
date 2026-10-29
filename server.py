@@ -12,11 +12,12 @@ import phonetics
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 DB = DATA / "naming.sqlite3"
+DIST = ROOT / "frontend" / "dist"
 # Only assets required by the application are public. In particular, never
 # expose the SQLite database, source files, repository metadata or directories.
 PUBLIC_ASSETS = frozenset({
     "/", "/index.html", "/styles.css", "/engine.js", "/app.js",
-    "/service-worker.js", "/keepsake.js", "/manifest.webmanifest",
+    "/service-worker.js", "/keepsake.js", "/manifest.webmanifest", "/favicon.svg",
     "/data/character-catalog.json", "/data/classics.json", "/data/product.json",
 })
 ZONE_LABELS = {
@@ -261,9 +262,24 @@ class Handler(SimpleHTTPRequestHandler):
     def send_head(self):
         # Both GET and HEAD use this method; do not allow directory listings or
         # decoded path aliases to bypass the same explicit allowlist.
-        if urlparse(self.path).path not in PUBLIC_ASSETS:
+        route = urlparse(self.path).path
+        if route in ("/", "/index.html", "/service-worker.js", "/manifest.webmanifest", "/favicon.svg"):
+            if not (DIST / "index.html").is_file():
+                self.send_error(503, "Frontend not built; run npm ci and npm run build in frontend")
+                return None
+            self.directory = str(DIST)
+        elif re.fullmatch(r"/assets/[A-Za-z0-9_-]+\.(?:js|css|svg|png|jpe?g|webp|woff2?)", route):
+            assets = (DIST / "assets").resolve()
+            target = (DIST / route.lstrip("/")).resolve()
+            if assets.parent != DIST.resolve() or target.parent != assets or not target.is_file():
+                self.send_error(404)
+                return None
+            self.directory = str(DIST)
+        elif route not in PUBLIC_ASSETS:
             self.send_error(404)
             return None
+        else:
+            self.directory = str(ROOT)
         return super().send_head()
 
     def end_headers(self):

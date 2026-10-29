@@ -1,17 +1,21 @@
 # 序名 · 现代东方命名
 
-响应式中文起名与改名原型。当前已接入四柱排盘；候选名字、字的五行归类、卦象关联及评分仍为待核验的演示数据，不提供喜用神或确定性运势判断。
+响应式中文起名与改名原型。前端使用 React 19 与 Vite 8，后端使用 Python。当前已接入四柱排盘；候选名字、字的五行归类、卦象关联及评分仍为待核验的演示数据，不提供喜用神或确定性运势判断。
 
 ## 安装与运行
 
-需要 Python 3.9+、系统时区数据库和 Node.js（运行前端测试时）。安装固定版本的 MIT 许可历法及拼音依赖：
+需要 Python 3.9+、系统时区数据库，以及 Node.js 20.19–20.x 或 22.12+（建议使用受支持的 LTS 版本）。安装依赖并构建 React 前端：
 
 ```bash
 python3 -m pip install -r requirements.txt
+npm ci --prefix frontend
+npm run build --prefix frontend
 python3 server.py
 ```
 
-访问 `http://localhost:4173`。服务提供 `/api/health`、`/api/catalog`、`/api/classics`、`/api/product`、`/api/name-counts` 和 `/api/analyze`。四柱由服务端计算；服务不可用时页面会提示重试，不会回退到虚构的排盘。
+访问 `http://localhost:4173`。Python 服务从 `frontend/dist` 提供构建后的页面和静态资源；没有构建时首页返回 503，API 仍可用。服务提供 `/api/health`、`/api/catalog`、`/api/classics`、`/api/product`、`/api/name-counts` 和 `/api/analyze`。四柱由服务端计算；服务不可用时页面会提示重试，不会回退到虚构的排盘。
+
+开发时先启动 Python 服务（默认端口 4173），再在另一个终端执行 `npm run dev --prefix frontend`，访问 Vite 给出的本地地址；开发服务器将 `/api` 和 `/data` 代理到 Python 服务。每次部署前重新运行前端构建，构建目录和 `node_modules` 不提交到 Git。根目录的旧 `index.html`、`app.js`、`service-worker.js` 保留用于旧版本回滚兼容，生产首页使用 React 版本。
 
 ## 四柱排盘口径
 
@@ -43,6 +47,8 @@ python3 scripts/verify_solar_terms_skyfield.py
 ```bash
 python3 -m unittest discover -s tests -v
 node --test tests/test_*.js
+# 首次运行需安装浏览器：npx --prefix frontend playwright install chromium
+npm run test:e2e --prefix frontend
 ```
 
 启动服务后可运行 `python3 scripts/simulate_100_users.py --base-url http://127.0.0.1:4173`，生成 100 条可重复的合成用户路径；结果不是实际用户访谈。历史反馈见 `reports/simulated-100-users.md`。

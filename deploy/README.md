@@ -4,7 +4,7 @@
 
 示例假定专用低权限账户 `xuming`、代码位于 `/opt/xuming/app`、虚拟环境位于 `/opt/xuming/venv`，反向代理和证书由服务器管理员配置。按实际服务器修改路径和用户；确保服务用户可写 `app/data`，但不要给 Web 代理开放该目录。执行前备份既有服务和配置。
 
-1. 获取并审核要部署的 Git 提交；在服务器准备低权限账户、应用目录及 Python 3.9+ 的虚拟环境，安装 `pip install -r /opt/xuming/app/requirements.txt`。
+1. 获取并审核要部署的 Git 提交；在服务器准备低权限账户、应用目录及 Python 3.9+ 的虚拟环境，安装 `pip install -r /opt/xuming/app/requirements.txt`。使用 Node.js 20.19–20.x 或 22.12+ 在应用目录执行 `npm ci --prefix frontend` 和 `npm run build --prefix frontend`，构建的 `frontend/dist` 供服务只读访问。
 2. 按路径和账户修改 `xuming.service.example`，安装为 systemd 服务；服务通过 `HOST=127.0.0.1` 只绑定本机。按需检查目录权限与服务日志。
 3. 取得目标域名的有效证书，修改 `nginx.conf.example` 的域名和证书路径；在 Nginx 中代理到本机应用，禁止配置静态目录直出。先检查 `nginx -t`，再按服务器既有变更流程加载配置。
 4. 使用 HTTPS 验证首页、排盘、候选、收藏、报告及 `/api/health`，同时确认 `/.git/config`、`/server.py`、`/data/naming.sqlite3` 不可通过代理访问；验证 HTTP 跳转、证书续期与服务重启。
