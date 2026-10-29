@@ -58,11 +58,15 @@ function showToast(message, type = 'success') {
   toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3200);
 }
 
+function scrollBehavior() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+}
+
 function showMessage(message, type = 'error', scroll = true) {
   formMessage.textContent = message;
   formMessage.className = `form-message ${type}`;
   formMessage.hidden = !message;
-  if (message && scroll) formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (message && scroll) formMessage.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
 }
 
 function renderSaved() {
@@ -313,7 +317,7 @@ function renderCards(data, analysis, selected) {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
     const reading = readingNotes(item.pronunciation).map((note) => `<p>${escapeHTML(note)}</p>`).join('');
-    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    return `<article class="card"><div class="card-top"><span class="rank">${String(item.rank).padStart(2, '0')} / 名字提案</span><span class="card-status">${item.source_status === 'verified' ? '寓意已复核' : '寓意待核验'}</span></div><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>可以展开每个候选查看资料状态，收藏喜欢的名字或下载当前方案。</p></div><a class="primary" href="#pricing">查看服务状态 <span>→</span></a>`;
@@ -430,7 +434,7 @@ form.addEventListener('submit', async (event) => {
     downloadReport.disabled = !freeCount;
     const requestedCount = Number(data.candidateCount || 3);
     resultStatus.textContent = freeCount ? `已生成 ${freeCount} 个方向，可展开卡片查看演示意象及资料状态。${freeCount < requestedCount ? `当前字数和避用字条件下，演示字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
-    document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('#results').scrollIntoView({ behavior: scrollBehavior() });
     showToast(freeCount ? '名字方案已生成，先收藏喜欢的方向。' : '请调整避用字或名字字数后重试。', freeCount ? 'success' : 'info');
   } catch (error) {
     lastAnalysis = null;
@@ -469,7 +473,7 @@ regenerate.addEventListener('click', async () => {
     }
     return;
   }
-  document.querySelector('#form').scrollIntoView({ behavior: 'smooth' });
+  document.querySelector('#form').scrollIntoView({ behavior: scrollBehavior() });
   showToast('先完成上方信息，就能生成名字方案。', 'info');
 });
 
@@ -556,7 +560,7 @@ const clearData = document.querySelector('#clearData');
 savedButton?.addEventListener('click', () => {
   renderSaved();
   savedPanel.hidden = false;
-  savedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  savedPanel.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
 });
 document.querySelector('#closeSaved')?.addEventListener('click', () => { savedPanel.hidden = true; });
 savedList?.addEventListener('click', (event) => {
