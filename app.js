@@ -183,6 +183,29 @@ function renderSummary(data, analysis) {
   summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>主要意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>辅助意象</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (error) {
+      // Some browsers block clipboard access outside a secure context.
+    }
+  }
+  const helper = document.createElement('textarea');
+  helper.value = value;
+  helper.setAttribute('readonly', '');
+  helper.style.position = 'fixed';
+  helper.style.opacity = '0';
+  document.body.appendChild(helper);
+  try {
+    helper.select();
+    return typeof document.execCommand === 'function' && document.execCommand('copy');
+  } finally {
+    helper.remove();
+  }
+}
+
 function renderCards(data, analysis) {
   const list = window.NameEngine.candidates(data, analysis);
   lastCandidates = list;
@@ -195,10 +218,19 @@ function renderCards(data, analysis) {
   cards.innerHTML = freeList.map((item) => {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
-    return `<article class="card"><span class="rank">0${item.rank} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">依据状态：演示规则 / 部分资料待人工核验</small></details><div class="card-foot"><span class="score">${escapeHTML(item.score)} <small>/ 100</small></span><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></article>`;
+    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看易经、阴阳五行依据</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">依据状态：演示规则 / 部分资料待人工核验</small></details><div class="card-foot"><span class="score">${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
+  cards.querySelectorAll('.copy-name').forEach((button) => button.addEventListener('click', async () => {
+    const name = button.dataset.name;
+    try {
+      if (!await copyText(name)) throw new Error('copy failed');
+      showToast(`已复制${name}，可以发给家人讨论。`);
+    } catch (error) {
+      showToast('复制失败，请长按名字手动复制。', 'info');
+    }
+  }));
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
     const name = button.dataset.name;
     saved = saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name];

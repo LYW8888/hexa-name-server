@@ -11,3 +11,5 @@
 @media(max-width:800px){.hero-meta{margin-bottom:18px}.form-helper{max-width:none}.toast{bottom:14px;border-radius:12px}.result-status{font-size:11px}}
 
 .result-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.secondary:disabled{opacity:.45;cursor:not-allowed;background:transparent}.result-actions .secondary{white-space:nowrap}@media(max-width:800px){.result-actions{width:100%;margin-top:14px}.result-head{display:block}.result-actions .secondary{flex:1}}
+
+.card-tools{display:flex;align-items:center;gap:12px}.copy-name{border:0;background:transparent;color:var(--teal);cursor:pointer;font-size:12px;padding:4px 0}.copy-name:hover{color:var(--ink)}
