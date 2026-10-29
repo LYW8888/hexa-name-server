@@ -7,6 +7,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 import bazi
+import phonetics
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -98,8 +99,7 @@ def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
             raise ValueError(f"{key} must contain Chinese characters and separators only")
         chars = set()
         for char in value:
-            code = ord(char)
-            if 0x3400 <= code <= 0x9fff or 0x20000 <= code <= 0x323af:
+            if phonetics.is_han(char):
                 chars.add(char)
             elif not (char.isspace() or char in "，,、；;‘’“”'\"：:"):
                 raise ValueError(f"{key} must contain Chinese characters and separators only")
@@ -109,7 +109,7 @@ def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
     def legacy_field(words: str) -> set[str]:
         found = set()
         for match in re.finditer(rf"(?:{words})[：:\s‘“\"']*([^，,；;\s]+)", legacy):
-            found.update(char for char in match.group(1) if 0x3400 <= ord(char) <= 0x9fff)
+            found.update(char for char in match.group(1) if phonetics.is_han(char))
         return found
 
     liked = parse_field("likedChars") if "likedChars" in payload else legacy_field("喜欢|喜歡")
@@ -120,8 +120,8 @@ def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
 
 def analyze(payload: dict) -> dict:
     surname = str(payload.get("surname", "")).strip()
-    if not surname or len(surname) > 2:
-        raise ValueError("surname must contain one or two characters")
+    if not 1 <= len(surname) <= 2 or not all(phonetics.is_han(char) for char in surname):
+        raise ValueError("surname must contain one or two Chinese characters")
     mode = str(payload.get("mode", "due_date"))
     if mode not in ("due_date", "born"):
         raise ValueError("mode must be due_date or born")
@@ -226,7 +226,7 @@ def analyze(payload: dict) -> dict:
         source = item["meaning_source"]
         reference = source.get("reference") if source["verification_status"] == "verified" else None
         source_text = source["description"] if not reference else f"{source['description']}（{reference['title']}，{reference['edition']}，{reference['citation']}；复核：{reference['reviewed_by']}，{reference['reviewed_at']}）"
-        result.append({"name": surname + given, "given": given, "pinyin": item["pinyin"], "meaning": item["meaning"], "tags": item["tags"], "element": item["tags"][0], "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": source["verification_status"], "source": source_text, "source_reference": reference, "element_evidence": f"演示字库意象分类：{item['tags'][0]}；归类尚未核验，不代表生辰五行。", "gua_evidence": gua_evidence, "yinyang_evidence": yinyang_evidence})
+        result.append({"name": surname + given, "given": given, "pinyin": item["pinyin"], "pronunciation": phonetics.check(surname, given, item["pinyin"]), "meaning": item["meaning"], "tags": item["tags"], "element": item["tags"][0], "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": source["verification_status"], "source": source_text, "source_reference": reference, "element_evidence": f"演示字库意象分类：{item['tags'][0]}；归类尚未核验，不代表生辰五行。", "gua_evidence": gua_evidence, "yinyang_evidence": yinyang_evidence})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     if variant and result:
         offset = (variant * effective_count) % len(result)

@@ -54,7 +54,7 @@ class HttpHandlerTest(unittest.TestCase):
 
     def test_private_files_and_path_aliases_are_not_served(self):
         for method in ('GET', 'HEAD'):
-            for path in ('/data/', '/data/naming.sqlite3', '/.git/config', '/server.py',
+            for path in ('/data/', '/data/naming.sqlite3', '/.git/config', '/server.py', '/phonetics.py',
                          '/tests/test_server.py', '/README.md', '/data/../server.py',
                          '/data/%2e%2e/server.py', '/%2e%67it/config'):
                 with self.subTest(method=method, path=path):
@@ -67,7 +67,9 @@ class HttpHandlerTest(unittest.TestCase):
         status, headers, body = self.request('POST', '/api/analyze', json.dumps(valid), {'Content-Type': 'application/json'})
         self.assertEqual(status, 200)
         self.assertIn('no-store', headers['Cache-Control'])
-        self.assertEqual(len(json.loads(body)['analysis']['bazi']['pillars']), 4)
+        data = json.loads(body)
+        self.assertEqual(len(data['analysis']['bazi']['pillars']), 4)
+        self.assertEqual(data['candidates'][0]['pronunciation']['source']['library'], 'pypinyin')
         for raw in (b'[]', b'null', b'{', json.dumps({**valid, 'styles': [{}]}).encode()):
             with self.subTest(body=raw):
                 status, _, body = self.request('POST', '/api/analyze', raw, {'Content-Type': 'application/json'})

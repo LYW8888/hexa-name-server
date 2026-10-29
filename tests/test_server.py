@@ -22,6 +22,16 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["due_time"], "12:00")
         self.assertTrue(result["analysis"]["bazi"]["reference"])
         self.assertTrue(result["candidates"])
+    def test_surname_requires_one_or_two_han_characters(self):
+        base = {"mode":"due_date", "dueDate":"2099-01-01", "place":"杭州"}
+        for surname in ('A', '林😀', '张李王'):
+            with self.subTest(surname=surname), self.assertRaisesRegex(ValueError, 'surname must'):
+                server.analyze({**base, 'surname': surname})
+        for surname in ('单', '欧阳', '𠮷'):
+            with self.subTest(surname=surname):
+                result = server.analyze({**base, 'surname': surname})
+                self.assertTrue(result['candidates'][0]['name'].startswith(surname))
+                self.assertEqual(len(result['candidates'][0]['pronunciation']['surname']), len(surname))
     def test_due_date_and_actual_birth_can_coexist(self):
         result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2024-04-20", "dueTime":"10:00", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"female"})
         self.assertEqual(result["analysis"]["scenario"], "预产期参考 + 已出生信息")

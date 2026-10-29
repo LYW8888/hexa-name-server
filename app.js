@@ -172,6 +172,15 @@ function validatePanel() {
     invalid.focus();
     return false;
   }
+  if (step === 0) {
+    const surnameInput = form.querySelector('input[name=surname]');
+    const characters = [...surnameInput.value.trim()];
+    if (characters.length < 1 || characters.length > 2 || characters.some((char) => char !== '〇' && !/\p{Script=Han}/u.test(char))) {
+      showMessage('姓氏请填写 1–2 个汉字，支持复姓。');
+      surnameInput.focus();
+      return false;
+    }
+  }
   if (step === 1) {
     const mode = document.querySelector('input[name=mode]:checked')?.value;
     const birthDate = document.querySelector('input[name=birthDate]').value;
@@ -258,6 +267,24 @@ async function copyText(value) {
   }
 }
 
+function readingNotes(pronunciation) {
+  if (!pronunciation || !Array.isArray(pronunciation.surname) || !Array.isArray(pronunciation.given)) {
+    return ['读音对照暂不可用，请自行核对。'];
+  }
+  const surname = pronunciation.surname.map((item) => `${item.character}：${item.readings.length ? item.readings.join(' / ') : '字典未收录'}`).join('；');
+  const given = pronunciation.given.map((item) => {
+    const result = item.status === 'listed' ? '字典列有此音' : item.status === 'unknown' ? '字典未收录' : '预设读音不在字典列表中，需复核';
+    const alternatives = item.readings.length > 1 ? `；字典读音 ${item.readings.join(' / ')}` : '';
+    return `${item.character}：${item.selected || '未填写'}（${result}${alternatives}）`;
+  }).join('；');
+  const notes = [`姓氏单字读音：${surname}。`, `名的读音对照：${given}。`];
+  if (pronunciation.surname.some((item) => item.readings.length > 1)) notes.push('姓氏包含多音字；以上是字典单字读音，姓氏实际读法请按家族习惯核对。');
+  if (pronunciation.surname_given_overlap?.length) notes.push(`姓和名中都有“${pronunciation.surname_given_overlap.join('、')}”，请结合全名读写习惯判断。`);
+  notes.push(pronunciation.limitations);
+  notes.push(`读音对照：${pronunciation.source.library} ${pronunciation.source.version}；预设读音和多音字用法仍需人工核对。`);
+  return notes;
+}
+
 function renderCards(data, analysis, selected) {
   const list = window.NameEngine.candidates(data, analysis, selected);
   lastCandidates = list;
@@ -270,7 +297,8 @@ function renderCards(data, analysis, selected) {
   cards.innerHTML = freeList.map((item) => {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
-    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    const reading = readingNotes(item.pronunciation).map((note) => `<p>${escapeHTML(note)}</p>`).join('');
+    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>可以展开每个候选查看资料状态，收藏喜欢的名字或下载当前方案。</p></div><a class="primary" href="#pricing">查看服务状态 <span>→</span></a>`;
@@ -319,7 +347,7 @@ async function loadProduct() {
 function friendlyError(message) {
   const text = String(message || '');
   const rules = [
-    [/surname must contain one or two characters/i, '姓氏需要填写 1–2 个汉字。'],
+    [/surname must contain one or two (?:Chinese )?characters/i, '姓氏需要填写 1–2 个汉字。'],
     [/mode must be due_date or born/i, '请选择预产期或已出生流程。'],
     [/purpose must be newborn or rename/i, '请选择新生儿起名或成人改名。'],
     [/rename purpose requires born mode/i, '成人改名需要使用已出生信息流程。'],
@@ -361,6 +389,7 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!validatePanel()) return;
   const data = Object.fromEntries(new FormData(form));
+  data.surname = data.surname.trim();
   data.styles = [...document.querySelectorAll('input[name=style]:checked')].map((item) => item.value);
   data.variant = 0;
   lastRequest = data;
@@ -466,6 +495,7 @@ function downloadReportFile() {
   lastCandidates.forEach((item, index) => {
     lines.push(`### ${index + 1}. ${item.fullName}`);
     lines.push(`- 拼音：${item.pinyin}`);
+    readingNotes(item.pronunciation).forEach(note => lines.push(`- ${note}`));
     lines.push(`- 寓意：${item.meaning}`);
     lines.push(`- 标签：${item.tags.join('、')}`);
     lines.push(`- 演示评分：${item.score}/100`);
