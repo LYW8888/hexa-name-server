@@ -42,7 +42,7 @@ python3 scripts/verify_solar_terms_skyfield.py
 
 ```bash
 python3 -m unittest discover -s tests -v
-node --test tests/test_engine.js
+node --test tests/test_*.js
 ```
 
 启动服务后可运行 `python3 scripts/simulate_100_users.py --base-url http://127.0.0.1:4173`，生成 100 条可重复的合成用户路径；结果不是实际用户访谈。历史反馈见 `reports/simulated-100-users.md`。
@@ -61,7 +61,7 @@ curl -s -X POST http://localhost:4173/api/analyze -H 'Content-Type: application/
 
 ## 隐私与产品状态
 
-收藏的名字、拼音和寓意只保存在浏览器本地，可从页面底部清除；出生信息提交至同源分析服务，不写入收藏。下载方案由浏览器生成。支付接口尚未接入，正式上线前需补齐隐私政策、数据保存及删除流程、支付与报告交付。
+收藏的名字、拼音和寓意只保存在浏览器本地，可从页面底部清除；出生信息提交至同源分析服务，不写入收藏。下载方案和名字心愿卡由浏览器生成；心愿卡只包含用户主动填写的名字、祝愿及网站域名，不自动加入出生信息。推荐链接由首页地址和固定的 `utm_source=share&utm_medium=referral` 来源参数组成，不附带表单、出生或收藏数据；复制与系统分享由用户主动操作，当前没有站内推荐归因统计。支付接口尚未接入，正式上线前需补齐隐私政策、数据保存及删除流程、支付与报告交付。
 
 服务仅公开页面所需的静态文件和 API，不提供项目目录浏览或数据库文件下载；API 响应设置 `no-store`，服务工作线程只缓存公开静态资源。自带的 Python HTTP 服务主要供开发和验证使用，本身不提供 HTTPS。对外部署需通过可信的 HTTPS 反向代理，并确认代理不会直接公开项目目录或记录请求体中的出生信息；还需按实际部署环境配置访问控制、限流和运维监控。
 

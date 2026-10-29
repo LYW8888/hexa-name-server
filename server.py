@@ -16,7 +16,7 @@ DB = DATA / "naming.sqlite3"
 # expose the SQLite database, source files, repository metadata or directories.
 PUBLIC_ASSETS = frozenset({
     "/", "/index.html", "/styles.css", "/engine.js", "/app.js",
-    "/service-worker.js", "/manifest.webmanifest",
+    "/service-worker.js", "/keepsake.js", "/manifest.webmanifest",
     "/data/character-catalog.json", "/data/classics.json", "/data/product.json",
 })
 ZONE_LABELS = {

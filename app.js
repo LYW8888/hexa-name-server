@@ -317,7 +317,7 @@ function renderCards(data, analysis, selected) {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
     const reading = readingNotes(item.pronunciation).map((note) => `<p>${escapeHTML(note)}</p>`).join('');
-    return `<article class="card"><div class="card-top"><span class="rank">${String(item.rank).padStart(2, '0')} / 名字提案</span><span class="card-status">${item.source_status === 'verified' ? '寓意已复核' : '寓意待核验'}</span></div><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    return `<article class="card"><div class="card-top"><span class="rank">${String(item.rank).padStart(2, '0')} / 名字提案</span><span class="card-status">${item.source_status === 'verified' ? '寓意已复核' : '寓意待核验'}</span></div><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="make-keepsake" data-name="${fullName}" type="button">做心愿卡</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>可以展开每个候选查看资料状态，收藏喜欢的名字或下载当前方案。</p></div><a class="primary" href="#pricing">查看服务状态 <span>→</span></a>`;
@@ -330,6 +330,7 @@ function renderCards(data, analysis, selected) {
       showToast('复制失败，请长按名字手动复制。', 'info');
     }
   }));
+  cards.querySelectorAll('.make-keepsake').forEach((button) => button.addEventListener('click', () => openKeepsake(button.dataset.name)));
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
     const name = button.dataset.name;
     saved = saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name];
@@ -576,4 +577,88 @@ clearData?.addEventListener('click', () => {
   savedDetails = Object.create(null);
   renderSaved();
   if (persistSaved()) showToast('本地收藏已清除。');
+});
+
+// The card is drawn and exported in the browser; form and birth data are never
+// added to the site recommendation link.
+const keepsakeName = document.querySelector('#keepsakeName');
+const keepsakeWish = document.querySelector('#keepsakeWish');
+const keepsakeCanvas = document.querySelector('#keepsakeCanvas');
+const keepsakeMessage = document.querySelector('#keepsakeMessage');
+const shareHint = document.querySelector('#shareHint');
+const siteLink = document.querySelector('#siteLink');
+const shareSite = document.querySelector('#shareSite');
+const publicSite = window.Keepsake.siteURL(window.location.href);
+const recommendationLink = window.Keepsake.recommendationURL(window.location.href);
+
+function updateKeepsake() {
+  const name = window.Keepsake.validate(keepsakeName.value, keepsakeWish.value);
+  window.Keepsake.draw(keepsakeCanvas, name.name, name.wish, publicSite);
+  keepsakeCanvas.setAttribute('aria-label', `名字心愿卡预览：${name.name || '尚未填写名字'}${name.wish ? `，祝愿：${name.wish}` : ''}`);
+}
+
+function openKeepsake(name) {
+  keepsakeName.value = name;
+  keepsakeMessage.hidden = true;
+  updateKeepsake();
+  document.querySelector('#keepsake').scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+  keepsakeName.focus({ preventScroll: true });
+}
+
+[keepsakeName, keepsakeWish].forEach((field) => field.addEventListener('input', () => {
+  keepsakeMessage.hidden = true;
+  updateKeepsake();
+}));
+updateKeepsake();
+if (document.fonts?.ready) document.fonts.ready.then(updateKeepsake).catch(() => {});
+siteLink.textContent = recommendationLink;
+if (['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) {
+  shareHint.textContent = '当前是本机测试地址，亲友无法通过此地址访问；上线后可复制正式链接。链接只含固定来源参数，不含姓名和出生信息。';
+}
+if (!publicSite) {
+  document.querySelector('#copySiteLink').disabled = true;
+  shareHint.textContent = '当前页面没有可分享的网站地址；卡片仍可在本机制作。';
+}
+if (publicSite && typeof navigator.share === 'function') shareSite.hidden = false;
+
+document.querySelector('#downloadKeepsake').addEventListener('click', () => {
+  const state = window.Keepsake.validate(keepsakeName.value, keepsakeWish.value);
+  if (state.error) {
+    keepsakeMessage.textContent = state.error;
+    keepsakeMessage.hidden = false;
+    (state.error.includes('祝愿') ? keepsakeWish : keepsakeName).focus();
+    return;
+  }
+  keepsakeMessage.hidden = true;
+  if (!window.Keepsake.draw(keepsakeCanvas, state.name, state.wish, publicSite) || typeof keepsakeCanvas.toBlob !== 'function') {
+    showToast('当前浏览器无法导出图片，请尝试其他浏览器。', 'info');
+    return;
+  }
+  keepsakeCanvas.toBlob((blob) => {
+    if (!blob) { showToast('图片生成失败，请稍后重试。', 'info'); return; }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = state.name.replace(/[^\p{Script=Han}A-Za-z0-9_-]/gu, '').slice(0, 24);
+    link.href = url; link.download = `序名心愿卡-${safeName || '名字'}.png`; link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast('心愿卡已下载，分享前请确认图片内容。');
+  }, 'image/png');
+});
+
+document.querySelector('#copySiteLink').addEventListener('click', async () => {
+  if (!publicSite) return;
+  try {
+    if (!await copyText(recommendationLink)) throw new Error('copy failed');
+    showToast('网站链接已复制，可以自行发给亲友。');
+  } catch (error) {
+    showToast('复制失败，请手动复制下方网站地址。', 'info');
+  }
+});
+shareSite.addEventListener('click', async () => {
+  if (!publicSite || typeof navigator.share !== 'function') return;
+  try {
+    await navigator.share({ title: '序名 · 命名参考', text: '为家人寻找名字灵感。', url: recommendationLink });
+  } catch (error) {
+    if (error.name !== 'AbortError') showToast('分享未完成，可使用复制推荐链接。', 'info');
+  }
 });
