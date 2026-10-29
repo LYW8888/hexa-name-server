@@ -65,6 +65,37 @@ def init_db() -> None:
         conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("schema_version", "0.1.0"))
         conn.commit()
 
+def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
+    """Explicit fields are individual Chinese characters separated by punctuation.
+
+    The previous free-text field remains supported for older API clients.
+    """
+    def parse_field(key: str) -> set[str]:
+        value = payload.get(key, "") or ""
+        if not isinstance(value, str) or len(value) > 100:
+            raise ValueError(f"{key} must contain Chinese characters and separators only")
+        chars = set()
+        for char in value:
+            code = ord(char)
+            if 0x3400 <= code <= 0x9fff or 0x20000 <= code <= 0x323af:
+                chars.add(char)
+            elif not (char.isspace() or char in "，,、；;‘’“”'\"：:"):
+                raise ValueError(f"{key} must contain Chinese characters and separators only")
+        return chars
+
+    legacy = str(payload.get("chars", "") or "")
+    def legacy_field(words: str) -> set[str]:
+        found = set()
+        for match in re.finditer(rf"(?:{words})[：:\s‘“\"']*([^，,；;\s]+)", legacy):
+            found.update(char for char in match.group(1) if 0x3400 <= ord(char) <= 0x9fff)
+        return found
+
+    liked = parse_field("likedChars") if "likedChars" in payload else legacy_field("喜欢|喜歡")
+    avoided = parse_field("avoidedChars") if "avoidedChars" in payload else legacy_field("避开|避開|不要|不取")
+    if liked & avoided:
+        raise ValueError("likedChars and avoidedChars cannot overlap")
+    return liked, avoided
+
 def analyze(payload: dict) -> dict:
     surname = str(payload.get("surname", "")).strip()
     if not surname or len(surname) > 2:
@@ -137,7 +168,7 @@ def analyze(payload: dict) -> dict:
     if len(current_name) > 20:
         raise ValueError("currentName must be 20 characters or fewer")
     meaning = str(payload.get("meaning", "")).strip()
-    chars = str(payload.get("chars", "")).strip()
+    liked, avoided = character_preferences(payload)
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list):
         styles = []
@@ -147,17 +178,23 @@ def analyze(payload: dict) -> dict:
     with sqlite3.connect(DB) as conn:
         rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
     exact = [row for row in rows if len(row[0]) == length]
-    pool = exact or rows
+    pool = [row for row in exact if not any(char in avoided for char in row[0])]
     effective_count = min(candidate_count, len(pool))
-    avoid_match = re.search(r"(?:避开|避開|不要|不取)[：:\s‘“\"']*([^，,；;\s]+)", chars)
-    avoid_text = avoid_match.group(1) if avoid_match else ""
+    try:
+        variant = int(payload.get("variant", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("variant must be an integer from 0 to 100000") from exc
+    if not 0 <= variant <= 100000:
+        raise ValueError("variant must be an integer from 0 to 100000")
     result = []
     for given, candidate_meaning, element, candidate_styles, base in pool:
         gender_boost = 2 if gender == "unknown" or gender in GENDER_BY_GIVEN.get(given, {"unknown"}) else 0
-        preference_boost = 2 if any(char in meaning or f"喜欢{char}" in chars or f"喜歡{char}" in chars for char in given) else 0
-        avoid_penalty = -8 if any(char in avoid_text for char in given) else 0
-        score = base + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + gender_boost + preference_boost + avoid_penalty
-        result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "source_status": "demo"})
+        preference_boost = 2 if any(char in meaning or char in liked for char in given) else 0
+        style_boost = 2 if set(styles) & set(candidate_styles.split(",")) else 0
+        variant_boost = (sum(map(ord, given)) + variant * 13) % 3 if variant else 0
+        score = base + style_boost + gender_boost + preference_boost + variant_boost
+        evidence = f"演示评分构成：基础 {base}；风格偏好 +{style_boost}；性别倾向 +{gender_boost}；文字偏好 +{preference_boost}；探索轮次 +{variant_boost}。避用字已过滤；未计算喜用神。"
+        result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = (f"{'预产期参考排盘，出生后请以实际出生时间重新计算' if chart['reference'] else '按实际出生日期和时间排盘'}；"

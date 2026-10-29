@@ -67,6 +67,31 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["candidate_count"], 5)
         self.assertEqual(result["analysis"]["available_candidate_count"], 5)
         self.assertLess(result["analysis"]["candidate_count"], 11)
+    def test_avoid_characters_are_hard_constraints_and_counts_are_honest(self):
+        base = {"mode":"due_date", "surname":"安", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":11, "avoidedChars":"安、宁"}
+        for variant in range(4):
+            result = server.analyze({**base, "variant": variant})
+            self.assertTrue(result["candidates"])
+            self.assertEqual(result["analysis"]["available_candidate_count"], len(result["candidates"]))
+            for item in result["candidates"]:
+                self.assertNotIn("安", item["given"])
+                self.assertNotIn("宁", item["given"])
+                self.assertTrue(item["name"].startswith("安"))  # Surname is not filtered.
+    def test_no_matches_is_an_empty_result_not_a_different_length(self):
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":3, "avoidedChars":"安 澄 明 宁 远"})
+        self.assertEqual(result["candidates"], [])
+        self.assertEqual(result["analysis"]["candidate_count"], 0)
+        self.assertEqual(result["analysis"]["available_candidate_count"], 0)
+    def test_explicit_and_legacy_character_preferences(self):
+        base = {"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":11}
+        explicit = server.analyze({**base, "likedChars":"清", "avoidedChars":"安、宁"})
+        legacy = server.analyze({**base, "chars":"喜欢‘清’，避开‘安、宁’"})
+        self.assertEqual(explicit["candidates"], legacy["candidates"])
+        self.assertTrue(any(item["given"] == "清晏" and "文字偏好 +2" in item["score_evidence"] for item in explicit["candidates"]))
+        with self.assertRaisesRegex(ValueError, "cannot overlap"):
+            server.analyze({**base, "likedChars":"安", "avoidedChars":"安"})
+        with self.assertRaisesRegex(ValueError, "avoidedChars must contain"):
+            server.analyze({**base, "avoidedChars":"安 or 伟"})
     def test_rename_purpose_uses_born_flow_and_is_labeled(self):
         result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "candidateCount":2, "gender":"unknown"})
         self.assertEqual(result["analysis"]["purpose"], "成人改名")

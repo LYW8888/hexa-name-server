@@ -55,34 +55,22 @@
     '书宁安': { gua: '巽', guaMeaning: '巽为风，取文理、安定、渐进之象', strokes: 24 }
   };
   profiles.forEach((profile) => Object.assign(profile, classical[profile.given] || {}));
-  function textScore(value) { return [...(value || '')].reduce((sum, char) => sum + char.codePointAt(0), 0); }
   function countForLength(length) {
     return profiles.filter((item) => [...item.given].length === Number(length)).length;
   }
-  function candidates(data, analysis) {
-    const desiredLength = Number(data.length || 2);
-    const requestedCount = Number.parseInt(data.candidateCount ?? data.count ?? 3, 10);
-    const candidateCount = Number.isInteger(requestedCount) && requestedCount >= 1 && requestedCount <= 11 ? requestedCount : 3;
-    const selectedStyles = data.styles || [];
-    const variant = Number.parseInt(data.variant || 0, 10) || 0;
-    const gender = data.gender || 'unknown';
-    const meaningText = String(data.meaning || '');
-    const charsText = String(data.chars || '');
-    const avoidMatch = charsText.match(/(?:避开|避開|不要|不取)[：:\s‘“"']*([^，,；;\s]+)/);
-    const avoidText = avoidMatch ? avoidMatch[1] : '';
-    const exact = profiles.filter((item) => [...item.given].length === desiredLength);
-    const pool = exact.length ? exact : profiles;
-    return pool.map((profile) => {
-      const styleBoost = selectedStyles.some((style) => profile.styles.includes(style)) ? 2 : 0;
-      const genderBoost = gender === 'unknown' || profile.genders.includes(gender) ? 2 : 0;
-      const variantBoost = variant > 0 ? (textScore(profile.given) + variant * 13) % 3 : 0;
-      const preferenceBoost = [...profile.given].some((char) => meaningText.includes(char) || charsText.includes(`喜欢${char}`) || charsText.includes(`喜歡${char}`)) ? 2 : 0;
-      const avoidPenalty = [...profile.given].some((char) => avoidText.includes(char)) ? -8 : 0;
+  // Selection and ordering come from the API; this only adds presentation data.
+  function candidates(data, analysis, selected = []) {
+    const byGiven = new Map(profiles.map((profile) => [profile.given, profile]));
+    return selected.map((candidate, index) => {
+      const profile = byGiven.get(candidate.given);
+      if (!profile) throw new Error('候选资料版本不一致，请刷新页面后重试。');
       const polarity = profile.strokes % 2 === 0 ? '阴' : '阳';
-      const element = profile.tags[0];
-      const scoreEvidence = `演示评分构成：基础 ${profile.score}；${styleBoost ? '风格偏好 +2；' : '风格偏好 +0；'}${genderBoost ? '性别倾向 +2；' : '性别倾向 +0；'}${preferenceBoost ? '文字偏好 +2；' : '文字偏好 +0；'}${avoidPenalty ? '避用字 -8；' : '避用字 0；'}${variantBoost ? `探索轮次 +${variantBoost}。` : '探索轮次 +0。'}未计算喜用神。`;
-      return { ...profile, scoreEvidence, elementEvidence: `演示字库意象分类：${element}；归类尚未核验，不代表生辰五行。`, guaEvidence: `演示库人工关联的八卦象意：${profile.gua}卦，${profile.guaMeaning}。并非依出生信息起卦；《周易·说卦传》来源及释义待核验。`, yinyangEvidence: `演示笔画奇偶参考：候选名暂记 ${profile.strokes} 画，按奇偶标为${polarity}；笔画和对应规则均待核验，不能用于判断运势。`, score: Math.max(0, Math.min(profile.score + styleBoost + genderBoost + preferenceBoost + avoidPenalty + variantBoost, 99)), fullName: `${data.surname || '林'}${profile.given}`, analysis: analysis.method };
-    }).sort((a, b) => b.score - a.score).slice(0, candidateCount).map((item, index) => ({ ...item, rank: index + 1 }));
+      return { ...profile, score: candidate.score, scoreEvidence: candidate.score_evidence,
+        elementEvidence: `演示字库意象分类：${profile.tags[0]}；归类尚未核验，不代表生辰五行。`,
+        guaEvidence: `演示库人工关联的八卦象意：${profile.gua}卦，${profile.guaMeaning}。并非依出生信息起卦；《周易·说卦传》来源及释义待核验。`,
+        yinyangEvidence: `演示笔画奇偶参考：候选名暂记 ${profile.strokes} 画，按奇偶标为${polarity}；笔画和对应规则均待核验，不能用于判断运势。`,
+        fullName: candidate.name, analysis: analysis.method, rank: index + 1 };
+    });
   }
   window.NameEngine = { candidates, countForLength };
 }());

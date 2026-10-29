@@ -212,12 +212,12 @@ async function copyText(value) {
   }
 }
 
-function renderCards(data, analysis) {
-  const list = window.NameEngine.candidates(data, analysis);
+function renderCards(data, analysis, selected) {
+  const list = window.NameEngine.candidates(data, analysis, selected);
   lastCandidates = list;
   const freeList = list;
   if (!freeList.length) {
-    cards.innerHTML = '<div class="empty-result">暂时没有匹配方案，请调整名的字数或偏好后重试。</div>';
+    cards.innerHTML = '<div class="empty-result">没有符合避用字要求的候选。请减少避用字或调整名的字数，再重新生成。</div>';
     upgradePanel.hidden = true;
     return 0;
   }
@@ -289,6 +289,8 @@ function friendlyError(message) {
     [/candidateCount must be/i, '生成数量需要填写 1–11 个整数。'],
     [/place is required/i, '请填写出生地点，便于生成地域和时区参考。'],
     [/currentName must be/i, '现用姓名最多填写 20 个字符。'],
+    [/likedChars and avoidedChars cannot overlap/i, '喜欢的字和必须避开的字不能重复，请调整后重试。'],
+    [/(likedChars|avoidedChars) must contain/i, '喜欢和避开的字请填写汉字，可用空格、顿号或逗号分隔。'],
     [/request too large/i, '提交内容过大，请减少文字后重试。'],
   ];
   const match = rules.find(([pattern]) => pattern.test(text));
@@ -300,8 +302,8 @@ async function requestAnalysis(data) {
     const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || '分析请求未通过校验');
-    if (!payload.analysis?.bazi) throw new Error('历法服务未返回完整四柱，请重试。');
-    return payload.analysis;
+    if (!payload.analysis?.bazi || !Array.isArray(payload.candidates)) throw new Error('服务未返回完整方案，请重试。');
+    return payload;
   } catch (error) {
     if (error instanceof TypeError) throw new Error('无法连接排盘服务，请检查网络后重试。');
     throw error;
@@ -318,39 +320,62 @@ form.addEventListener('submit', async (event) => {
   lastAnalysis = null;
   lastCandidates = [];
   downloadReport.disabled = true;
+  regenerate.disabled = true;
+  cards.innerHTML = '';
+  upgradePanel.hidden = true;
+  summary.className = 'summary empty';
+  summary.innerHTML = '<span>✦</span><p>正在整理命名方向与四柱参考。</p>';
+  resultStatus.textContent = '正在生成方案…';
   const submit = form.querySelector('button[type=submit]');
   const originalLabel = submit.textContent;
   submit.disabled = true;
   submit.textContent = '正在整理…';
   showMessage('');
   try {
-    const analysis = await requestAnalysis(data);
-    lastAnalysis = analysis;
-    downloadReport.disabled = false;
+    const { analysis, candidates } = await requestAnalysis(data);
     renderSummary(data, analysis);
-    const freeCount = renderCards(data, analysis);
+    const freeCount = renderCards(data, analysis, candidates);
+    lastAnalysis = analysis;
+    downloadReport.disabled = !freeCount;
     const requestedCount = Number(data.candidateCount || 3);
-    resultStatus.textContent = `已生成 ${freeCount} 个方向，可展开卡片查看演示意象及资料状态。${freeCount < requestedCount ? `当前字数的演示字库仅匹配 ${freeCount} 个。` : ''}`;
+    resultStatus.textContent = freeCount ? `已生成 ${freeCount} 个方向，可展开卡片查看演示意象及资料状态。${freeCount < requestedCount ? `当前字数和避用字条件下，演示字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
     document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
-    showToast('名字方案已生成，先收藏喜欢的方向。');
+    showToast(freeCount ? '名字方案已生成，先收藏喜欢的方向。' : '请调整避用字或名字字数后重试。', freeCount ? 'success' : 'info');
   } catch (error) {
+    lastAnalysis = null;
+    lastCandidates = [];
+    summary.className = 'summary empty';
+    summary.innerHTML = '<span>✦</span><p>方案尚未生成，请检查填写内容后重试。</p>';
+    resultStatus.textContent = '暂时无法生成方案。';
     showMessage(friendlyError(error.message || ''));
   } finally {
     submit.disabled = false;
+    regenerate.disabled = false;
     submit.textContent = originalLabel;
   }
 });
 
-regenerate.addEventListener('click', () => {
+regenerate.addEventListener('click', async () => {
   if (lastRequest && lastAnalysis?.bazi) {
-    lastRequest = { ...lastRequest, variant: (Number(lastRequest.variant) || 0) + 1 };
-    const analysis = lastAnalysis;
-    downloadReport.disabled = false;
-    renderSummary(lastRequest, analysis);
-    const freeCount = renderCards(lastRequest, analysis);
-    const requestedCount = Number(lastRequest.candidateCount || 3);
-    resultStatus.textContent = `已按第 ${lastRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数的演示字库仅匹配 ${freeCount} 个。` : ''}`;
-    showToast('已换一组候选方向，可下载当前方案。');
+    const nextRequest = { ...lastRequest, variant: (Number(lastRequest.variant) + 1) % 100001 };
+    regenerate.disabled = true;
+    form.querySelector('button[type=submit]').disabled = true;
+    try {
+      const { analysis, candidates } = await requestAnalysis(nextRequest);
+      const freeCount = renderCards(nextRequest, analysis, candidates);
+      lastRequest = nextRequest;
+      lastAnalysis = analysis;
+      renderSummary(nextRequest, analysis);
+      downloadReport.disabled = !freeCount;
+      const requestedCount = Number(nextRequest.candidateCount || 3);
+      resultStatus.textContent = freeCount ? `已按第 ${nextRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数和避用字条件下，演示字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
+      showToast(freeCount ? '已重新整理候选方向。' : '请调整避用字或名字字数后重试。', 'info');
+    } catch (error) {
+      showToast(friendlyError(error.message || ''), 'info');
+    } finally {
+      regenerate.disabled = false;
+      form.querySelector('button[type=submit]').disabled = false;
+    }
     return;
   }
   document.querySelector('#form').scrollIntoView({ behavior: 'smooth' });
@@ -377,6 +402,8 @@ function downloadReportFile() {
     `时区：${analysis.zone_label || analysis.zone || lastRequest.zone || '中国标准时间 UTC+8'}`,
     `预产期：${analysis.due_date ? `${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写'}`,
     `出生信息：${analysis.birth_date ? `${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写'}`,
+    `喜欢的字：${lastRequest.likedChars || '未填写'}（排序偏好）`,
+    `避用字：${lastRequest.avoidedChars || '未填写'}（仅作用于名）`,
     `候选数量：${lastCandidates.length}`,
     `四柱：${chart.pillars.map(item => `${item.label} ${item.ganzhi}`).join('　')}`,
     `日主：${chart.day_master.stem}（${chart.day_master.element}）`,
