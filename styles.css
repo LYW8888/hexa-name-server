@@ -254,3 +254,26 @@ footer{color:#74867b}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.card:hover,.primary:hover,.method-grid article:hover{transform:none!important}}
 /* Supporting copy stays legible on the light surfaces. */
 .field-hint,.privacy-note,.result-status,.evidence-disclaimer{color:#64746a}
+
+/* A compact mobile navigation and a clearer sense of progress. */
+.mobile-menu-button,.mobile-menu{display:none}
+.journey{display:grid;gap:16px;margin-top:38px;color:#89978c;font-size:12px}
+.journey div{display:flex;align-items:center;gap:12px}
+.journey span{width:29px;height:29px;display:grid;place-items:center;border:1px solid #d2ddd0;border-radius:50%;font-size:10px;font-weight:600}
+.journey b{font-weight:500}
+.journey .current{color:#284b3c}
+.journey .current span{background:#284b3c;border-color:#284b3c;color:#fff}
+.journey .current b{font-weight:700}
+.journey .complete span{background:#e5eee3;color:#365e50}
+@media(max-width:800px){
+  header{z-index:10}
+  nav{gap:8px}
+  nav .mobile-menu-button{display:grid;place-items:center;width:40px;height:40px;padding:0;font-size:20px;line-height:1}
+  .mobile-menu{position:absolute;top:calc(100% + 8px);right:20px;display:block;width:min(280px,calc(100vw - 40px));padding:10px;background:#f9faf4;border:1px solid #dce6d9;border-radius:16px;box-shadow:0 20px 55px #07191645;color:#203b34}
+  .mobile-menu a{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:10px 12px;border-radius:9px;font-size:14px}
+  .mobile-menu a:hover,.mobile-menu a:focus-visible{background:#eaf1e7}
+  .mobile-menu small{display:inline-block;width:32px;color:#8ba095;font-size:10px}
+  .journey{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:23px}
+  .journey div{gap:6px;font-size:11px}
+  .journey span{width:25px;height:25px;font-size:9px}
+}

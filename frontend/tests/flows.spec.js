@@ -89,3 +89,14 @@ test('字库数量晚到时会同步修正数量上限', async({page})=>{
   await page.goto('/');await page.locator('[name=length]').selectOption('3');await page.locator('[name=candidateCount]').fill('11');
   await expect(page.locator('[name=candidateCount]')).toHaveAttribute('max','5');await expect(page.locator('[name=candidateCount]')).toHaveValue('5');
 });
+
+test('手机导航可通过键盘打开、关闭并跳转', async({page})=>{
+  await page.setViewportSize({width:390,height:844}); await page.goto('/');
+  const button=page.locator('#mobileMenuButton'), menu=page.locator('#mobileMenu');
+  await expect(menu).toBeHidden(); await button.focus(); await page.keyboard.press('Enter');
+  await expect(button).toHaveAttribute('aria-expanded','true'); await expect(menu).toBeVisible();
+  await page.keyboard.press('Escape'); await expect(menu).toBeHidden(); await expect(button).toBeFocused();
+  await button.click(); await menu.getByRole('link',{name:'心愿卡'}).click();
+  await expect(menu).toBeHidden(); await expect(page).toHaveURL(/#keepsake$/);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
