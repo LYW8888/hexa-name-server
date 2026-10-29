@@ -11,6 +11,13 @@ import bazi
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 DB = DATA / "naming.sqlite3"
+# Only assets required by the application are public. In particular, never
+# expose the SQLite database, source files, repository metadata or directories.
+PUBLIC_ASSETS = frozenset({
+    "/", "/index.html", "/styles.css", "/engine.js", "/app.js",
+    "/service-worker.js", "/manifest.webmanifest",
+    "/data/character-catalog.json", "/data/classics.json", "/data/product.json",
+})
 ZONE_LABELS = {
     "Asia/Shanghai": "中国标准时间 UTC+8",
     "Asia/Taipei": "台北时间 UTC+8",
@@ -170,8 +177,8 @@ def analyze(payload: dict) -> dict:
     meaning = str(payload.get("meaning", "")).strip()
     liked, avoided = character_preferences(payload)
     styles = payload.get("styles", []) or []
-    if not isinstance(styles, list):
-        styles = []
+    if not isinstance(styles, list) or any(not isinstance(style, str) for style in styles):
+        raise ValueError("styles must be a list of strings")
     chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete)
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
@@ -205,11 +212,23 @@ def analyze(payload: dict) -> dict:
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def send_head(self):
+        # Both GET and HEAD use this method; do not allow directory listings or
+        # decoded path aliases to bypass the same explicit allowlist.
+        if urlparse(self.path).path not in PUBLIC_ASSETS:
+            self.send_error(404)
+            return None
+        return super().send_head()
+
     def end_headers(self):
-        # HTML and scripts must refresh after a deployment; the service worker
-        # still provides offline caching under its explicit version.
-        if self.path.split("?", 1)[0].endswith(("/", ".html", ".js", ".css", ".webmanifest")):
-            self.send_header("Cache-Control", "no-store, max-age=0")
+        # The service worker handles its own versioned asset cache. API results
+        # may contain birth data and should not be stored by HTTP caches.
+        self.send_header("Cache-Control", "no-store, max-age=0")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
         super().end_headers()
 
     def do_GET(self):
@@ -227,8 +246,10 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_error(404)
         try:
             size = int(self.headers.get("Content-Length", "0"))
+            if size < 0: raise ValueError("invalid Content-Length")
             if size > 64 * 1024: raise ValueError("request too large")
             payload = json.loads(self.rfile.read(size) or b"{}")
+            if not isinstance(payload, dict): raise ValueError("request body must be a JSON object")
             return self.json(analyze(payload))
         except (ValueError, json.JSONDecodeError) as exc:
             return self.json({"error": str(exc)}, 400)
