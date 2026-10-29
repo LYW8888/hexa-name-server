@@ -32,13 +32,32 @@ CANDIDATES = (
     ("知行", "知与行相互照见，把理解带入生活。", "木", "classical,bright", 91),
     ("景和安", "有光明、有和意，也有安定的落点。", "火", "classical,bright", 88),
     ("清晏宁", "清澈、安宁而坚定，温柔中有力量。", "水", "classical,nature", 87),
+    ("明远", "明辨而有远志，心有光亮与方向。", "火", "classical,bright", 88),
+    ("书宁", "以书明理，以宁守心，知性而安定。", "木", "classical,modern", 86),
+    ("若川", "如水有度，心有远川；柔和而开阔。", "水", "modern,nature", 87),
+    ("嘉言", "嘉善之言，诚明有礼，温厚而端正。", "木", "classical,bright", 86),
+    ("承安", "承其厚重，守一方安定，踏实而有担当。", "土", "classical,modern", 85),
+    ("云舒", "云卷云舒，从容自在，心境开阔。", "水", "modern,nature", 84),
+    ("庭轩", "庭院端正，轩然开阔，稳重而有气度。", "土", "classical,bright", 84),
+    ("简宁", "简而有致，宁静坚定，清醒而从容。", "火", "modern,classical", 83),
+    ("明", "明亮、明辨，心有清晰方向。", "火", "modern,bright", 84),
+    ("宁", "安宁、平静，保有内在力量。", "火", "modern,classical", 83),
+    ("远", "远志、远见，也保留探索空间。", "土", "modern,bright", 82),
+    ("明远安", "明亮有远志，安定而有方向感。", "火", "classical,bright", 84),
+    ("若川宁", "如川开阔，心境宁静，柔韧而坚定。", "水", "classical,nature", 83),
+    ("书宁安", "知性、宁静而安定，温和有分寸。", "木", "classical,modern", 82),
 )
 
 GENDER_BY_GIVEN = {
     '知衡': {'unknown', 'male'}, '景和': {'unknown', 'male', 'female'}, '予安': {'unknown', 'female'},
     '清晏': {'unknown', 'female'}, '言川': {'unknown', 'male'}, '昭宁': {'unknown', 'female'},
     '安': {'unknown', 'male', 'female'}, '澄': {'unknown', 'male', 'female'}, '知行': {'unknown', 'male'},
-    '景和安': {'unknown', 'male', 'female'}, '清晏宁': {'unknown', 'female'}
+    '景和安': {'unknown', 'male', 'female'}, '清晏宁': {'unknown', 'female'},
+    '明远': {'unknown', 'male'}, '书宁': {'unknown', 'female', 'male'}, '若川': {'unknown', 'female', 'male'},
+    '嘉言': {'unknown', 'female', 'male'}, '承安': {'unknown', 'male'}, '云舒': {'unknown', 'female'},
+    '庭轩': {'unknown', 'male'}, '简宁': {'unknown', 'female', 'male'}, '明': {'unknown', 'male', 'female'},
+    '宁': {'unknown', 'male', 'female'}, '远': {'unknown', 'male', 'female'}, '明远安': {'unknown', 'male', 'female'},
+    '若川宁': {'unknown', 'female'}, '书宁安': {'unknown', 'female', 'male'}
 }
 
 def init_db() -> None:
@@ -153,7 +172,7 @@ def analyze(payload: dict) -> dict:
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = f"演示规则：以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}；{f"现用姓名为 {current_name}" if current_name else "未填写现用姓名"}；时区为{zone_label}。正式版本需要经核验的历法服务。"
-    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "method": method}, "candidates": result[:effective_count]}
+    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
 
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
