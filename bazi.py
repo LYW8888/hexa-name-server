@@ -32,9 +32,9 @@ def _local_moment(date_text, time_text, zone_name):
     choices = [naive.replace(tzinfo=zone, fold=fold) for fold in (0, 1)]
     valid = [candidate for candidate in choices if candidate.astimezone(timezone.utc).astimezone(zone).replace(tzinfo=None) == naive]
     if not valid:
-        raise ValueError('所填当地时间处于夏令时跳变的不存在时段，请核对出生时间。')
+        raise ValueError('所填当地时间处于夏令时跳变的不存在时段，请核对日期和时间。')
     if len(valid) == 2 and valid[0].utcoffset() != valid[1].utcoffset():
-        raise ValueError('所填当地时间处于夏令时重复时段，暂无法确定时刻，请核对出生记录。')
+        raise ValueError('所填当地时间处于夏令时重复时段，暂无法确定时刻，请核对日期和时间。')
     return valid[0]
 
 
@@ -72,8 +72,9 @@ def calculate(date_text, time_text, zone_name, reference=False):
         for offset in (-120, 120):
             ec = _solar(near['_instant'] + timedelta(seconds=offset)).getLunar().getEightChar()
             alternatives.append({'year': ec.getYear(), 'month': ec.getMonth()})
+        subject = '预产期参考时刻' if reference else '出生时刻'
         boundary = {'term': near['name'], 'local_time': near['local_time'], 'alternatives': alternatives,
-                    'warning': '出生时刻距节交接不超过 2 分钟；不同历法实现可能有秒级差异，请复核出生记录和节气时刻。'}
+                    'warning': f'{subject}距节交接不超过 2 分钟；不同历法实现可能有秒级差异，请复核输入时间和节气时刻。'}
     for term in (previous, following):
         if term:
             term.pop('_instant')

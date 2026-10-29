@@ -227,6 +227,21 @@ function setStep(next) {
   if (step === 1) syncBirthMode();
 }
 
+function renderComparison(comparison) {
+  if (!comparison) return '';
+  if (comparison.error) return `<section class="bazi-comparison" aria-label="预产期与出生信息对照"><h3>预产期与实际出生对照</h3><p class="comparison-warning">预产期参考排盘暂不可用：${escapeHTML(comparison.error)} 实际出生排盘不受影响。</p></section>`;
+  if (!comparison.reference || !Array.isArray(comparison.differences) || comparison.differences.length !== 4) return '';
+  const rows = comparison.differences;
+  const headings = rows.map(item => `<th scope="col">${escapeHTML(item.label)}</th>`).join('');
+  const reference = rows.map(item => `<td>${escapeHTML(item.reference)}</td>`).join('');
+  const actual = rows.map(item => `<td>${escapeHTML(item.actual)}</td>`).join('');
+  const changed = rows.map(item => `<td class="${item.changed ? 'comparison-changed' : ''}">${item.changed ? '有变化' : '相同'}</td>`).join('');
+  const referenceBoundary = comparison.reference.boundary;
+  const boundary = referenceBoundary ? `<p class="comparison-warning">${escapeHTML(referenceBoundary.warning)} ${escapeHTML(referenceBoundary.term)} ${escapeHTML(referenceBoundary.local_time)}；交接前 ${escapeHTML(referenceBoundary.alternatives[0].year)}年 ${escapeHTML(referenceBoundary.alternatives[0].month)}月，交接后 ${escapeHTML(referenceBoundary.alternatives[1].year)}年 ${escapeHTML(referenceBoundary.alternatives[1].month)}月。</p>` : '';
+  const boundaryNotice = comparison.near_boundary ? '<p class="comparison-warning">其中一组时间接近节气交接，年柱或月柱的对照结果可能随节气时刻核对而变化。</p>' : '';
+  return `<section class="bazi-comparison" aria-label="预产期与出生信息对照"><div class="comparison-heading"><h3>预产期与实际出生对照</h3><span>${comparison.near_boundary ? '靠近节气，需复核' : comparison.has_changes ? '四柱中有变化' : '四柱相同'}</span></div><p>预产期参考 ${escapeHTML(comparison.reference.local_time)}；主排盘采用实际出生时间。</p><div class="comparison-table-wrap"><table><caption>预产期参考与实际出生的四柱对照</caption><thead><tr><th scope="col">时间依据</th>${headings}</tr></thead><tbody><tr><th scope="row">预产期参考</th>${reference}</tr><tr><th scope="row">实际出生</th>${actual}</tr><tr><th scope="row">对照</th>${changed}</tr></tbody></table></div>${boundaryNotice}${boundary}<p class="comparison-note">仅比较两次输入对应的四柱，不判断运势好坏；当前候选名排序未使用四柱。</p></section>`;
+}
+
 function renderSummary(data, analysis) {
   const chart = analysis.bazi;
   if (!chart || !Array.isArray(chart.pillars) || chart.pillars.length !== 4) throw new Error('历法服务未返回完整四柱，请重试。');
@@ -241,7 +256,7 @@ function renderSummary(data, analysis) {
   const prior = chart.previous_jie ? `${chart.previous_jie.name} ${chart.previous_jie.local_time}` : '暂无';
   const next = chart.next_jie ? `${chart.next_jie.name} ${chart.next_jie.local_time}` : '暂无';
   summary.className = 'summary bazi-summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario)} · ${escapeHTML(analysis.gender)} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place)} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="bazi-title"><b>四柱排盘${chart.reference ? ' · 预产期参考' : ''}</b><span>日主 ${escapeHTML(chart.day_master.stem)} · ${escapeHTML(chart.day_master.element)}</span></div><div class="pillars">${pillarCards}</div><p class="bazi-counts">表面八字五行计数：${escapeHTML(counts)}<br><small>仅计天干与地支各一项，不含藏干，不代表旺衰或喜用神。</small></p>${boundary}<details class="bazi-method"><summary>查看排盘口径与节气</summary><p>${escapeHTML(chart.conventions.join('；'))}。</p><p>前一节：${escapeHTML(prior)}；后一节：${escapeHTML(next)}。</p><p>历法引擎 ${escapeHTML(chart.source.library)} ${escapeHTML(chart.source.version)}；经跨库样本对照，权威机构认证尚未完成。</p></details><p class="method-note">${escapeHTML(analysis.method)}</p>`;
+  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario)} · ${escapeHTML(analysis.gender)} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place)} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="bazi-title"><b>四柱排盘 · ${chart.reference ? '预产期参考' : '实际出生'}</b><span>日主 ${escapeHTML(chart.day_master.stem)} · ${escapeHTML(chart.day_master.element)}</span></div><div class="pillars">${pillarCards}</div><p class="bazi-counts">表面八字五行计数：${escapeHTML(counts)}<br><small>仅计天干与地支各一项，不含藏干，不代表旺衰或喜用神。</small></p>${boundary}${renderComparison(analysis.bazi_comparison)}<details class="bazi-method"><summary>查看排盘口径与节气</summary><p>${escapeHTML(chart.conventions.join('；'))}。</p><p>前一节：${escapeHTML(prior)}；后一节：${escapeHTML(next)}。</p><p>历法引擎 ${escapeHTML(chart.source.library)} ${escapeHTML(chart.source.version)}；经跨库样本对照，权威机构认证尚未完成。</p></details><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
 async function copyText(value) {
@@ -466,6 +481,18 @@ function downloadReportFile() {
   const analysis = lastAnalysis;
   if (!analysis?.bazi) return;
   const chart = analysis.bazi;
+  const comparison = analysis.bazi_comparison;
+  const referenceBoundary = comparison?.reference?.boundary;
+  const comparisonLines = !comparison ? [] : comparison.error
+    ? [`预产期参考对照暂不可用：${comparison.error}；实际出生排盘不受影响。`]
+    : [
+      `预产期参考四柱（${comparison.reference.local_time}）：${comparison.differences.map(item => `${item.label} ${item.reference}`).join('　')}`,
+      `实际出生四柱：${comparison.differences.map(item => `${item.label} ${item.actual}`).join('　')}`,
+      `四柱对照：${comparison.differences.map(item => `${item.label}${item.changed ? '有变化' : '相同'}`).join('、')}`,
+      ...(comparison.near_boundary ? ['节气边界提示：其中一组时间接近节气交接，年柱或月柱的对照结果可能随节气时刻核对而变化。'] : []),
+      ...(referenceBoundary ? [`预产期参考边界：${referenceBoundary.warning} ${referenceBoundary.term} ${referenceBoundary.local_time}`, `交接前：${referenceBoundary.alternatives[0].year}年 ${referenceBoundary.alternatives[0].month}月；交接后：${referenceBoundary.alternatives[1].year}年 ${referenceBoundary.alternatives[1].month}月`] : []),
+      '对照只比较四柱，不判断运势好坏；当前候选排序未使用四柱。'
+    ];
   const lines = [
     '# 序名 · 命名参考方案',
     '',
@@ -485,7 +512,8 @@ function downloadReportFile() {
     `日主：${chart.day_master.stem}（${chart.day_master.element}）`,
     `表面八字五行计数：${Object.entries(chart.element_counts).map(([element, count]) => `${element} ${count}`).join('、')}`,
     `排盘口径：${chart.conventions.join('；')}`,
-    ...(chart.boundary ? [`节气边界提醒：${chart.boundary.warning}`, `交接前：${chart.boundary.alternatives[0].year}年 ${chart.boundary.alternatives[0].month}月；交接后：${chart.boundary.alternatives[1].year}年 ${chart.boundary.alternatives[1].month}月`] : []),
+    ...(chart.boundary ? [`节气边界提醒：${chart.boundary.warning} ${chart.boundary.term} ${chart.boundary.local_time}`, `交接前：${chart.boundary.alternatives[0].year}年 ${chart.boundary.alternatives[0].month}月；交接后：${chart.boundary.alternatives[1].year}年 ${chart.boundary.alternatives[1].month}月`] : []),
+    ...comparisonLines,
     '',
     `说明：${analysis.method || '传统文化参考，不承诺确定性运势结果。'}`,
     '',

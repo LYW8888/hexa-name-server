@@ -195,6 +195,21 @@ def analyze(payload: dict) -> dict:
     if not isinstance(styles, list) or any(not isinstance(style, str) for style in styles):
         raise ValueError("styles must be a list of strings")
     chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete)
+    comparison = None
+    if actual_complete and due_date:
+        try:
+            reference_chart = bazi.calculate(due_date, due_time, zone, reference=True)
+            differences = [{"label": actual["label"], "reference": expected["ganzhi"],
+                            "actual": actual["ganzhi"], "changed": expected["ganzhi"] != actual["ganzhi"]}
+                           for expected, actual in zip(reference_chart["pillars"], chart["pillars"])]
+            comparison = {"reference": reference_chart, "differences": differences,
+                          "has_changes": any(item["changed"] for item in differences),
+                          "near_boundary": bool(reference_chart["boundary"] or chart["boundary"]), "error": None}
+        except ValueError as exc:
+            # An optional estimate must never invalidate an otherwise valid
+            # actual-birth chart (for example a nonexistent DST clock time).
+            comparison = {"reference": None, "differences": [], "has_changes": None,
+                          "near_boundary": None, "error": str(exc)}
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
     names = load_names()
@@ -236,7 +251,7 @@ def analyze(payload: dict) -> dict:
               f"时区：{zone_label}；年柱以立春、月柱以十二节的交接时刻为界；"
               "日柱以当地民用时间 23:00 换日。五行仅统计四柱表面八字，不含藏干，不判定旺衰或喜用神；"
               "候选名评分及字的五行归类仍为待核验的演示规则。")
-    return {"analysis": {"primary": None, "support": None, "bazi": chart, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
+    return {"analysis": {"primary": None, "support": None, "bazi": chart, "bazi_comparison": comparison, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
 
 
 class Handler(SimpleHTTPRequestHandler):
