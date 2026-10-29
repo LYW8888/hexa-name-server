@@ -37,7 +37,7 @@ try {
     for (const name of saved) {
       const entry = details[name];
       if (entry && typeof entry.pinyin === 'string' && typeof entry.meaning === 'string') {
-        savedDetails[name] = { pinyin: entry.pinyin, meaning: entry.meaning };
+        savedDetails[name] = { pinyin: entry.pinyin, meaning: entry.meaning, source_status: entry.source_status };
       }
     }
   }
@@ -69,7 +69,7 @@ function renderSaved() {
   count.textContent = String(saved.length);
   savedList.innerHTML = saved.length ? saved.map((name) => {
     const detail = savedDetails[name];
-    return `<div class="saved-item"><div><b>${escapeHTML(name)}</b>${detail ? `<small>${escapeHTML(detail.pinyin)}</small><p>${escapeHTML(detail.meaning)}</p><small>寓意资料待核验</small>` : '<small>旧收藏仅记录名字，可重新生成后补充寓意。</small>'}</div><button type="button" class="remove-saved" data-name="${escapeHTML(name)}" aria-label="取消收藏 ${escapeHTML(name)}">移除</button></div>`;
+    return `<div class="saved-item"><div><b>${escapeHTML(name)}</b>${detail ? `<small>${escapeHTML(detail.pinyin)}</small><p>${escapeHTML(detail.meaning)}</p><small>${detail.source_status === 'verified' ? '寓意资料已记录复核' : '寓意资料待核验'}</small>` : '<small>旧收藏仅记录名字，可重新生成后补充寓意。</small>'}</div><button type="button" class="remove-saved" data-name="${escapeHTML(name)}" aria-label="取消收藏 ${escapeHTML(name)}">移除</button></div>`;
   }).join('') : '<p class="saved-empty">还没有收藏名字。生成方案后，点击名字卡片上的“收藏”。</p>';
   cards.querySelectorAll('.save').forEach((button) => {
     const selected = saved.includes(button.dataset.name);
@@ -270,7 +270,7 @@ function renderCards(data, analysis, selected) {
   cards.innerHTML = freeList.map((item) => {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
-    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>可以展开每个候选查看资料状态，收藏喜欢的名字或下载当前方案。</p></div><a class="primary" href="#pricing">查看服务状态 <span>→</span></a>`;
@@ -289,7 +289,7 @@ function renderCards(data, analysis, selected) {
     const nowSaved = saved.includes(name);
     if (nowSaved) {
       const item = lastCandidates.find((candidate) => candidate.fullName === name);
-      if (item) savedDetails[name] = { pinyin: item.pinyin, meaning: item.meaning };
+      if (item) savedDetails[name] = { pinyin: item.pinyin, meaning: item.meaning, source_status: item.source_status };
     } else delete savedDetails[name];
     renderSaved();
     if (persistSaved()) showToast(nowSaved ? `已收藏${name}` : `已取消收藏${name}`);
@@ -473,7 +473,9 @@ function downloadReportFile() {
     lines.push(`- 易经象意：${item.guaEvidence}`);
     lines.push(`- 阴阳：${item.yinyangEvidence}`);
     lines.push(`- 评分构成：${item.scoreEvidence}`);
-    lines.push(`- 资料状态：演示规则，部分资料待人工核验`);
+    lines.push(`- 寓意资料：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${item.source}`);
+    if (item.source_reference?.url) lines.push(`- 参考来源：${item.source_reference.url}`);
+    lines.push('- 评分和卦象关联仍为演示资料。');
     lines.push('');
   });
   const blob = new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/markdown;charset=utf-8' });

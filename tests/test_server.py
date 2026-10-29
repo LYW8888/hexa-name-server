@@ -121,6 +121,16 @@ class ServerRulesTest(unittest.TestCase):
             (data_dir / "names.json").write_text(json.dumps(catalog), encoding="utf-8")
             with patch.object(server, "DATA", data_dir), self.assertRaisesRegex(ValueError, "invalid record"):
                 server.load_names()
+    def test_verified_source_requires_traceable_review_metadata(self):
+        source = {"description": "测试义项", "verification_status": "verified", "reference": {
+            "title": "测试词典", "edition": "测试版本", "citation": "测试条目", "url": "https://example.org/test",
+            "license": "测试许可", "reviewed_by": "测试复核人", "reviewed_at": "2026-10-29"}}
+        self.assertTrue(server.valid_source(source))
+        source["reference"]["reviewed_at"] = "2026-02-30"
+        self.assertFalse(server.valid_source(source))
+        source["reference"]["reviewed_at"] = "2026-10-29"
+        source["reference"]["url"] = "file:///test"
+        self.assertFalse(server.valid_source(source))
     def test_rename_purpose_uses_born_flow_and_is_labeled(self):
         result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "candidateCount":2, "gender":"unknown"})
         self.assertEqual(result["analysis"]["purpose"], "成人改名")

@@ -23,6 +23,31 @@ ZONE_LABELS = {
     "Asia/Taipei": "台北时间 UTC+8",
     "Asia/Hong_Kong": "香港时间 UTC+8",
 }
+
+def valid_source(source) -> bool:
+    """A verified label requires traceable metadata, plus actual human review."""
+    if not isinstance(source, dict) or not isinstance(source.get("description"), str) or not source["description"].strip():
+        return False
+    status = source.get("verification_status")
+    if status in ("demo", "pending"):
+        return True
+    if status != "verified":
+        return False
+    reference = source.get("reference")
+    if not isinstance(reference, dict):
+        return False
+    fields = ("title", "edition", "citation", "license", "reviewed_by", "reviewed_at", "url")
+    if any(not isinstance(reference.get(key), str) or not reference[key].strip() for key in fields):
+        return False
+    url = urlparse(reference["url"])
+    if url.scheme not in ("https", "http") or not url.netloc:
+        return False
+    try:
+        date.fromisoformat(reference["reviewed_at"])
+    except ValueError:
+        return False
+    return True
+
 def load_names() -> list[dict]:
     """Load the single candidate catalog, rejecting incomplete or duplicated data."""
     data = json.loads((DATA / "names.json").read_text(encoding="utf-8"))
@@ -42,7 +67,7 @@ def load_names() -> list[dict]:
             or not isinstance(item.get("styles"), list) or any(not isinstance(style, str) for style in item["styles"])
             or not isinstance(item.get("genders"), list) or any(g not in ("unknown", "male", "female") for g in item["genders"])
             or not isinstance(item.get("base_score"), int) or not 0 <= item["base_score"] <= 99
-            or source.get("verification_status") not in ("demo", "pending") or not source.get("description")
+            or not valid_source(source)
             or (associations is not None and (not isinstance(associations, dict) or associations.get("verification_status") != "demo" or not associations.get("gua")
             or not associations.get("gua_meaning") or not isinstance(associations.get("strokes"), int)))):
             raise ValueError(f"candidate catalog contains invalid record: {given!r}")
@@ -198,7 +223,10 @@ def analyze(payload: dict) -> dict:
         else:
             gua_evidence = "尚无经核验的卦象资料；并非依出生信息起卦。"
             yinyang_evidence = "尚无经核验的笔画和阴阳资料。"
-        result.append({"name": surname + given, "given": given, "pinyin": item["pinyin"], "meaning": item["meaning"], "tags": item["tags"], "element": item["tags"][0], "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": item["meaning_source"]["verification_status"], "source": item["meaning_source"]["description"], "element_evidence": f"演示字库意象分类：{item['tags'][0]}；归类尚未核验，不代表生辰五行。", "gua_evidence": gua_evidence, "yinyang_evidence": yinyang_evidence})
+        source = item["meaning_source"]
+        reference = source.get("reference") if source["verification_status"] == "verified" else None
+        source_text = source["description"] if not reference else f"{source['description']}（{reference['title']}，{reference['edition']}，{reference['citation']}；复核：{reference['reviewed_by']}，{reference['reviewed_at']}）"
+        result.append({"name": surname + given, "given": given, "pinyin": item["pinyin"], "meaning": item["meaning"], "tags": item["tags"], "element": item["tags"][0], "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": source["verification_status"], "source": source_text, "source_reference": reference, "element_evidence": f"演示字库意象分类：{item['tags'][0]}；归类尚未核验，不代表生辰五行。", "gua_evidence": gua_evidence, "yinyang_evidence": yinyang_evidence})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     if variant and result:
         offset = (variant * effective_count) % len(result)
