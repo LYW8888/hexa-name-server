@@ -1,10 +1,25 @@
-const CACHE = 'xuming-mvp-v16';
-const ASSETS = ['./', './index.html', './styles.css?v=2026-10-29-16', './engine.js?v=2026-10-29-16', './app.js?v=2026-10-29-16', './manifest.webmanifest', './data/character-catalog.json', './data/classics.json', './data/product.json'];
+const CACHE = 'xuming-mvp-v17';
+const ASSETS = ['./', './index.html', './styles.css?v=2026-10-29-17', './engine.js?v=2026-10-29-17', './app.js?v=2026-10-29-17', './manifest.webmanifest', './data/character-catalog.json', './data/classics.json', './data/product.json'];
 self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('xuming-mvp-') && key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || new URL(event.request.url).pathname.startsWith('/api/')) return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-    const copy = response.clone(); caches.open(CACHE).then((cache) => cache.put(event.request, copy)); return response;
-  })));
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  event.respondWith(caches.open(CACHE).then(async (cache) => {
+    if (request.mode === 'navigate') {
+      try {
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch (error) {
+        return (await cache.match(request)) || (await cache.match('./index.html')) || Response.error();
+      }
+    }
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  }));
 });

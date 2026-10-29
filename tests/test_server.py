@@ -20,6 +20,7 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["scenario"], "预产期参考")
         self.assertEqual(result["analysis"]["due_date"], "2099-04-16")
         self.assertEqual(result["analysis"]["due_time"], "12:00")
+        self.assertTrue(result["analysis"]["bazi"]["reference"])
         self.assertTrue(result["candidates"])
     def test_due_date_and_actual_birth_can_coexist(self):
         result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2024-04-20", "dueTime":"10:00", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"female"})
@@ -28,6 +29,8 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["due_date"], "2024-04-20")
         self.assertEqual(result["analysis"]["birth_date"], "2024-04-16")
         self.assertEqual(result["analysis"]["gender"], "女")
+        self.assertFalse(result["analysis"]["bazi"]["reference"])
+        self.assertEqual(result["analysis"]["bazi"]["local_time"], "2024-04-16 08:30 +0800")
     def test_born_requires_actual_date_and_time(self):
         result = server.analyze({"mode":"born", "surname":"林", "dueDate":"2024-04-20", "dueTime":"10:00", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"male"})
         self.assertEqual(result["analysis"]["scenario"], "已出生准确时间")
@@ -41,6 +44,11 @@ class ServerRulesTest(unittest.TestCase):
     def test_invalid_due_time_is_rejected_but_future_due_date_is_valid(self):
         with self.assertRaisesRegex(ValueError, "dueTime"):
             server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "dueTime":"25:90", "place":"杭州", "length":2, "gender":"unknown"})
+    def test_birth_time_rejects_offset_or_seconds(self):
+        for invalid_time in ("12:00+08:00", "12:00:00"):
+            with self.subTest(invalid_time=invalid_time):
+                with self.assertRaisesRegex(ValueError, "birthTime"):
+                    server.analyze({"mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":invalid_time, "place":"杭州", "length":2, "gender":"unknown"})
     def test_place_is_required_for_analysis(self):
         with self.assertRaisesRegex(ValueError, "place"):
             server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "length":2, "gender":"unknown"})
@@ -71,21 +79,20 @@ class ServerRulesTest(unittest.TestCase):
         self.assertEqual(result["analysis"]["zone"], "Asia/Taipei")
         self.assertEqual(result["analysis"]["zone_label"], "台北时间 UTC+8")
         self.assertIn("台北时间", result["analysis"]["method"])
-    def test_timezone_names_do_not_change_demo_elements_or_candidates(self):
+    def test_same_offset_timezone_names_have_same_pillars_and_candidates(self):
         base = {"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "dueTime":"12:00", "place":"杭州", "length":2, "gender":"unknown"}
         results = [server.analyze({**base, "zone": zone}) for zone in server.ZONE_LABELS]
         for result in results[1:]:
-            self.assertEqual(result["analysis"]["primary"], results[0]["analysis"]["primary"])
-            self.assertEqual(result["analysis"]["support"], results[0]["analysis"]["support"])
+            self.assertEqual(result["analysis"]["bazi"]["pillars"], results[0]["analysis"]["bazi"]["pillars"])
             self.assertEqual(result["candidates"], results[0]["candidates"])
-        self.assertIn("并非四柱排盘或五行分析", results[0]["analysis"]["method"])
+        self.assertTrue(results[0]["analysis"]["bazi"]["reference"])
     def test_timezone_is_validated(self):
         with self.assertRaisesRegex(ValueError, "zone"):
             server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "zone":"UTC", "length":2, "gender":"unknown"})
     def test_rename_keeps_current_name_as_context(self):
         result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "currentName":"林知远", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"unknown"})
         self.assertEqual(result["analysis"]["current_name"], "林知远")
-        self.assertIn("现用姓名为 林知远", result["analysis"]["method"])
+        self.assertFalse(result["analysis"]["bazi"]["reference"])
     def test_current_name_length_is_validated(self):
         with self.assertRaisesRegex(ValueError, "currentName"):
             server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "currentName":"名" * 21, "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"unknown"})

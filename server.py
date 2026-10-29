@@ -1,8 +1,4 @@
-"""Zero-dependency local server for the 序名 MVP.
-
-The calculation endpoint is deliberately a transparent demo rule. Replace the
-rule function with a verified calendar/four-pillars provider before production.
-"""
+"""Local server for 序名; four pillars and candidate suggestions are distinct."""
 from __future__ import annotations
 import json, os, re, sqlite3
 from datetime import date, datetime, time
@@ -10,11 +6,11 @@ from zoneinfo import ZoneInfo
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
+import bazi
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 DB = DATA / "naming.sqlite3"
-ELEMENTS = ("木", "火", "土", "金", "水")
 ZONE_LABELS = {
     "Asia/Shanghai": "中国标准时间 UTC+8",
     "Asia/Taipei": "台北时间 UTC+8",
@@ -69,9 +65,6 @@ def init_db() -> None:
         conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("schema_version", "0.1.0"))
         conn.commit()
 
-def text_score(value: str) -> int:
-    return sum(ord(char) for char in value or "")
-
 def analyze(payload: dict) -> dict:
     surname = str(payload.get("surname", "")).strip()
     if not surname or len(surname) > 2:
@@ -108,19 +101,16 @@ def analyze(payload: dict) -> dict:
         raise ValueError("birthDate and birthTime must be supplied together")
     if due_date:
         date.fromisoformat(due_date)  # Future due dates are valid.
-        try:
-            time.fromisoformat(due_time)
-        except ValueError as exc:
-            raise ValueError("dueTime must use HH:MM format") from exc
+        if not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", due_time):
+            raise ValueError("dueTime must use HH:MM format")
     if birth_date:
         parsed_birth = date.fromisoformat(birth_date)
         now_in_zone = datetime.now(ZoneInfo(zone))
         if parsed_birth > now_in_zone.date():
             raise ValueError("actual birth date cannot be in the future")
-        try:
-            parsed_birth_time = time.fromisoformat(birth_time)
-        except ValueError as exc:
-            raise ValueError("birthTime must use HH:MM format") from exc
+        if not re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", birth_time):
+            raise ValueError("birthTime must use HH:MM format")
+        parsed_birth_time = time.fromisoformat(birth_time)
         if parsed_birth == now_in_zone.date() and parsed_birth_time > now_in_zone.time().replace(second=0, microsecond=0):
             raise ValueError("birthTime cannot be in the future")
 
@@ -151,8 +141,7 @@ def analyze(payload: dict) -> dict:
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list):
         styles = []
-    seed = sum(int(x) for x in re.findall(r"\d", basis_date + basis_time)) + text_score(place) + text_score(parents)
-    primary, support = ELEMENTS[seed % 5], ELEMENTS[(seed + 2) % 5]
+    chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete)
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
     with sqlite3.connect(DB) as conn:
@@ -167,12 +156,16 @@ def analyze(payload: dict) -> dict:
         gender_boost = 2 if gender == "unknown" or gender in GENDER_BY_GIVEN.get(given, {"unknown"}) else 0
         preference_boost = 2 if any(char in meaning or f"喜欢{char}" in chars or f"喜歡{char}" in chars for char in given) else 0
         avoid_penalty = -8 if any(char in avoid_text for char in given) else 0
-        score = base + (2 if element == primary else 0) + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + (1 if parents and element == support else 0) + gender_boost + preference_boost + avoid_penalty
+        score = base + (2 if set(styles) & set(candidate_styles.split(",")) else 0) + gender_boost + preference_boost + avoid_penalty
         result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "source_status": "demo"})
     result.sort(key=lambda item: (-item["score"], item["given"]))
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
-    method = f"演示规则：将日期、时间中的数字与出生地和父母姓氏的字符数值求和后取模生成示例意象，并非四柱排盘或五行分析；时区仅用于日期校验和展示。以{'实际出生日期和准确时间' if actual_complete else '预产期和参考时间'}作为主要计算输入；{f'预产期为 {due_date} {due_time}' if due_date else '未填写预产期'}；{f'出生信息为 {birth_date} {birth_time}' if birth_date else '尚未填写实际出生信息'}；{'已纳入父母姓氏线索' if parents else '未填写父母姓氏'}；性别偏好为{gender_label}；用途为{purpose_label}；{f"现用姓名为 {current_name}" if current_name else "未填写现用姓名"}；时区为{zone_label}。正式版本需要经核验的历法服务。"
-    return {"analysis": {"primary": primary, "support": support, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
+    method = (f"{'预产期参考排盘，出生后请以实际出生时间重新计算' if chart['reference'] else '按实际出生日期和时间排盘'}；"
+              f"时区：{zone_label}；年柱以立春、月柱以十二节的交接时刻为界；"
+              "日柱以当地民用时间 23:00 换日。五行仅统计四柱表面八字，不含藏干，不判定旺衰或喜用神；"
+              "候选名评分及字的五行归类仍为待核验的演示规则。")
+    return {"analysis": {"primary": None, "support": None, "bazi": chart, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
+
 
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):

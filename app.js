@@ -173,14 +173,20 @@ function setStep(next) {
 }
 
 function renderSummary(data, analysis) {
+  const chart = analysis.bazi;
+  if (!chart || !Array.isArray(chart.pillars) || chart.pillars.length !== 4) throw new Error('历法服务未返回完整四柱，请重试。');
   const due = analysis.due_date ? `预产期 ${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写预产期';
-  const actual = analysis.birth_date ? `出生 ${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写实际出生信息';
+  const actual = analysis.birth_date ? `出生 ${analysis.birth_date} ${analysis.birth_time}` : '尚未填写实际出生信息';
   const purpose = analysis.purpose || (data.purpose === 'rename' ? '成人改名' : '新生儿起名');
   const zone = analysis.zone_label || analysis.zone || data.zone || '中国标准时间 UTC+8';
-  const currentName = analysis.current_name || data.currentName || '';
-  const currentNameNote = currentName ? `现用姓名 ${currentName} · ` : '';
-  summary.className = 'summary';
-  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario || '命名参考')} · ${escapeHTML(analysis.gender || '未知')} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place || '出生地待补充')} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="metric"><b>${escapeHTML(analysis.primary)}</b><span>演示意象</span></div><div class="metric"><b>${escapeHTML(analysis.support)}</b><span>演示辅助</span></div><div class="metric"><b>${analysis.family ? '已纳入' : '参考'}</b><span>家庭线索</span></div><p class="method-note">${escapeHTML(analysis.method)}</p>`;
+  const currentNameNote = analysis.current_name ? `现用姓名 ${analysis.current_name} · ` : '';
+  const pillarCards = chart.pillars.map(pillar => `<div class="pillar"><span>${escapeHTML(pillar.label)}</span><b>${escapeHTML(pillar.ganzhi)}</b><small>${escapeHTML(pillar.stem_element)} · ${escapeHTML(pillar.branch_element)}</small></div>`).join('');
+  const counts = Object.entries(chart.element_counts).map(([element, count]) => `${element} ${count}`).join('　');
+  const boundary = chart.boundary ? `<p class="boundary-notice">${escapeHTML(chart.boundary.warning)}<br>${escapeHTML(chart.boundary.term)} ${escapeHTML(chart.boundary.local_time)}；交接前 ${escapeHTML(chart.boundary.alternatives[0].year)}年 ${escapeHTML(chart.boundary.alternatives[0].month)}月，交接后 ${escapeHTML(chart.boundary.alternatives[1].year)}年 ${escapeHTML(chart.boundary.alternatives[1].month)}月。</p>` : '';
+  const prior = chart.previous_jie ? `${chart.previous_jie.name} ${chart.previous_jie.local_time}` : '暂无';
+  const next = chart.next_jie ? `${chart.next_jie.name} ${chart.next_jie.local_time}` : '暂无';
+  summary.className = 'summary bazi-summary';
+  summary.innerHTML = `<div class="summary-intro"><strong>${escapeHTML(data.surname || '你的姓氏')} · ${escapeHTML(purpose)}</strong><small>${escapeHTML(analysis.scenario)} · ${escapeHTML(analysis.gender)} · ${escapeHTML(currentNameNote)}${escapeHTML(data.place)} · ${escapeHTML(zone)}<br>${escapeHTML(due)} · ${escapeHTML(actual)}</small></div><div class="bazi-title"><b>四柱排盘${chart.reference ? ' · 预产期参考' : ''}</b><span>日主 ${escapeHTML(chart.day_master.stem)} · ${escapeHTML(chart.day_master.element)}</span></div><div class="pillars">${pillarCards}</div><p class="bazi-counts">表面八字五行计数：${escapeHTML(counts)}<br><small>仅计天干与地支各一项，不含藏干，不代表旺衰或喜用神。</small></p>${boundary}<details class="bazi-method"><summary>查看排盘口径与节气</summary><p>${escapeHTML(chart.conventions.join('；'))}。</p><p>前一节：${escapeHTML(prior)}；后一节：${escapeHTML(next)}。</p><p>历法引擎 ${escapeHTML(chart.source.library)} ${escapeHTML(chart.source.version)}；经跨库样本对照，权威机构认证尚未完成。</p></details><p class="method-note">${escapeHTML(analysis.method)}</p>`;
 }
 
 async function copyText(value) {
@@ -218,7 +224,7 @@ function renderCards(data, analysis) {
   cards.innerHTML = freeList.map((item) => {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
-    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">演示数据：并非四柱排盘或由出生信息起卦，资料待核验</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
@@ -294,10 +300,10 @@ async function requestAnalysis(data) {
     const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || '分析请求未通过校验');
-    if (!payload.analysis) throw new Error('分析结果不完整');
+    if (!payload.analysis?.bazi) throw new Error('历法服务未返回完整四柱，请重试。');
     return payload.analysis;
   } catch (error) {
-    if (error instanceof TypeError) return window.NameEngine.analyze(data);
+    if (error instanceof TypeError) throw new Error('无法连接排盘服务，请检查网络后重试。');
     throw error;
   }
 }
@@ -336,10 +342,9 @@ form.addEventListener('submit', async (event) => {
 });
 
 regenerate.addEventListener('click', () => {
-  if (lastRequest) {
+  if (lastRequest && lastAnalysis?.bazi) {
     lastRequest = { ...lastRequest, variant: (Number(lastRequest.variant) || 0) + 1 };
-    const analysis = window.NameEngine.analyze(lastRequest);
-    lastAnalysis = analysis;
+    const analysis = lastAnalysis;
     downloadReport.disabled = false;
     renderSummary(lastRequest, analysis);
     const freeCount = renderCards(lastRequest, analysis);
@@ -357,7 +362,9 @@ function downloadReportFile() {
     showToast('先生成名字方案，再下载命名记录。', 'info');
     return;
   }
-  const analysis = lastAnalysis || window.NameEngine.analyze(lastRequest);
+  const analysis = lastAnalysis;
+  if (!analysis?.bazi) return;
+  const chart = analysis.bazi;
   const lines = [
     '# 序名 · 命名参考方案',
     '',
@@ -371,6 +378,11 @@ function downloadReportFile() {
     `预产期：${analysis.due_date ? `${analysis.due_date} ${analysis.due_time || '12:00'}` : '未填写'}`,
     `出生信息：${analysis.birth_date ? `${analysis.birth_date} ${analysis.birth_time || '时间待补充'}` : '尚未填写'}`,
     `候选数量：${lastCandidates.length}`,
+    `四柱：${chart.pillars.map(item => `${item.label} ${item.ganzhi}`).join('　')}`,
+    `日主：${chart.day_master.stem}（${chart.day_master.element}）`,
+    `表面八字五行计数：${Object.entries(chart.element_counts).map(([element, count]) => `${element} ${count}`).join('、')}`,
+    `排盘口径：${chart.conventions.join('；')}`,
+    ...(chart.boundary ? [`节气边界提醒：${chart.boundary.warning}`, `交接前：${chart.boundary.alternatives[0].year}年 ${chart.boundary.alternatives[0].month}月；交接后：${chart.boundary.alternatives[1].year}年 ${chart.boundary.alternatives[1].month}月`] : []),
     '',
     `说明：${analysis.method || '传统文化参考，不承诺确定性运势结果。'}`,
     '',
