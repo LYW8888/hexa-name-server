@@ -78,7 +78,7 @@ class ServerRulesTest(unittest.TestCase):
                 self.assertNotIn("宁", item["given"])
                 self.assertTrue(item["name"].startswith("安"))  # Surname is not filtered.
     def test_no_matches_is_an_empty_result_not_a_different_length(self):
-        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":3, "avoidedChars":"安 澄 明 宁 远"})
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":3, "avoidedChars":"安 澄 明 宁 远 知 衡 清 景 和 嘉 书 舒 川 若"})
         self.assertEqual(result["candidates"], [])
         self.assertEqual(result["analysis"]["candidate_count"], 0)
         self.assertEqual(result["analysis"]["available_candidate_count"], 0)
@@ -92,6 +92,35 @@ class ServerRulesTest(unittest.TestCase):
             server.analyze({**base, "likedChars":"安", "avoidedChars":"安"})
         with self.assertRaisesRegex(ValueError, "avoidedChars must contain"):
             server.analyze({**base, "avoidedChars":"安 or 伟"})
+    def test_rounds_explore_the_same_eligible_pool_without_inventing_evidence(self):
+        base = {"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":3, "avoidedChars":"安"}
+        first = server.analyze(base)
+        second = server.analyze({**base, "variant":1})
+        self.assertTrue(set(item["given"] for item in first["candidates"]).isdisjoint(item["given"] for item in second["candidates"]))
+        for item in first["candidates"] + second["candidates"]:
+            self.assertNotIn("安", item["given"])
+            self.assertIn(item["source_status"], ("pending", "demo"))
+            self.assertIn("并非依出生信息起卦", item["gua_evidence"])
+            self.assertTrue(item["pinyin"] and item["source"])
+    def test_new_single_names_do_not_invent_classical_associations(self):
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":11, "likedChars":"知"})
+        name = next(item for item in result["candidates"] if item["given"] == "知")
+        self.assertIn("尚无经核验", name["gua_evidence"])
+        self.assertIn("尚无经核验", name["yinyang_evidence"])
+    def test_catalog_must_have_unique_names_and_no_unsubstantiated_verified_status(self):
+        import json
+        with tempfile.TemporaryDirectory() as temp:
+            data_dir = Path(temp)
+            catalog = json.loads((server.DATA / "names.json").read_text(encoding="utf-8"))
+            catalog["names"].append(catalog["names"][0])
+            (data_dir / "names.json").write_text(json.dumps(catalog), encoding="utf-8")
+            with patch.object(server, "DATA", data_dir), self.assertRaisesRegex(ValueError, "invalid record"):
+                server.load_names()
+            catalog["names"].pop()
+            catalog["names"][0]["meaning_source"]["verification_status"] = "verified"
+            (data_dir / "names.json").write_text(json.dumps(catalog), encoding="utf-8")
+            with patch.object(server, "DATA", data_dir), self.assertRaisesRegex(ValueError, "invalid record"):
+                server.load_names()
     def test_rename_purpose_uses_born_flow_and_is_labeled(self):
         result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "candidateCount":2, "gender":"unknown"})
         self.assertEqual(result["analysis"]["purpose"], "成人改名")

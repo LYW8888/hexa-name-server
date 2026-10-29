@@ -16,17 +16,33 @@ const candidateCountHint = document.querySelector('#candidateCountHint');
 const currentNameField = document.querySelector('#currentNameField');
 const currentNameInput = document.querySelector('input[name=currentName]');
 const downloadReport = document.querySelector('#downloadReport');
+const savedPanel = document.querySelector('#savedPanel');
+const savedList = document.querySelector('#savedList');
 let step = 0;
 let lastRequest = null;
 let lastAnalysis = null;
 let lastCandidates = [];
 let toastTimer;
 let saved = [];
+let savedDetails = Object.create(null);
 try {
   const stored = JSON.parse(localStorage.getItem('序名收藏') || '[]');
   saved = Array.isArray(stored) ? stored.filter((item) => typeof item === 'string') : [];
 } catch (error) {
   saved = [];
+}
+try {
+  const details = JSON.parse(localStorage.getItem('序名收藏详情') || '{}');
+  if (details && typeof details === 'object' && !Array.isArray(details)) {
+    for (const name of saved) {
+      const entry = details[name];
+      if (entry && typeof entry.pinyin === 'string' && typeof entry.meaning === 'string') {
+        savedDetails[name] = { pinyin: entry.pinyin, meaning: entry.meaning };
+      }
+    }
+  }
+} catch (error) {
+  savedDetails = Object.create(null);
 }
 
 function escapeHTML(value) {
@@ -47,6 +63,30 @@ function showMessage(message, type = 'error', scroll = true) {
   formMessage.className = `form-message ${type}`;
   formMessage.hidden = !message;
   if (message && scroll) formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderSaved() {
+  count.textContent = String(saved.length);
+  savedList.innerHTML = saved.length ? saved.map((name) => {
+    const detail = savedDetails[name];
+    return `<div class="saved-item"><div><b>${escapeHTML(name)}</b>${detail ? `<small>${escapeHTML(detail.pinyin)}</small><p>${escapeHTML(detail.meaning)}</p><small>寓意资料待核验</small>` : '<small>旧收藏仅记录名字，可重新生成后补充寓意。</small>'}</div><button type="button" class="remove-saved" data-name="${escapeHTML(name)}" aria-label="取消收藏 ${escapeHTML(name)}">移除</button></div>`;
+  }).join('') : '<p class="saved-empty">还没有收藏名字。生成方案后，点击名字卡片上的“收藏”。</p>';
+  cards.querySelectorAll('.save').forEach((button) => {
+    const selected = saved.includes(button.dataset.name);
+    button.classList.toggle('saved', selected);
+    button.textContent = selected ? '已收藏' : '收藏 ♡';
+  });
+}
+
+function persistSaved() {
+  try {
+    localStorage.setItem('序名收藏', JSON.stringify(saved));
+    localStorage.setItem('序名收藏详情', JSON.stringify(savedDetails));
+    return true;
+  } catch (error) {
+    showToast('当前浏览器无法保存收藏，本次收藏仅在页面打开期间有效。', 'info');
+    return false;
+  }
 }
 
 function syncCandidateCountLimit() {
@@ -97,6 +137,12 @@ document.querySelectorAll('input[name=purpose]').forEach((input) => input.addEve
 }));
 syncBirthMode();
 syncCandidateCountLimit();
+fetch('/api/name-counts').then((response) => {
+  if (!response.ok) throw new Error('catalog unavailable');
+  return response.json();
+}).then((data) => { window.NameEngine.setCounts(data.counts); syncCandidateCountLimit(); }).catch(() => {
+  candidateCountHint.textContent = '可请求 1–11 个；实际数量以服务端字库为准。';
+});
 lengthInput?.addEventListener('change', syncCandidateCountLimit);
 
 function getClockInZone(zone) {
@@ -227,7 +273,7 @@ function renderCards(data, analysis, selected) {
     return `<article class="card"><span class="rank">${String(item.rank).padStart(2, '0')} / FREE PREVIEW</span><h3>${fullName}</h3><div class="pinyin">${escapeHTML(data.surname || '林')} · ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
-  upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>解锁完整报告，查看更多候选、评分明细、音形检查和可下载方案。</p></div><a class="primary" href="#pricing">查看完整方案 <span>→</span></a>`;
+  upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>可以展开每个候选查看资料状态，收藏喜欢的名字或下载当前方案。</p></div><a class="primary" href="#pricing">查看服务状态 <span>→</span></a>`;
   cards.querySelectorAll('.copy-name').forEach((button) => button.addEventListener('click', async () => {
     const name = button.dataset.name;
     try {
@@ -240,22 +286,23 @@ function renderCards(data, analysis, selected) {
   cards.querySelectorAll('.save').forEach((button) => button.addEventListener('click', () => {
     const name = button.dataset.name;
     saved = saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name];
-    localStorage.setItem('序名收藏', JSON.stringify(saved));
     const nowSaved = saved.includes(name);
-    button.classList.toggle('saved', nowSaved);
-    button.textContent = nowSaved ? '已收藏' : '收藏 ♡';
-    count.textContent = saved.length;
-    showToast(nowSaved ? `已收藏${name}` : `已取消收藏${name}`);
+    if (nowSaved) {
+      const item = lastCandidates.find((candidate) => candidate.fullName === name);
+      if (item) savedDetails[name] = { pinyin: item.pinyin, meaning: item.meaning };
+    } else delete savedDetails[name];
+    renderSaved();
+    if (persistSaved()) showToast(nowSaved ? `已收藏${name}` : `已取消收藏${name}`);
   }));
   return freeList.length;
 }
 
 function renderPlans(product) {
   const plans = product.plans || [];
-  planGrid.innerHTML = plans.map((plan, index) => `<article class="plan ${index === 1 ? 'featured' : ''}">${index === 1 ? '<span class="plan-badge">MOST CHOSEN</span>' : ''}<h3>${escapeHTML(plan.name)}</h3><div class="plan-price">${escapeHTML(plan.price)}</div><p>${escapeHTML(plan.description)}</p><ul>${(plan.benefits || []).map((benefit) => `<li>${escapeHTML(benefit)}</li>`).join('')}</ul><button class="${index === 0 ? 'secondary' : 'primary'} plan-action" type="button" data-plan="${escapeHTML(plan.id)}">${index === 0 ? '当前免费' : '了解方案'}</button></article>`).join('');
+  planGrid.innerHTML = plans.map((plan, index) => `<article class="plan ${index === 1 ? 'featured' : ''}">${index === 1 ? '<span class="plan-badge">PLANNED</span>' : ''}<h3>${escapeHTML(plan.name)}</h3><div class="plan-price">${escapeHTML(plan.price)}</div><p>${escapeHTML(plan.description)}</p><ul>${(plan.benefits || []).map((benefit) => `<li>${escapeHTML(benefit)}</li>`).join('')}</ul><button class="${index === 0 ? 'secondary' : 'primary'} plan-action" type="button" data-plan="${escapeHTML(plan.id)}">${index === 0 ? '当前免费' : '了解方案'}</button></article>`).join('');
   planGrid.querySelectorAll('.plan-action').forEach((button) => button.addEventListener('click', () => {
     const plan = plans.find((item) => item.id === button.dataset.plan);
-    showToast(plan?.id === 'free_preview' ? '免费预览已经在上方生成，可以先收藏喜欢的名字。' : (product.payment_status || '支付服务即将接入，方案权益已准备好。'), plan?.id === 'free_preview' ? 'success' : 'info');
+    showToast(plan?.id === 'free' ? '免费预览已经在上方生成，可以先收藏喜欢的名字。' : (product.payment_status || '完整服务尚在规划，当前没有开通购买。'), plan?.id === 'free' ? 'success' : 'info');
   }));
 }
 
@@ -441,19 +488,28 @@ function downloadReportFile() {
 }
 
 downloadReport?.addEventListener('click', downloadReportFile);
-count.textContent = saved.length;
+renderSaved();
 loadProduct();
 
 const savedButton = document.querySelector('#savedButton');
 const clearData = document.querySelector('#clearData');
 savedButton?.addEventListener('click', () => {
-  document.querySelector('#results').scrollIntoView({ behavior: 'smooth' });
-  showToast(saved.length ? `已收藏 ${saved.length} 个名字` : '完成一次生成后，就可以收藏喜欢的名字。', 'info');
+  renderSaved();
+  savedPanel.hidden = false;
+  savedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+document.querySelector('#closeSaved')?.addEventListener('click', () => { savedPanel.hidden = true; });
+savedList?.addEventListener('click', (event) => {
+  const button = event.target.closest('.remove-saved');
+  if (!button) return;
+  saved = saved.filter((name) => name !== button.dataset.name);
+  delete savedDetails[button.dataset.name];
+  renderSaved();
+  if (persistSaved()) showToast('已取消收藏。');
 });
 clearData?.addEventListener('click', () => {
   saved = [];
-  localStorage.removeItem('序名收藏');
-  count.textContent = '0';
-  document.querySelectorAll('.save.saved').forEach((button) => { button.classList.remove('saved'); button.textContent = '收藏 ♡'; });
-  showToast('本地收藏已清除。');
+  savedDetails = Object.create(null);
+  renderSaved();
+  if (persistSaved()) showToast('本地收藏已清除。');
 });

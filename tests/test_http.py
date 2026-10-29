@@ -46,7 +46,7 @@ class HttpHandlerTest(unittest.TestCase):
                 self.assertTrue(body)
                 self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
                 self.assertIn('no-store', headers['Cache-Control'])
-        for path in ('/api/health', '/api/catalog', '/api/classics', '/api/product'):
+        for path in ('/api/health', '/api/catalog', '/api/classics', '/api/product', '/api/name-counts'):
             with self.subTest(path=path):
                 status, _, body = self.request('GET', path)
                 self.assertEqual(status, 200)

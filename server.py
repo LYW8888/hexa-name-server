@@ -23,53 +23,43 @@ ZONE_LABELS = {
     "Asia/Taipei": "台北时间 UTC+8",
     "Asia/Hong_Kong": "香港时间 UTC+8",
 }
-CANDIDATES = (
-    ("知衡", "知其所来，守心而衡；清醒而有分寸。", "木", "classical,bright", 94),
-    ("景和", "景是光明与敬意，和是从容与相处。", "火", "classical,bright", 92),
-    ("予安", "予人以善意，也为自己留一方安定。", "土", "classical,modern", 90),
-    ("清晏", "清澈而坚定，晏然自得，心有晴明。", "水", "classical,nature", 89),
-    ("言川", "言有所守，心有远川；诚实而开阔。", "水", "modern,nature", 88),
-    ("昭宁", "昭示光亮，宁静笃定，温柔而有力量。", "火", "classical,bright", 87),
-    ("安", "安定、从容，也保留给未来的空间。", "土", "modern,classical", 86),
-    ("澄", "澄明而不喧，保有清醒和宁静。", "水", "modern,nature", 85),
-    ("知行", "知与行相互照见，把理解带入生活。", "木", "classical,bright", 91),
-    ("景和安", "有光明、有和意，也有安定的落点。", "火", "classical,bright", 88),
-    ("清晏宁", "清澈、安宁而坚定，温柔中有力量。", "水", "classical,nature", 87),
-    ("明远", "明辨而有远志，心有光亮与方向。", "火", "classical,bright", 88),
-    ("书宁", "以书明理，以宁守心，知性而安定。", "木", "classical,modern", 86),
-    ("若川", "如水有度，心有远川；柔和而开阔。", "水", "modern,nature", 87),
-    ("嘉言", "嘉善之言，诚明有礼，温厚而端正。", "木", "classical,bright", 86),
-    ("承安", "承其厚重，守一方安定，踏实而有担当。", "土", "classical,modern", 85),
-    ("云舒", "云卷云舒，从容自在，心境开阔。", "水", "modern,nature", 84),
-    ("庭轩", "庭院端正，轩然开阔，稳重而有气度。", "土", "classical,bright", 84),
-    ("简宁", "简而有致，宁静坚定，清醒而从容。", "火", "modern,classical", 83),
-    ("明", "明亮、明辨，心有清晰方向。", "火", "modern,bright", 84),
-    ("宁", "安宁、平静，保有内在力量。", "火", "modern,classical", 83),
-    ("远", "远志、远见，也保留探索空间。", "土", "modern,bright", 82),
-    ("明远安", "明亮有远志，安定而有方向感。", "火", "classical,bright", 84),
-    ("若川宁", "如川开阔，心境宁静，柔韧而坚定。", "水", "classical,nature", 83),
-    ("书宁安", "知性、宁静而安定，温和有分寸。", "木", "classical,modern", 82),
-)
+def load_names() -> list[dict]:
+    """Load the single candidate catalog, rejecting incomplete or duplicated data."""
+    data = json.loads((DATA / "names.json").read_text(encoding="utf-8"))
+    names = data.get("names")
+    if not isinstance(names, list) or not names:
+        raise ValueError("candidate catalog is empty or invalid")
+    seen = set()
+    for item in names:
+        given = item.get("given")
+        source = item.get("meaning_source", {})
+        associations = item.get("demo_associations")
+        if (not isinstance(given, str) or not 1 <= len(given) <= 3 or given in seen
+            or not isinstance(item.get("pinyin"), str) or not item["pinyin"]
+            or not isinstance(item.get("meaning"), str) or not item["meaning"]
+            or not isinstance(item.get("tags"), list) or not item["tags"]
+            or any(not isinstance(tag, str) for tag in item["tags"])
+            or not isinstance(item.get("styles"), list) or any(not isinstance(style, str) for style in item["styles"])
+            or not isinstance(item.get("genders"), list) or any(g not in ("unknown", "male", "female") for g in item["genders"])
+            or not isinstance(item.get("base_score"), int) or not 0 <= item["base_score"] <= 99
+            or source.get("verification_status") not in ("demo", "pending") or not source.get("description")
+            or (associations is not None and (not isinstance(associations, dict) or associations.get("verification_status") != "demo" or not associations.get("gua")
+            or not associations.get("gua_meaning") or not isinstance(associations.get("strokes"), int)))):
+            raise ValueError(f"candidate catalog contains invalid record: {given!r}")
+        seen.add(given)
+    return names
 
-GENDER_BY_GIVEN = {
-    '知衡': {'unknown', 'male'}, '景和': {'unknown', 'male', 'female'}, '予安': {'unknown', 'female'},
-    '清晏': {'unknown', 'female'}, '言川': {'unknown', 'male'}, '昭宁': {'unknown', 'female'},
-    '安': {'unknown', 'male', 'female'}, '澄': {'unknown', 'male', 'female'}, '知行': {'unknown', 'male'},
-    '景和安': {'unknown', 'male', 'female'}, '清晏宁': {'unknown', 'female'},
-    '明远': {'unknown', 'male'}, '书宁': {'unknown', 'female', 'male'}, '若川': {'unknown', 'female', 'male'},
-    '嘉言': {'unknown', 'female', 'male'}, '承安': {'unknown', 'male'}, '云舒': {'unknown', 'female'},
-    '庭轩': {'unknown', 'male'}, '简宁': {'unknown', 'female', 'male'}, '明': {'unknown', 'male', 'female'},
-    '宁': {'unknown', 'male', 'female'}, '远': {'unknown', 'male', 'female'}, '明远安': {'unknown', 'male', 'female'},
-    '若川宁': {'unknown', 'female'}, '书宁安': {'unknown', 'female', 'male'}
-}
 
 def init_db() -> None:
+    # Keep the existing SQLite catalog for compatibility; the checked-in JSON
+    # is the authoritative source for both selection and presentation.
     DATA.mkdir(exist_ok=True)
+    rows = [(item["given"], item["meaning"], item["tags"][0], ",".join(item["styles"]), item["base_score"]) for item in load_names()]
     with sqlite3.connect(DB) as conn:
         conn.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         conn.execute("CREATE TABLE IF NOT EXISTS candidates (given TEXT PRIMARY KEY, meaning TEXT, element TEXT, styles TEXT, base_score INTEGER)")
-        conn.executemany("INSERT OR REPLACE INTO candidates VALUES (?,?,?,?,?)", CANDIDATES)
-        conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("schema_version", "0.1.0"))
+        conn.executemany("INSERT OR REPLACE INTO candidates VALUES (?,?,?,?,?)", rows)
+        conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("schema_version", "1.0.0"))
         conn.commit()
 
 def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
@@ -182,10 +172,8 @@ def analyze(payload: dict) -> dict:
     chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete)
     scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
     purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
-    with sqlite3.connect(DB) as conn:
-        rows = conn.execute("SELECT given, meaning, element, styles, base_score FROM candidates").fetchall()
-    exact = [row for row in rows if len(row[0]) == length]
-    pool = [row for row in exact if not any(char in avoided for char in row[0])]
+    names = load_names()
+    pool = [item for item in names if len(item["given"]) == length and not any(char in avoided for char in item["given"])]
     effective_count = min(candidate_count, len(pool))
     try:
         variant = int(payload.get("variant", 0))
@@ -194,15 +182,27 @@ def analyze(payload: dict) -> dict:
     if not 0 <= variant <= 100000:
         raise ValueError("variant must be an integer from 0 to 100000")
     result = []
-    for given, candidate_meaning, element, candidate_styles, base in pool:
-        gender_boost = 2 if gender == "unknown" or gender in GENDER_BY_GIVEN.get(given, {"unknown"}) else 0
+    for item in pool:
+        given = item["given"]
+        base = item["base_score"]
+        gender_boost = 2 if gender == "unknown" or gender in item["genders"] else 0
         preference_boost = 2 if any(char in meaning or char in liked for char in given) else 0
-        style_boost = 2 if set(styles) & set(candidate_styles.split(",")) else 0
-        variant_boost = (sum(map(ord, given)) + variant * 13) % 3 if variant else 0
-        score = base + style_boost + gender_boost + preference_boost + variant_boost
-        evidence = f"演示评分构成：基础 {base}；风格偏好 +{style_boost}；性别倾向 +{gender_boost}；文字偏好 +{preference_boost}；探索轮次 +{variant_boost}。避用字已过滤；未计算喜用神。"
-        result.append({"name": surname + given, "given": given, "meaning": candidate_meaning, "element": element, "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": "demo"})
+        style_boost = 2 if set(styles) & set(item["styles"]) else 0
+        score = base + style_boost + gender_boost + preference_boost
+        evidence = f"演示评分构成：基础 {base}；风格偏好 +{style_boost}；性别倾向 +{gender_boost}；文字偏好 +{preference_boost}。重新生成时轮换候选；避用字已过滤；未计算喜用神。"
+        assoc = item["demo_associations"]
+        if assoc:
+            polarity = "阴" if assoc["strokes"] % 2 == 0 else "阳"
+            gua_evidence = f"演示库人工关联的八卦象意：{assoc['gua']}卦，{assoc['gua_meaning']}。并非依出生信息起卦；《周易·说卦传》来源及释义待核验。"
+            yinyang_evidence = f"演示笔画奇偶参考：候选名暂记 {assoc['strokes']} 画，按奇偶标为{polarity}；笔画和对应规则均待核验，不能用于判断运势。"
+        else:
+            gua_evidence = "尚无经核验的卦象资料；并非依出生信息起卦。"
+            yinyang_evidence = "尚无经核验的笔画和阴阳资料。"
+        result.append({"name": surname + given, "given": given, "pinyin": item["pinyin"], "meaning": item["meaning"], "tags": item["tags"], "element": item["tags"][0], "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": item["meaning_source"]["verification_status"], "source": item["meaning_source"]["description"], "element_evidence": f"演示字库意象分类：{item['tags'][0]}；归类尚未核验，不代表生辰五行。", "gua_evidence": gua_evidence, "yinyang_evidence": yinyang_evidence})
     result.sort(key=lambda item: (-item["score"], item["given"]))
+    if variant and result:
+        offset = (variant * effective_count) % len(result)
+        result = result[offset:] + result[:offset]
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = (f"{'预产期参考排盘，出生后请以实际出生时间重新计算' if chart['reference'] else '按实际出生日期和时间排盘'}；"
               f"时区：{zone_label}；年柱以立春、月柱以十二节的交接时刻为界；"
@@ -234,6 +234,9 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         route = urlparse(self.path).path
         if route == "/api/health": return self.json({"status": "ok", "database": DB.name})
+        if route == "/api/name-counts":
+            names = load_names()
+            return self.json({"counts": {str(length): sum(len(item["given"]) == length for item in names) for length in (1, 2, 3)}})
         if route == "/api/catalog":
             return self.json(json.loads((DATA / "character-catalog.json").read_text(encoding="utf-8")))
         if route == "/api/classics":
@@ -263,4 +266,5 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("PORT", "4173"))
-    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
+    host = os.environ.get("HOST", "0.0.0.0")
+    ThreadingHTTPServer((host, port), Handler).serve_forever()

@@ -83,5 +83,5 @@ def calculate(date_text, time_text, zone_name, reference=False):
         'previous_jie': previous, 'next_jie': following, 'boundary': boundary,
         'reference': reference, 'local_time': local.strftime('%Y-%m-%d %H:%M %z'),
         'conventions': ['年柱以立春交接时刻为界', '月柱以十二节交接时刻为界', '日柱按当地民用时间 23:00 换日，子时为 23:00–00:59', '节气采用 UTC+8 标准时刻并转换到所选时区', '未使用出生地经度修正真太阳时', '五行统计仅计四柱八字表面天干地支，不含藏干，不等同旺衰或喜用神'],
-        'source': {'library': 'lunar_python', 'version': '1.4.8', 'license': 'MIT', 'range': '1900–2100', 'verification': 'cross-checked; official certification pending'}
+        'source': {'library': 'lunar_python', 'version': '1.4.8', 'license': 'MIT', 'range': '1900–2100', 'verification': 'cross-checked; official certification pending', 'independent_ephemeris': 'JPL DE421: sampled solar terms 1900–2050; official certification pending'}
     }

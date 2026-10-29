@@ -1,0 +1,22 @@
+[Unit]
+Description=Xuming naming application
+After=network.target
+
+[Service]
+Type=simple
+User=xuming
+Group=xuming
+WorkingDirectory=/opt/xuming/app
+Environment=HOST=127.0.0.1
+Environment=PORT=4173
+ExecStart=/opt/xuming/venv/bin/python /opt/xuming/app/server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xuming/app/data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,2 +1,4 @@
 -r requirements.txt
 sxtwl==2.0.7
+skyfield==1.53
+skyfield-data==6.0.0
