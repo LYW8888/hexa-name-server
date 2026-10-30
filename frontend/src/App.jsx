@@ -3,6 +3,7 @@ import { Header, Hero, Plans, Method, Footer } from './Layout.jsx';
 import NamingForm from './NamingForm.jsx';
 import Results from './Results.jsx';
 import Keepsake from './Keepsake.jsx';
+import CustomerArea from './CustomerArea.jsx';
 import { copyText, friendlyError, downloadReportFile } from './utils.js';
 
 const DEFAULT_STATUS='完成信息后，这里会出现可比较的名字方向。';
@@ -62,5 +63,5 @@ export default function App(){
   function regenerate(){if(result?.analysis?.bazi)generate({...result.data,variant:(Number(result.data.variant)+1)%100001},true);else{scroll('#form');toast('先完成上方信息，就能生成名字方案。','info');}}
   function openKeepsake(name){setSelection({name});scroll('#keepsake');}
   function showSaved(){setSavedOpen(true);scroll('#savedPanel');}
-  return <><Header count={favorite.names.length} onSaved={showSaved}/><main id="top"><Hero/><NamingForm onGenerate={generate} busy={busy} counts={counts} message={message} setMessage={setMessage} toast={toast}/><Results data={result?.data} analysis={result?.analysis} candidates={result?.candidates || []} status={status} busy={busy} saved={favorite.names} details={favorite.details} savedOpen={savedOpen} onCloseSaved={()=>setSavedOpen(false)} onRemove={remove} onRegenerate={regenerate} onDownload={()=>downloadReportFile(result.data,result.analysis,result.candidates,toast)} onCopy={copy} onSave={save} onKeepsake={openKeepsake}/><Keepsake selection={selection} toast={toast}/><Plans product={product} toast={toast}/><Method/></main><Footer clear={clear}/><div id="toast" className={`toast ${notice?.type || ''}`} role="status" aria-live="polite" hidden={!notice}>{notice?.text}</div></>;
+  return <><Header count={favorite.names.length} onSaved={showSaved} onAccount={()=>scroll('#account')}/><main id="top"><Hero/><NamingForm onGenerate={generate} busy={busy} counts={counts} message={message} setMessage={setMessage} toast={toast}/><Results data={result?.data} analysis={result?.analysis} candidates={result?.candidates || []} status={status} busy={busy} saved={favorite.names} details={favorite.details} savedOpen={savedOpen} onCloseSaved={()=>setSavedOpen(false)} onRemove={remove} onRegenerate={regenerate} onDownload={()=>downloadReportFile(result.data,result.analysis,result.candidates,toast)} onCopy={copy} onSave={save} onKeepsake={openKeepsake}/><CustomerArea result={result} toast={toast}/><Keepsake selection={selection} toast={toast}/><Plans product={product} toast={toast}/><Method/></main><Footer clear={clear}/><div id="toast" className={`toast ${notice?.type || ''}`} role="status" aria-live="polite" hidden={!notice}>{notice?.text}</div></>;
 }

@@ -11,6 +11,8 @@ if len(SECRET_KEY) < 50:
 DEBUG = False
 DATA_UPLOAD_MAX_MEMORY_SIZE = 65536
 DEV = os.environ.get('XUMING_ADMIN_DEV') == '1'
+if not DEV and (os.getuid() == 0 or os.geteuid() == 0):
+    raise PermissionError('run the backoffice as its dedicated non-root account')
 ALLOWED_HOSTS = [v.strip() for v in os.environ.get('XUMING_ADMIN_HOSTS', 'localhost,127.0.0.1').split(',') if v.strip()]
 HOME_DIR = Path(os.environ.get('XUMING_ADMIN_HOME', '/var/lib/xuming-admin'))
 info = HOME_DIR.lstat()

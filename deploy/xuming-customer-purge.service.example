@@ -1,0 +1,16 @@
+[Unit]
+Description=Purge expired Xuming customer previews and old challenge records
+
+[Service]
+Type=oneshot
+User=xuming-customer
+Group=xuming-customer
+WorkingDirectory=/opt/xuming/app
+EnvironmentFile=/etc/xuming/customer.env
+ExecStart=/opt/xuming/venv/bin/python manage_customer.py purge_customer_data
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xuming-customer

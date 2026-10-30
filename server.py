@@ -292,6 +292,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         route = urlparse(self.path).path
+        if route == '/api/customer/session':
+            # Anonymous capability stub only. A separately deployed customer
+            # service takes over this prefix at the reverse proxy.
+            return self.json({'customer': None, 'sms_available': False,
+                              'purchases_available': False, 'retention_days': 30, 'record_limit': 20})
         if route == "/api/health": return self.json({"status": "ok", "database": DB.name})
         if route == "/api/name-counts":
             names = load_names()

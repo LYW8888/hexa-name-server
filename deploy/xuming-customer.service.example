@@ -1,0 +1,21 @@
+[Unit]
+Description=Xuming isolated customer identity and saved previews
+After=network.target
+
+[Service]
+User=xuming-customer
+Group=xuming-customer
+WorkingDirectory=/opt/xuming/app
+EnvironmentFile=/etc/xuming/customer.env
+ExecStart=/opt/xuming/venv/bin/gunicorn customer.wsgi:application --bind 127.0.0.1:4181 --workers 2 --threads 2 --timeout 30
+Restart=on-failure
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xuming-customer
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

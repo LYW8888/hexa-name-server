@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily cleanup of expired customer records
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=300
+Unit=xuming-customer-purge.service
+
+[Install]
+WantedBy=timers.target

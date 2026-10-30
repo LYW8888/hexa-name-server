@@ -11,3 +11,5 @@ frontend/playwright-report/
 .private-admin/
 .env
 .env.*
+*.env
+.private-customer/

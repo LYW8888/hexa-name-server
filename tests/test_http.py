@@ -64,12 +64,19 @@ class HttpHandlerTest(unittest.TestCase):
     def test_private_files_and_path_aliases_are_not_served(self):
         for method in ('GET', 'HEAD'):
             for path in ('/data/', '/data/naming.sqlite3', '/.git/config', '/server.py', '/phonetics.py',
-                         '/tests/test_server.py', '/README.md', '/operations/console.py', '/operations/', '/backoffice/settings.py', '/admin.html', '/data/../server.py',
+                         '/tests/test_server.py', '/README.md', '/operations/console.py', '/operations/', '/backoffice/settings.py', '/customer/settings.py', '/admin.html', '/data/../server.py',
                          '/data/%2e%2e/server.py', '/%2e%67it/config', '/frontend/package.json',
                          '/assets/../index.html', '/assets/%2e%2e/index.html'):
                 with self.subTest(method=method, path=path):
                     status, _, _ = self.request(method, path)
                     self.assertEqual(status, 404)
+
+    def test_customer_capability_stub_does_not_authenticate_or_issue_cookies(self):
+        status, headers, body = self.request('GET', '/api/customer/session', headers={'Cookie':'__Secure-xuming_customer=staff-or-customer-session'})
+        self.assertEqual(status,200)
+        self.assertIsNone(json.loads(body)['customer'])
+        self.assertFalse(json.loads(body)['sms_available'])
+        self.assertNotIn('Set-Cookie',headers)
 
     def test_built_assets_and_missing_build_behavior(self):
         status, _, body = self.request('GET', '/assets/index-abc123.js')
