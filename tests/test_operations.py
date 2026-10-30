@@ -60,10 +60,11 @@ class OperationsTest(unittest.TestCase):
         with self.connect('finance') as db:
             income = console.finance_record(db, 'income', 12500)
             console.finance_record(db, 'expense', 2500)
-            console.finance_record(db, 'refund', 1000)
-            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], 9000)
+            with self.assertRaises(ValueError):
+                console.finance_record(db, 'refund', 1000)
+            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], 10000)
             reversal = console.finance_reverse(db, income)
-            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], -3500)
+            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], -2500)
             with self.assertRaises(ValueError):
                 console.finance_reverse(db, income)
             with self.assertRaises(ValueError):
@@ -73,7 +74,33 @@ class OperationsTest(unittest.TestCase):
                     console.finance_record(db, 'income', invalid)
             with self.assertRaises(sqlite3.IntegrityError):
                 db.execute('UPDATE entries SET amount_fen=1')
-            self.assertEqual(db.execute('SELECT COUNT(*) FROM entries').fetchone()[0], 4)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM entries').fetchone()[0], 3)
+
+    def test_legacy_finance_records_are_preserved_without_new_refunds(self):
+        import uuid
+        original_id = str(uuid.uuid4())
+        with self.connect('finance') as db:
+            # Simulate a record created by the preceding release.
+            db.execute('INSERT INTO entries VALUES (?,?,?,?,NULL)', (original_id, 'refund', 1000, console.now()))
+            db.commit()
+            self.assertEqual(console.finance_summary(db)['legacy_refund_fen'], 1000)
+            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], -1000)
+            console.finance_reverse(db, original_id)
+            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], 0)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM entries').fetchone()[0], 2)
+
+    def test_legacy_support_schema_keeps_existing_records(self):
+        import uuid
+        ticket_id = str(uuid.uuid4())
+        path = self.directory / 'support.sqlite3'
+        with sqlite3.connect(path) as db:
+            db.execute('CREATE TABLE tickets(id TEXT PRIMARY KEY,category TEXT,status TEXT,created_at TEXT,updated_at TEXT)')
+            db.execute('INSERT INTO tickets VALUES (?,?,?,?,?)', (ticket_id, 'usage', 'open', console.now(), console.now()))
+        path.chmod(0o600)
+        with self.connect('support') as db:
+            self.assertIsNone(console.list_records(db, 'support')[0]['service_id'])
+            console.ticket_create(db, 'delivery', str(uuid.uuid4()))
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM tickets').fetchone()[0], 2)
 
     def test_finance_and_support_are_separate_schemas(self):
         with self.connect('support') as support:

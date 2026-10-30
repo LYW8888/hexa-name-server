@@ -337,3 +337,12 @@ input,select,textarea{border-color:#dfd5cb;background:#fffdfa}input:focus,select
   .mobile-menu{background:#fffaf4;border-color:#e8d9cc;color:#422e29;box-shadow:0 20px 55px #4b29263d}
   .mobile-menu a:hover,.mobile-menu a:focus-visible{background:#f6eae0}.mobile-menu small{color:#a28575}
 }
+.service-policy{margin-top:38px;padding:28px;border:1px solid #e4d8cc;border-radius:14px;background:#fffaf3}
+.service-policy h3{margin:0;font:600 26px/1.5 var(--serif);color:var(--ink)}
+.service-policy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin:24px 0}
+.service-policy-grid article{border-top:1px solid #e4d8cc;padding-top:14px}
+.service-policy-grid span{font-size:10px;color:var(--red);letter-spacing:.1em}
+.service-policy-grid h4{margin:8px 0;font-size:14px}
+.service-policy-grid p,.service-scope,.service-exception{font-size:12px;color:#716157;line-height:1.8}
+.service-policy-grid p{margin:0}.service-scope{padding-top:16px;border-top:1px solid #e4d8cc}.service-exception{margin-bottom:0}
+@media(max-width:800px){.service-policy{padding:22px 18px}.service-policy h3{font-size:22px}.service-policy-grid{grid-template-columns:1fr;gap:18px}}

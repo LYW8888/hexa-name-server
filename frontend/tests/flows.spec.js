@@ -100,3 +100,16 @@ test('手机导航可通过键盘打开、关闭并跳转', async({page})=>{
   await expect(menu).toBeHidden(); await expect(page).toHaveURL(/#keepsake$/);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
 });
+
+test('单次服务说明清楚展示，规划中的服务不会开放购买', async({page})=>{
+  await page.setViewportSize({width:390,height:844}); await page.goto('/#pricing');
+  const policy=page.getByRole('region',{name:'单次服务机制'});
+  await expect(policy).toContainText('不订阅、不自动续费');
+  await expect(policy).toContainText('重复获取同一份报告不新增服务费用');
+  await expect(policy).toContainText('规划中');
+  await expect(policy).toContainText('不会自动收费');
+  await page.locator('[data-plan=planned]').click();
+  await expect(page.locator('#toast')).toContainText('没有开通购买或收费');
+  await expect(page.getByRole('button',{name:'立即购买'})).toHaveCount(0);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
