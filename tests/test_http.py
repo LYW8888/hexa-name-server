@@ -64,7 +64,7 @@ class HttpHandlerTest(unittest.TestCase):
     def test_private_files_and_path_aliases_are_not_served(self):
         for method in ('GET', 'HEAD'):
             for path in ('/data/', '/data/naming.sqlite3', '/.git/config', '/server.py', '/phonetics.py',
-                         '/tests/test_server.py', '/README.md', '/operations/console.py', '/operations/', '/data/../server.py',
+                         '/tests/test_server.py', '/README.md', '/operations/console.py', '/operations/', '/backoffice/settings.py', '/admin.html', '/data/../server.py',
                          '/data/%2e%2e/server.py', '/%2e%67it/config', '/frontend/package.json',
                          '/assets/../index.html', '/assets/%2e%2e/index.html'):
                 with self.subTest(method=method, path=path):

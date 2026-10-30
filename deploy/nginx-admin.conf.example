@@ -1,0 +1,36 @@
+# Separate admin origin. Replace host/cert paths and restrict ingress to your VPN/office.
+# Place the rate zone in the nginx http context, not inside the server block.
+limit_req_zone $binary_remote_addr zone=xuming_admin_login:10m rate=5r/m;
+server {
+    listen 80;
+    server_name ops.example.com;
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 308 https://$host$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name ops.example.com;
+    ssl_certificate /etc/letsencrypt/live/ops.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ops.example.com/privkey.pem;
+    client_max_body_size 64k;
+    access_log off;
+    # Add your actual VPN/office allow rules before enabling this virtual host.
+    # allow 10.20.0.0/16;
+    # deny all;
+    location = /api/login {
+        limit_req zone=xuming_admin_login burst=5 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:4180;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_read_timeout 15s;
+    }
+    location / {
+        proxy_pass http://127.0.0.1:4180;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_read_timeout 15s;
+    }
+}

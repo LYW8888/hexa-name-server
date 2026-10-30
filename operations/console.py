@@ -9,6 +9,7 @@ import sqlite3
 import stat
 import sys
 import uuid
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +25,7 @@ KINDS = ('income', 'expense')
 MAX_ATTEMPTS = 3
 LEASE_SECONDS = 600
 MAX_AMOUNT = 1_000_000_000_00  # 1 billion CNY in fen per manual entry
+AUDIT_ACTOR = ContextVar('audit_actor', default=None)
 
 
 def require_identity(role):
@@ -64,6 +66,8 @@ def connect(role, directory):
         CREATE TRIGGER IF NOT EXISTS audit_no_update BEFORE UPDATE ON audit BEGIN SELECT RAISE(ABORT, 'audit is append-only'); END;
         CREATE TRIGGER IF NOT EXISTS audit_no_delete BEFORE DELETE ON audit BEGIN SELECT RAISE(ABORT, 'audit is append-only'); END;
     ''')
+    if 'actor' not in {row['name'] for row in conn.execute('PRAGMA table_info(audit)')}:
+        conn.execute('ALTER TABLE audit ADD COLUMN actor TEXT')
     if role == 'support':
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS tickets (
@@ -83,6 +87,9 @@ def connect(role, directory):
             CREATE TRIGGER IF NOT EXISTS entries_no_update BEFORE UPDATE ON entries BEGIN SELECT RAISE(ABORT, 'entries are append-only'); END;
             CREATE TRIGGER IF NOT EXISTS entries_no_delete BEFORE DELETE ON entries BEGIN SELECT RAISE(ABORT, 'entries are append-only'); END;
         ''')
+        if 'request_key' not in {row['name'] for row in conn.execute('PRAGMA table_info(entries)')}:
+            conn.execute('ALTER TABLE entries ADD COLUMN request_key TEXT')
+        conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS finance_request_key ON entries(request_key) WHERE request_key IS NOT NULL')
     else:
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS services (
@@ -102,7 +109,8 @@ def now():
 
 
 def audit(conn, action, object_id=None):
-    conn.execute('INSERT INTO audit(at,action,object_id) VALUES (?,?,?)', (now(), action, object_id))
+    conn.execute('INSERT INTO audit(at,action,object_id,actor) VALUES (?,?,?,?)',
+                 (now(), action, object_id, AUDIT_ACTOR.get() or f'os_uid:{os.geteuid()}'))
 
 
 def identifier(value):
@@ -138,12 +146,22 @@ def ticket_move(conn, ticket_id, status):
         audit(conn, 'ticket.status.' + status, ticket_id)
 
 
-def finance_record(conn, kind, amount):
+def finance_record(conn, kind, amount, request_key=None):
     if kind not in KINDS or type(amount) is not int or not 0 < amount <= MAX_AMOUNT:
         raise ValueError('invalid kind or amount in fen')
     entry_id = str(uuid.uuid4())
+    if request_key is not None:
+        identifier(request_key)
     with conn:
-        conn.execute('INSERT INTO entries VALUES (?,?,?,?,NULL)', (entry_id, kind, amount, now()))
+        conn.execute('BEGIN IMMEDIATE')
+        if request_key:
+            existing = conn.execute('SELECT * FROM entries WHERE request_key=?', (request_key,)).fetchone()
+            if existing:
+                if existing['kind'] != kind or existing['amount_fen'] != amount:
+                    raise ValueError('request key is already bound to a different financial record')
+                audit(conn, 'finance.record.reused', existing['id'])
+                return existing['id']
+        conn.execute('INSERT INTO entries(id,kind,amount_fen,created_at,reverses,request_key) VALUES (?,?,?,?,NULL,?)', (entry_id, kind, amount, now(), request_key))
         audit(conn, 'finance.record.' + kind, entry_id)
     return entry_id
 
@@ -156,7 +174,7 @@ def finance_reverse(conn, entry_id):
         if not original or conn.execute('SELECT 1 FROM entries WHERE reverses=?', (entry_id,)).fetchone():
             raise ValueError('entry does not exist or was already reversed')
         reversal_id = str(uuid.uuid4())
-        conn.execute('INSERT INTO entries VALUES (?,?,?,?,?)', (reversal_id, original['kind'], original['amount_fen'], now(), entry_id))
+        conn.execute('INSERT INTO entries(id,kind,amount_fen,created_at,reverses) VALUES (?,?,?,?,?)', (reversal_id, original['kind'], original['amount_fen'], now(), entry_id))
         audit(conn, 'finance.reverse', reversal_id)
     return reversal_id
 
@@ -285,6 +303,17 @@ def service_summary(conn):
     return {'counts': counts, 'note': 'Internal delivery metadata only; not proof of payment or customer receipt.'}
 
 
+def service_status(conn, service_id):
+    """Minimal projection for support; never return authorization, hashes or tokens."""
+    identifier(service_id)
+    with conn:
+        row = conn.execute('SELECT id,status,attempts,updated_at FROM services WHERE id=?', (service_id,)).fetchone()
+        if not row:
+            raise ValueError('service does not exist')
+        audit(conn, 'delivery.status.read', service_id)
+    return dict(row)
+
+
 def audit_history(conn, role):
     with conn:
         rows = [dict(row) for row in conn.execute('SELECT * FROM audit ORDER BY id DESC LIMIT 200')]
@@ -327,7 +356,7 @@ def main(argv=None):
         elif args.action == 'create':
             result = service_create(conn, args.request_key, args.authorization_ref, args.spec_sha256) if args.role == 'delivery' else {'id': ticket_create(conn, args.category, args.service_id)}
         elif args.action == 'move': ticket_move(conn, args.id, args.status); result = {'updated': args.id, 'status': args.status}
-        elif args.action == 'record': result = {'id': finance_record(conn, args.kind, args.amount_fen)}
+        elif args.action == 'record': result = {'id': finance_record(conn, args.kind, args.amount_fen, args.request_key)}
         elif args.action == 'reverse': result = {'reversal_id': finance_reverse(conn, args.id)}
         elif args.action == 'list': result = list_records(conn, args.role)
         elif args.action == 'audit': result = audit_history(conn, args.role)

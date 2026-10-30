@@ -1,0 +1,23 @@
+[Unit]
+Description=Xuming isolated %i worker
+
+[Service]
+User=xuming-%i
+# Allows the admin gateway to traverse the socket directory. Peer UID is also checked.
+Group=xuming-admin
+WorkingDirectory=/opt/xuming/app
+EnvironmentFile=/etc/xuming/worker.env
+RuntimeDirectory=xuming-%i
+RuntimeDirectoryMode=0750
+ExecStart=/opt/xuming/venv/bin/python -m operations.worker %i --directory /var/lib/xuming-ops/%i --socket /run/xuming-%i/worker.sock --admin-uid ${ADMIN_UID}
+Restart=on-failure
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xuming-ops/%i /run/xuming-%i
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

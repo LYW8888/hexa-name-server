@@ -112,6 +112,13 @@ class DeliveryTest(unittest.TestCase):
             with self.assertRaises(sqlite3.OperationalError):
                 self.db.execute(f'SELECT * FROM {table}')
 
+    def test_support_status_projection_excludes_authorization_and_report_data(self):
+        service = self.create()
+        console.service_start(self.db, service)
+        status = console.service_status(self.db, service)
+        self.assertEqual(set(status), {'id', 'status', 'attempts', 'updated_at'})
+        self.assertEqual(status['status'], 'processing')
+
 
 if __name__ == '__main__':
     unittest.main()

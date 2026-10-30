@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: 'flows.spec.js',
   fullyParallel: true,
   timeout: 30000,
   use: {

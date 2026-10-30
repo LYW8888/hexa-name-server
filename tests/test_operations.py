@@ -81,13 +81,23 @@ class OperationsTest(unittest.TestCase):
         original_id = str(uuid.uuid4())
         with self.connect('finance') as db:
             # Simulate a record created by the preceding release.
-            db.execute('INSERT INTO entries VALUES (?,?,?,?,NULL)', (original_id, 'refund', 1000, console.now()))
+            db.execute('INSERT INTO entries(id,kind,amount_fen,created_at,reverses) VALUES (?,?,?,?,NULL)', (original_id, 'refund', 1000, console.now()))
             db.commit()
             self.assertEqual(console.finance_summary(db)['legacy_refund_fen'], 1000)
             self.assertEqual(console.finance_summary(db)['net_recorded_fen'], -1000)
             console.finance_reverse(db, original_id)
             self.assertEqual(console.finance_summary(db)['net_recorded_fen'], 0)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM entries').fetchone()[0], 2)
+
+    def test_finance_request_key_prevents_double_registration(self):
+        import uuid
+        key = str(uuid.uuid4())
+        with self.connect('finance') as db:
+            original = console.finance_record(db, 'income', 9900, key)
+            self.assertEqual(console.finance_record(db, 'income', 9900, key), original)
+            with self.assertRaises(ValueError):
+                console.finance_record(db, 'expense', 9900, key)
+            self.assertEqual(console.finance_summary(db)['net_recorded_fen'], 9900)
 
     def test_legacy_support_schema_keeps_existing_records(self):
         import uuid

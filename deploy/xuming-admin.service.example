@@ -1,0 +1,22 @@
+[Unit]
+Description=Xuming private backoffice gateway
+After=network.target xuming-worker@support.service xuming-worker@finance.service xuming-worker@delivery.service
+Wants=xuming-worker@support.service xuming-worker@finance.service xuming-worker@delivery.service
+
+[Service]
+User=xuming-admin
+Group=xuming-admin
+WorkingDirectory=/opt/xuming/app
+EnvironmentFile=/etc/xuming/admin.env
+ExecStart=/opt/xuming/venv/bin/gunicorn backoffice.wsgi:application --bind 127.0.0.1:4180 --workers 2 --threads 2 --timeout 30
+Restart=on-failure
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xuming-admin
+RestrictAddressFamilies=AF_INET AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
