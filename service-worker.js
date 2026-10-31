@@ -1,5 +1,5 @@
-const CACHE = 'xuming-mvp-v26';
-const ASSETS = ['./', './index.html', './styles.css?v=2026-10-29-26', './engine.js?v=2026-10-29-26', './app.js?v=2026-10-29-26', './keepsake.js?v=2026-10-29-26', './manifest.webmanifest', './data/character-catalog.json', './data/classics.json', './data/product.json'];
+const CACHE = 'xuming-mvp-v27';
+const ASSETS = ['./', './index.html', './styles.css?v=submit-fix-27', './engine.js?v=submit-fix-27', './app.js?v=submit-fix-27', './keepsake.js?v=submit-fix-27', './manifest.webmanifest', './data/character-catalog.json', './data/classics.json', './data/product.json'];
 const ASSET_PATHS = new Set(ASSETS.map((asset) => new URL(asset, self.registration.scope).pathname));
 self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('xuming-mvp-') && key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));

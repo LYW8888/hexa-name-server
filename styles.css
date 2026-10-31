@@ -369,3 +369,9 @@ input,select,textarea{border-color:#dfd5cb;background:#fffdfa}input:focus,select
 .customer-records{list-style:none;padding:0;margin:0}.customer-records li{padding:17px 0;border-top:1px solid #eee3d7;display:grid;gap:13px}.customer-records b{font-size:13px;font-weight:500}.customer-records small{display:block;font-size:11px;color:#897264;line-height:1.8;margin-top:7px}.customer-record-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.customer-record-actions .secondary{padding:6px 12px;font-size:11px}.customer-delete{border:0;background:transparent;color:#97604d;cursor:pointer;font-size:11px;min-height:36px}.customer-empty{color:#8b7868;font-size:12px;line-height:1.8;padding:12px 0}
 @media(max-width:800px){nav .customer-entry{display:none}.customer-area{grid-template-columns:1fr;gap:28px;padding-bottom:75px}.customer-intro h2{font-size:30px}.customer-intro>p:not(.eyebrow){max-width:none}.customer-panel{padding:22px 18px}.customer-code-row{gap:8px}.customer-code-row button{padding:9px 12px}.customer-consent input{min-height:0!important}.customer-head{gap:8px}.customer-head h3{font-size:20px}}
 .customer-unavailable .secondary{margin:8px 0 0 10px;font-size:12px}
+/* Keep generation feedback beside the action that triggered it. */
+.generation-progress{margin:18px 0 0;padding:12px 14px;border:1px solid #dfcaba;border-radius:9px;background:#fcf5eb;color:#7b5342;font-size:12px;line-height:1.7}
+#namingForm>.form-message{margin-top:18px;margin-bottom:0}
+.legacy-version-notice{position:relative;z-index:30;margin:20px auto;max-width:1050px;padding:18px 22px;background:#fff7eb;border:1px solid #cfaa8c;border-radius:12px;color:#744637;font:14px/1.8 sans-serif}
+.legacy-version-notice strong{display:block;font-size:16px}.legacy-version-notice p{margin:6px 0 12px}.legacy-version-notice button{background:#913d35;border:0;border-radius:8px;padding:10px 16px;color:white;cursor:pointer;font:inherit}
+.legacy-version-notice:before{display:none}

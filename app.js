@@ -1,3 +1,33 @@
+// Legacy entry point: refuse mixed HTML/script releases before attaching actions.
+(function () {
+const legacyForm = document.querySelector('#namingForm');
+if (!legacyForm) return;
+legacyForm.noValidate = true;
+const requiredIds = ['summary','cards','savedCount','regenerate','formMessage','upgradePanel','planGrid','resultStatus','downloadReport','savedPanel','savedList','keepsakeName','keepsakeWish','keepsakeCanvas','keepsakeMessage','shareSite','downloadKeepsake','copySiteLink','siteLink','shareHint'];
+const requiredFields = ['surname','candidateCount','dueDate','dueTime','birthDate','birthTime','place','zone','length'];
+if (requiredIds.some(id => !document.getElementById(id)) || requiredFields.some(name => !legacyForm.elements.namedItem(name))) {
+  const notice = document.createElement('div');
+  notice.className = 'form-message legacy-version-notice';
+  notice.id = 'legacyVersionNotice';
+  notice.setAttribute('role', 'alert');
+  const title = document.createElement('strong'); title.textContent = '页面与程序版本不一致，暂时无法生成方案。';
+  const detail = document.createElement('p'); detail.textContent = '请刷新获取完整页面；如果仍然出现此提示，需要在服务器构建前端并重启正确的应用服务。刷新可能需要重新填写本次信息，本地收藏不会删除。';
+  const reload = document.createElement('button'); reload.type = 'button'; reload.textContent = '刷新完整页面';
+  reload.addEventListener('click', async () => {
+    reload.disabled = true; reload.textContent = '正在刷新…';
+    try {
+      if ('caches' in window) await Promise.all((await caches.keys()).filter(key => key.startsWith('xuming-mvp-') || key.startsWith('xuming-react-')).map(key => caches.delete(key)));
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration('/');
+        if (registration && [registration.active,registration.waiting,registration.installing].some(worker => worker && new URL(worker.scriptURL).pathname === '/service-worker.js')) await registration.unregister();
+      }
+    } catch (_) { /* Still request a fresh document if cache cleanup is unavailable. */ }
+    const url = new URL('/', location.href); url.searchParams.set('app_refresh', String(Date.now())); location.replace(url.href);
+  });
+  notice.append(title, detail, reload); legacyForm.prepend(notice);
+  legacyForm.addEventListener('submit', event => { event.preventDefault(); notice.scrollIntoView({block:'center'}); });
+  return;
+}
 const form = document.querySelector('#namingForm');
 const panels = [...document.querySelectorAll('.panel')];
 const steps = [...document.querySelectorAll('.progress span')];
@@ -393,21 +423,29 @@ function friendlyError(message) {
 }
 
 async function requestAnalysis(data) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    const payload = await response.json();
+    const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), signal: controller.signal, cache: 'no-store' });
+    if (response.status === 404 || response.status === 405) throw new Error('当前地址未接通起名接口，请检查网站部署后重试。');
+    if (response.status === 401 || response.status === 403) throw new Error('起名接口访问受限，请检查网站代理或访问规则后重试。');
+    if (response.status >= 500) throw new Error('排盘服务暂时不可用，请稍后重新生成。');
+    let payload;
+    try { payload = await response.json(); } catch { throw new Error('起名接口返回的内容无法识别，请检查网站部署后重试。'); }
     if (!response.ok) throw new Error(payload.error || '分析请求未通过校验');
     if (!payload.analysis?.bazi || !Array.isArray(payload.candidates)) throw new Error('服务未返回完整方案，请重试。');
     return payload;
   } catch (error) {
+    if (controller.signal.aborted) throw new Error('排盘服务响应超时，请检查网络后重新生成。');
     if (error instanceof TypeError) throw new Error('无法连接排盘服务，请检查网络后重试。');
     throw error;
-  }
+  } finally { clearTimeout(timer); }
 }
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (!validatePanel()) return;
+  if (step < 2) { if (validatePanel()) setStep(step + 1); return; }
+  for (let index = 0; index < panels.length; index++) { setStep(index); if (!validatePanel()) return; }
   const data = Object.fromEntries(new FormData(form));
   data.surname = data.surname.trim();
   data.styles = [...document.querySelectorAll('input[name=style]:checked')].map((item) => item.value);
@@ -662,3 +700,5 @@ shareSite.addEventListener('click', async () => {
     if (error.name !== 'AbortError') showToast('分享未完成，可使用复制推荐链接。', 'info');
   }
 });
+
+})();
