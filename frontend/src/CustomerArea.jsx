@@ -29,7 +29,7 @@ const FIELDS = [
 const newKey = () => globalThis.crypto?.randomUUID?.() || null;
 const displayDate = (value) =>
   new Date(value).toLocaleString("zh-CN", { hour12: false });
-export default function CustomerArea({ result, toast }) {
+export default function CustomerArea({ result, toast, onSaved, onDownload }) {
   const [customer, setCustomer] = useState(null),
     [available, setAvailable] = useState(false),
     [connectionFailed, setConnectionFailed] = useState(false),
@@ -46,11 +46,16 @@ export default function CustomerArea({ result, toast }) {
     [retention, setRetention] = useState(30);
   const csrf = useRef(""),
     requestKey = useRef(newKey()),
-    generation = useRef(0);
+    generation = useRef(0),
+    pageKeys = useRef(new WeakMap()),
+    savedPages = useRef(new Map());
   useEffect(() => {
     setConsent(false);
-    requestKey.current = newKey();
-  }, [result]);
+    if (result) {
+      if (!pageKeys.current.has(result)) pageKeys.current.set(result, newKey());
+      requestKey.current = pageKeys.current.get(result);
+    } else requestKey.current = newKey();
+  }, [result, customer?.id]);
   useEffect(() => {
     if (!cooldown) return;
     const timer = setTimeout(
@@ -183,6 +188,8 @@ export default function CustomerArea({ result, toast }) {
       generation.current++;
       setCustomer(null);
       setRecords([]);
+      pageKeys.current = new WeakMap();
+      savedPages.current.clear();
       setConsent(false);
       setDeleteId(null);
       setMessage("已退出账号，本地收藏仍保存在当前浏览器。");
@@ -199,11 +206,12 @@ export default function CustomerArea({ result, toast }) {
           result.data[key],
         ]),
       );
-      await api("records/save", {
+      const saved = await api("records/save", {
         request_key: requestKey.current,
         consent: true,
         input,
       });
+      savedPages.current.set(saved.record.id, result);
       await refresh();
       setMessage("体验方案已保存，可在同一手机号下找回；不会产生费用。");
     });
@@ -222,7 +230,15 @@ export default function CustomerArea({ result, toast }) {
   function remove(id) {
     run(async () => {
       await api(`records/${id}/delete`, {});
-      requestKey.current = newKey();
+      const page = savedPages.current.get(id);
+      if (page) {
+        pageKeys.current.delete(page);
+        savedPages.current.delete(id);
+      }
+      if (!page || page === result) {
+        requestKey.current = newKey();
+        if (result) pageKeys.current.set(result, requestKey.current);
+      }
       setConsent(false);
       setDeleteId(null);
       await refresh();
@@ -247,7 +263,7 @@ export default function CustomerArea({ result, toast }) {
           <span>账号独立保护</span>
         </div>
         <p className="customer-scope">
-          当前仅提供免费体验记录，尚未开放购买。保存的候选资料仍待核验。
+          当前提供免费体验记录。登录保存由你主动选择；本机收藏与下载方案可直接使用。
         </p>
       </div>
       <div className="customer-panel">
@@ -334,9 +350,18 @@ export default function CustomerArea({ result, toast }) {
                 {connectionFailed ? "账号服务暂时不可用" : "手机号登录暂未开通"}
               </strong>
               <p>免费体验、本地收藏、下载方案与制作心愿卡均可直接使用。</p>
-              <a className="primary" href="#form">
-                继续免费体验 ↗
-              </a>
+              {result?.candidates?.length ? (
+                <button className="primary" type="button" onClick={onDownload}>
+                  下载当前方案
+                </button>
+              ) : (
+                <a className="primary" href="#form">
+                  开始免费起名 ↗
+                </a>
+              )}
+              <button type="button" className="secondary" onClick={onSaved}>
+                打开本机收藏
+              </button>
               <button
                 className="secondary"
                 type="button"

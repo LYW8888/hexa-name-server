@@ -4,6 +4,8 @@ import NamingForm from "./NamingForm.jsx";
 import Results from "./Results.jsx";
 import Keepsake from "./Keepsake.jsx";
 import CustomerArea from "./CustomerArea.jsx";
+import SavedNames from "./SavedNames.jsx";
+import { requestKey } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
 import { copyText, friendlyError, downloadReportFile } from "./utils.js";
 
@@ -55,12 +57,21 @@ export default function App() {
   const [counts, setCounts] = useState({}),
     [product, setProduct] = useState(null),
     [message, setMessage] = useState("");
-  const [result, setResult] = useState(null),
+  const [session, setSession] = useState({ pages: [], index: 0, id: 0 }),
+    [draft, setDraft] = useState(null),
     [status, setStatus] = useState(DEFAULT_STATUS),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(null);
+  const result = session.pages[session.index] || null;
+  const dirty = !!(
+    result &&
+    draft &&
+    requestKey(draft) !== requestKey(result.data)
+  );
   const timer = useRef(null),
-    inFlight = useRef(false);
+    inFlight = useRef(false),
+    formController = useRef(null),
+    undoFavorite = useRef(null);
   const toast = useCallback((text, type = "success") => {
     window.clearTimeout(timer.current);
     setNotice({ text, type });
@@ -126,7 +137,40 @@ export default function App() {
       toast("已取消收藏。");
   }
   function clear() {
-    if (persist({ names: [], details: {} })) toast("本地收藏已清除。");
+    if (!favorite.names.length) {
+      toast("目前没有本机收藏。", "info");
+      return;
+    }
+    undoFavorite.current = favorite;
+    if (persist({ names: [], details: {} })) {
+      window.clearTimeout(timer.current);
+      setNotice({ text: "本机收藏已清空。", type: "info", undo: true });
+      timer.current = window.setTimeout(() => {
+        setNotice(null);
+        undoFavorite.current = null;
+      }, 10000);
+    }
+  }
+  function undoClear() {
+    if (undoFavorite.current) {
+      persist(undoFavorite.current);
+      undoFavorite.current = null;
+      toast("本机收藏已恢复。");
+    }
+  }
+  async function copyFavorites() {
+    const text = favorite.names
+      .map(
+        (name, index) =>
+          `${index + 1}. ${name}${favorite.details[name]?.pinyin ? " · " + favorite.details[name].pinyin : ""}${favorite.details[name]?.meaning ? "\n" + favorite.details[name].meaning : ""}`,
+      )
+      .join("\n\n");
+    try {
+      if (!(await copyText(text))) throw Error();
+      toast("收藏清单已复制，可以发给家人讨论。");
+    } catch {
+      toast("复制失败，可逐个复制名字。", "info");
+    }
   }
   async function copy(name) {
     try {
@@ -141,10 +185,8 @@ export default function App() {
     inFlight.current = true;
     setBusy(true);
     setMessage("");
-    if (!isRegenerate) {
-      setResult(null);
-      setStatus("正在生成方案…");
-    }
+    if (!isRegenerate)
+      setStatus(result ? "正在应用修改，上一份方案仍保留。" : "正在生成方案…");
     try {
       const payload = await requestAnalysis(data),
         candidates = window.NameEngine.candidates(
@@ -152,11 +194,20 @@ export default function App() {
           payload.analysis,
           payload.candidates,
         );
-      setResult({ data, analysis: payload.analysis, candidates });
+      const page = { data, analysis: payload.analysis, candidates };
+      setSession((previous) =>
+        isRegenerate
+          ? {
+              ...previous,
+              pages: [...previous.pages, page],
+              index: previous.pages.length,
+            }
+          : { pages: [page], index: 0, id: previous.id + 1 },
+      );
       const count = candidates.length,
         requested = Number(data.candidateCount || 3);
       const prefix = isRegenerate
-        ? `已按第 ${data.variant} 轮重新整理 ${count} 个方案。`
+        ? `已换到第 ${Number(data.variant) + 1} 组，共 ${count} 个名字。`
         : `已生成 ${count} 个方向，可加入比较，或展开卡片查看选字依据。`;
       setStatus(
         count
@@ -178,8 +229,11 @@ export default function App() {
         setStatus(`重新生成未完成：${text} 当前仍展示上一份方案。`);
         toast(text, "info");
       } else {
-        setResult(null);
-        setStatus("暂时无法生成方案。");
+        setStatus(
+          result?.candidates?.length
+            ? "本次修改未能生成，上一份方案仍可查看、收藏和下载。"
+            : "暂时无法生成方案。",
+        );
         setMessage(friendlyError(error.message || ""));
         scroll("#formMessage");
       }
@@ -189,23 +243,62 @@ export default function App() {
     }
   }
   function regenerate() {
-    if (result?.analysis?.bazi)
-      generate(
-        { ...result.data, variant: (Number(result.data.variant) + 1) % 100001 },
-        true,
-      );
-    else {
-      scroll("#form");
-      toast("先完成上方信息，就能生成名字方案。", "info");
+    if (!result?.analysis?.bazi) {
+      formController.current?.resume();
+      toast("先完成信息，就能生成名字方案。", "info");
+      return;
     }
+    if (session.index + 1 < session.pages.length) {
+      const index = session.index + 1;
+      setSession({ ...session, index });
+      setStatus(`正在查看第 ${index + 1} 组候选，条件保持不变。`);
+      return;
+    }
+    const size = Number(result.analysis.candidate_count) || 1;
+    const pages = Math.ceil(
+      (Number(result.analysis.available_candidate_count) || 0) / size,
+    );
+    if (session.index + 1 >= pages) {
+      toast("这一条件下的候选已看完，可以调整偏好探索其他方向。", "info");
+      return;
+    }
+    generate(
+      { ...result.data, variant: Number(result.data.variant || 0) + 1 },
+      true,
+    );
+  }
+  function previousGroup() {
+    if (inFlight.current || session.index <= 0) return;
+    const index = session.index - 1;
+    setSession({ ...session, index });
+    setStatus(`已返回第 ${index + 1} 组候选，原来的名字仍在这里。`);
+  }
+  function edit(index, field) {
+    formController.current?.openStep(index, field);
   }
   function openKeepsake(name) {
+    setSavedOpen(false);
     setSelection({ name });
     scroll("#keepsake");
   }
   function showSaved() {
     setSavedOpen(true);
-    scroll("#savedPanel");
+  }
+  function locateSaved(name) {
+    const index = session.pages.findIndex((page) =>
+      page.candidates.some((item) => item.fullName === name),
+    );
+    if (index < 0) return;
+    setSession({ ...session, index });
+    setSavedOpen(false);
+    setStatus(`已回到第 ${index + 1} 组候选。`);
+    requestAnimationFrame(() => {
+      const card = [...document.querySelectorAll("#cards .card")].find(
+        (el) => el.querySelector("h3")?.textContent === name,
+      );
+      card?.focus({ preventScroll: true });
+      card?.scrollIntoView({ behavior: behavior(), block: "center" });
+    });
   }
   return (
     <>
@@ -215,8 +308,10 @@ export default function App() {
         onAccount={() => scroll("#account")}
       />
       <main id="top">
-        <Hero />
+        <Hero onBegin={() => formController.current?.resume()} />
         <NamingForm
+          ref={formController}
+          onDraftChange={setDraft}
           onGenerate={generate}
           busy={busy}
           counts={counts}
@@ -231,10 +326,33 @@ export default function App() {
           status={status}
           busy={busy}
           saved={favorite.names}
-          details={favorite.details}
-          savedOpen={savedOpen}
-          onCloseSaved={() => setSavedOpen(false)}
-          onRemove={remove}
+          onSaved={showSaved}
+          comparisonKey={session.id}
+          dirty={dirty}
+          onApply={() => formController.current?.submit()}
+          onEdit={edit}
+          groupIndex={session.index}
+          hasHistory={session.pages.length > 1}
+          seenNames={
+            new Set(
+              session.pages
+                .slice(0, session.index)
+                .flatMap((page) =>
+                  page.candidates.map((item) => item.fullName),
+                ),
+            )
+          }
+          hasPrevious={session.index > 0}
+          hasNext={
+            session.index + 1 < session.pages.length ||
+            (result &&
+              session.index + 1 <
+                Math.ceil(
+                  result.analysis.available_candidate_count /
+                    (result.analysis.candidate_count || 1),
+                ))
+          }
+          onPrevious={previousGroup}
           onRegenerate={regenerate}
           onDownload={() =>
             downloadReportFile(
@@ -248,12 +366,50 @@ export default function App() {
           onSave={save}
           onKeepsake={openKeepsake}
         />
-        <CustomerArea result={result} toast={toast} />
+        <CustomerArea
+          result={result}
+          toast={toast}
+          onSaved={showSaved}
+          onDownload={() =>
+            result &&
+            downloadReportFile(
+              result.data,
+              result.analysis,
+              result.candidates,
+              toast,
+            )
+          }
+        />
         <Keepsake selection={selection} toast={toast} />
         <Plans product={product} toast={toast} />
         <Method />
       </main>
       <Footer clear={clear} />
+      <SavedNames
+        open={savedOpen}
+        names={favorite.names}
+        details={favorite.details}
+        onClose={() => setSavedOpen(false)}
+        onRemove={remove}
+        onCopy={copy}
+        onCopyAll={copyFavorites}
+        onKeepsake={openKeepsake}
+        onClear={clear}
+        onExplore={() => {
+          setSavedOpen(false);
+          result ? scroll("#results") : formController.current?.resume();
+        }}
+        onLocate={locateSaved}
+        locatable={
+          new Set(
+            session.pages.flatMap((page) =>
+              page.candidates.map((item) => item.fullName),
+            ),
+          )
+        }
+        notice={notice}
+        onUndo={undoClear}
+      />
       <div
         id="toast"
         className={`toast ${notice?.type || ""}`}
@@ -261,7 +417,12 @@ export default function App() {
         aria-live="polite"
         hidden={!notice}
       >
-        {notice?.text}
+        <span>{notice?.text}</span>
+        {notice?.undo && (
+          <button type="button" onClick={undoClear}>
+            撤销
+          </button>
+        )}
       </div>
     </>
   );

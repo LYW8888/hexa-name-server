@@ -130,3 +130,38 @@ test("账号服务失败后可重试，保留已生成的免费方案", async ({
   await expect(account.locator("[name=customerPhone]")).toBeVisible();
   await expect(page.locator("#cards .card")).toHaveCount(3);
 });
+
+test("翻回同一组保存会复用记录，删除后可重新保存", async ({ page }) => {
+  await page.goto("/");
+  await generate(page);
+  const account = await login(page, "13600008000");
+  async function saveCurrent() {
+    await account
+      .getByRole("checkbox", { name: "我确认保存本次信息与体验方案。" })
+      .check();
+    const response = page.waitForResponse((r) =>
+      r.url().endsWith("/api/customer/records/save"),
+    );
+    await account.getByRole("button", { name: "保存当前体验方案" }).click();
+    return (await response).json();
+  }
+  const first = await saveCurrent();
+  await expect(account.locator(".customer-records li")).toHaveCount(1);
+  await page.locator("#regenerate").click();
+  await expect(page.locator("#resultStatus")).toContainText("第 2 组");
+  await saveCurrent();
+  await expect(account.locator(".customer-records li")).toHaveCount(2);
+  await page.locator("#previousGroup").click();
+  const repeated = await saveCurrent();
+  expect(repeated.reused).toBe(true);
+  expect(repeated.record.id).toBe(first.record.id);
+  await expect(account.locator(".customer-records li")).toHaveCount(2);
+  const old = account.locator(".customer-records li").nth(1);
+  await old.getByRole("button", { name: "删除", exact: true }).click();
+  await old.getByRole("button", { name: "确认删除", exact: true }).click();
+  await expect(account.locator(".customer-records li")).toHaveCount(1);
+  const renewed = await saveCurrent();
+  expect(renewed.reused).toBe(false);
+  expect(renewed.record.id).not.toBe(first.record.id);
+  await expect(account.locator(".customer-records li")).toHaveCount(2);
+});

@@ -15,7 +15,10 @@ async function generate(
   await page.locator(".panel.active .next").click();
   await page.locator("[name=dueDate]").fill(due);
   if (dueTime) await page.locator("[name=dueTime]").fill(dueTime);
-  if (birth) await page.locator("[name=birthDate]").fill(birth);
+  if (birth) {
+    await page.locator(".secondary-dates>summary").click();
+    await page.locator("[name=birthDate]").fill(birth);
+  }
   if (birthTime) await page.locator("[name=birthTime]").fill(birthTime);
   await page.locator("[name=place]").fill("杭州");
   await page.locator(".panel.active .next").click();
@@ -44,7 +47,7 @@ for (const width of [1280, 390])
     expect(report).toContain("预产期参考四柱");
     expect(report).toContain("预产期参考边界");
     await page.locator("#regenerate").click();
-    await expect(page.locator("#resultStatus")).toContainText("第 1 轮");
+    await expect(page.locator("#resultStatus")).toContainText("第 2 组");
     expect(
       await page.evaluate(
         () =>
@@ -69,6 +72,7 @@ test("旧收藏格式、图片和推荐链接保持兼容及隐私", async ({ pa
   await page.goto("/?birthDate=2000-01-01&name=秘密#private");
   await page.locator("#savedButton").click();
   await expect(page.locator("#savedList")).toContainText("林安");
+  await page.locator("#closeSaved").click();
   await generate(page, {});
   const first = await page.locator("#cards h3").first().innerText();
   await page.locator("#cards .make-keepsake").first().click();
@@ -441,8 +445,8 @@ for (const width of [1280, 390])
       ),
     ).toBeTruthy();
     await page.locator("#regenerate").click();
-    await expect(page.locator("#resultStatus")).toContainText("第 1 轮");
-    await expect(comparison).toHaveCount(0);
+    await expect(page.locator("#resultStatus")).toContainText("第 2 组");
+    await expect(comparison).toContainText("已选 2/3");
   });
 
 for (const width of [1280, 390])
@@ -452,6 +456,7 @@ for (const width of [1280, 390])
     await page.locator("[name=surname]").fill("林");
     await page.locator(".panel.active .next").click();
     await page.locator("[name=dueDate]").fill("2099-12-23");
+    await page.locator(".secondary-dates>summary").click();
     await page.locator("[name=birthDate]").fill("2024-02-10");
     await page.locator("[name=birthTime]").fill("23:05");
     await page.locator(".time-settings summary").click();
@@ -514,7 +519,10 @@ test("明确的扶抑参考参与选字，中和盘不强行指定", async ({ pa
   await expect(page.locator("#cards .name-evidence").first()).toContainText(
     "喜神参考计0.75",
   );
-  await page.getByRole("button", { name: "修改出生信息" }).click();
+  await page
+    .locator("#summary")
+    .getByRole("button", { name: "修改出生信息" })
+    .click();
   await page.locator("[name=dueDate]").fill("2024-02-10");
   await page.locator(".panel.active .next").click();
   await page.locator("#namingForm button[type=submit]").click();
@@ -601,3 +609,192 @@ for (const width of [1280, 390])
       ),
     ).toBeTruthy();
   });
+
+for (const width of [1280, 390])
+  test(`步骤定位、两组日期保留及快捷生成 ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 850 });
+    await page.goto("/");
+    await page.locator("[name=surname]").fill("林");
+    await page.locator(".panel.active .next").click();
+    await expect(page.locator(".panel.active legend")).toBeFocused();
+    expect(
+      await page
+        .locator(".panel.active legend")
+        .evaluate((el) => el.getBoundingClientRect().top),
+    ).toBeGreaterThanOrEqual(0);
+    await expect(page.locator(".secondary-dates")).not.toHaveAttribute(
+      "open",
+      "",
+    );
+    await page.locator("[name=dueDate]").fill("2099-12-23");
+    await page.locator(".secondary-dates>summary").click();
+    await page.locator("[name=birthDate]").fill("2024-01-05");
+    await page.locator("[name=birthTime]").fill("12:00");
+    await page.locator("[name=place]").fill("杭州");
+    await page.locator("[name=mode][value=born]").evaluate((el) => el.click());
+    await expect(page.locator("[name=birthDate]")).toHaveValue("2024-01-05");
+    await expect(page.locator("[name=dueDate]")).toHaveValue("2099-12-23");
+    await page
+      .locator("[name=mode][value=due_date]")
+      .evaluate((el) => el.click());
+    await expect(page.locator(".birth-basis-preview")).toContainText(
+      "实际出生 2024-01-05 12:00",
+    );
+    await page.locator("[name=birthTime]").fill("");
+    await page.locator("[name=birthDate]").fill("");
+    await expect(page.locator(".secondary-dates")).toHaveAttribute("open", "");
+    await page.locator("[name=birthDate]").fill("2024-01-05");
+    await page.locator("[name=birthTime]").fill("12:00");
+    await page.locator(".quick-generate").click();
+    await expect(page.locator("#cards .card")).toHaveCount(3);
+    await expect(page.locator(".bazi-title")).toContainText("实际出生");
+    await page
+      .getByRole("button", { name: "调整偏好", exact: true })
+      .first()
+      .click();
+    await page.locator(".progress button").nth(0).click();
+    await expect(page.locator("[name=surname]")).toHaveValue("林");
+    await page.locator(".progress button").nth(1).click();
+    await expect(page.locator("[name=birthTime]")).toHaveValue("12:00");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBeTruthy();
+  });
+
+test("修改条件明确应用，失败保留旧方案，重试采用新偏好", async ({ page }) => {
+  await page.goto("/");
+  await generate(page, { due: "2099-12-23", birth: "", birthTime: "" });
+  const oldNames = await page.locator("#cards h3").allTextContents();
+  await page
+    .getByRole("button", { name: "调整偏好", exact: true })
+    .first()
+    .click();
+  await page.locator("[name=likedChars]").fill("安");
+  await page.locator("[name=elementPreference]").selectOption("none");
+  await expect(
+    page.getByRole("region", { name: "尚未应用的修改" }),
+  ).toBeVisible();
+  const abort = (route) => route.abort();
+  await page.route("**/api/analyze", abort);
+  await page.getByRole("button", { name: "应用修改并生成" }).click();
+  await expect(page.locator("#formMessage")).toContainText("无法连接");
+  expect(await page.locator("#cards h3").allTextContents()).toEqual(oldNames);
+  await expect(page.locator("#downloadReport")).toBeEnabled();
+  await page.unroute("**/api/analyze", abort);
+  const request = page.waitForRequest("**/api/analyze");
+  await page.getByRole("button", { name: "应用修改并生成" }).click();
+  const data = (await request).postDataJSON();
+  expect(data.likedChars).toBe("安");
+  expect(data.elementPreference).toBe("none");
+  expect(data.variant).toBe(0);
+  await expect(
+    page.getByRole("region", { name: "尚未应用的修改" }),
+  ).toHaveCount(0);
+  for (const name of await page.locator("#cards h3").allTextContents())
+    expect(name).toContain("安");
+});
+
+test("跨组比较保留，上一组与下一组可找回且不重复请求", async ({ page }) => {
+  await page.goto("/");
+  await generate(page, { due: "2099-12-23", birth: "", birthTime: "" });
+  let requests = 0;
+  page.on("request", (r) => {
+    if (r.url().endsWith("/api/analyze")) requests++;
+  });
+  const first = await page.locator("#cards h3").allTextContents();
+  await page.locator("#cards .compare-name").first().click();
+  await page.locator("#cards .save").first().click();
+  await page.locator("#regenerate").click();
+  await expect(page.locator("#resultStatus")).toContainText("第 2 组");
+  const second = await page.locator("#cards h3").allTextContents();
+  expect(second).not.toEqual(first);
+  await expect(page.locator(".candidate-comparison")).toContainText(first[0]);
+  await page.locator("#cards .compare-name").first().click();
+  await expect(page.locator(".candidate-comparison")).toContainText("已选 2/3");
+  await page.locator("#previousGroup").click();
+  expect(await page.locator("#cards h3").allTextContents()).toEqual(first);
+  await page.locator("#regenerate").click();
+  expect(await page.locator("#cards h3").allTextContents()).toEqual(second);
+  expect(requests).toBe(1);
+  await page
+    .getByRole("button", { name: /本机收藏/ })
+    .first()
+    .click();
+  await page
+    .getByRole("dialog", { name: "本机收藏 1" })
+    .getByRole("button", { name: "查看方案" })
+    .click();
+  await expect(page.locator("#savedPanel")).not.toBeVisible();
+  expect(await page.locator("#cards h3").allTextContents()).toEqual(first);
+  await expect(page.locator(".candidate-comparison")).toContainText(second[0]);
+});
+
+test("收藏搜索、复制、清空撤销及键盘关闭形成完整回路", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value) => {
+          window.__shortlist = value;
+        },
+      },
+    }),
+  );
+  await page.goto("/");
+  await generate(page, { due: "2099-12-23", birth: "", birthTime: "" });
+  const first = await page.locator("#cards h3").first().innerText();
+  await page.locator("#cards .save").first().click();
+  await page.locator("#cards .save").nth(1).click();
+  const trigger = page.getByRole("button", { name: "本机收藏 2" });
+  await trigger.click();
+  const panel = page.locator("#savedPanel");
+  await expect(panel).toBeVisible();
+  await expect(page.locator("#closeSaved")).toBeFocused();
+  await panel.getByLabel("查找收藏").fill("不存在的名字");
+  await expect(panel).toContainText("没有找到匹配");
+  await panel.getByRole("button", { name: "查看全部收藏" }).click();
+  await expect(panel.locator(".saved-item")).toHaveCount(2);
+  await panel.getByRole("button", { name: "复制收藏清单" }).click();
+  const copied = await page.evaluate(() => window.__shortlist);
+  expect(copied).toContain(first);
+  expect(copied).not.toContain("2099-12-23");
+  await panel.getByRole("button", { name: "清空本机收藏" }).click();
+  await expect(panel.locator(".saved-item")).toHaveCount(0);
+  await panel.getByRole("button", { name: "撤销" }).click();
+  await expect(panel.locator(".saved-item")).toHaveCount(2);
+  await page.keyboard.press("Escape");
+  await expect(panel).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  const stored = await page.evaluate(() =>
+    localStorage.getItem("序名收藏详情"),
+  );
+  expect(stored).not.toContain("dueDate");
+  expect(stored).not.toContain("2099-12-23");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+});
+
+test("成人改名自动采用出生信息，最后一组不再循环换名", async ({ page }) => {
+  await page.goto("/");
+  await page
+    .locator("[name=purpose][value=rename]")
+    .evaluate((el) => el.click());
+  await page.locator("[name=surname]").fill("王");
+  await page.locator("[name=length]").selectOption("3");
+  await page.locator("[name=candidateCount]").fill("10");
+  await page.locator(".panel.active .next").click();
+  await expect(page.locator("[name=mode][value=due_date]")).toBeDisabled();
+  await page.locator("[name=birthDate]").fill("2024-01-05");
+  await page.locator("[name=birthTime]").fill("12:00");
+  await page.locator("[name=place]").fill("杭州");
+  await page.locator(".quick-generate").click();
+  await expect(page.locator("#cards .card")).toHaveCount(10);
+  await expect(page.locator("#regenerate")).toBeDisabled();
+  await expect(page.locator("#regenerate")).toContainText("本条件已看完");
+});

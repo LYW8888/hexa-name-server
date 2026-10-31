@@ -42,7 +42,7 @@ export async function copyText(value) {
   helper.setAttribute("readonly", "");
   helper.style.position = "fixed";
   helper.style.opacity = "0";
-  document.body.appendChild(helper);
+  (document.querySelector("dialog[open]") || document.body).appendChild(helper);
   try {
     helper.select();
     return (

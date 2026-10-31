@@ -1,39 +1,99 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { formRequest } from "./form-state.js";
 import LOCATIONS from "../../data/locations.json";
 import { getClockInZone } from "./utils.js";
 
 const LABELS = ["对象与姓氏", "出生信息", "偏好与寓意"];
-export default function NamingForm({
-  onGenerate,
-  busy,
-  counts,
-  message,
-  setMessage,
-  toast,
-}) {
+export default forwardRef(function NamingForm(
+  { onGenerate, busy, counts, message, setMessage, toast, onDraftChange },
+  controller,
+) {
   const [step, setStep] = useState(0),
     [purpose, setPurpose] = useState("newborn"),
     [mode, setMode] = useState("due_date"),
     [length, setLength] = useState("2"),
     [draft, setDraft] = useState({}),
     [elementPreference, setElementPreference] = useState("yongshen"),
-    [timeBasis, setTimeBasis] = useState("civil");
-  const formRef = useRef(null);
+    [timeBasis, setTimeBasis] = useState("civil"),
+    [furthest, setFurthest] = useState(0),
+    [dates, setDates] = useState({
+      dueDate: "",
+      dueTime: "12:00",
+      birthDate: "",
+      birthTime: "",
+    });
+  const formRef = useRef(null),
+    invalidField = useRef(null),
+    secondaryDates = useRef(null);
   const max = Math.max(1, Math.min(11, Number(counts[length]) || 11));
-  useEffect(() => {
-    const field = formRef.current?.elements.candidateCount;
-    if (field && Number(field.value) > max) field.value = String(max);
-  }, [max]);
-  useEffect(() => {
-    if (message)
-      formRef.current?.querySelector("#formMessage")?.scrollIntoView({
+  function capture() {
+    if (!formRef.current) return;
+    const data = formRequest(formRef.current);
+    setDraft(data);
+    onDraftChange?.(data);
+  }
+  function clearError() {
+    invalidField.current?.removeAttribute("aria-invalid");
+    invalidField.current?.removeAttribute("aria-describedby");
+    invalidField.current = null;
+    setMessage("");
+  }
+  function openStep(index, fieldName) {
+    clearError();
+    setStep(index);
+    setFurthest((value) => Math.max(value, index));
+    requestAnimationFrame(() => {
+      const panel = formRef.current.querySelectorAll(".panel")[index];
+      const field = fieldName
+        ? formRef.current.elements[fieldName]
+        : panel.querySelector("legend");
+      const disclosure = field?.closest("details");
+      if (disclosure) disclosure.open = true;
+      field?.focus({ preventScroll: true });
+      field?.scrollIntoView({
         behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
           .matches
           ? "auto"
           : "smooth",
-        block: "nearest",
+        block: "start",
       });
-  }, [message]);
+    });
+  }
+  function navigate(index) {
+    if (busy) return;
+    if (index > step) for (let i = 0; i < index; i++) if (!validate(i)) return;
+    openStep(index);
+  }
+  useImperativeHandle(controller, () => ({
+    openStep,
+    resume: () => openStep(step),
+    submit: submitFinal,
+  }));
+  // Reopen retained secondary information only when switching scenario. Clearing
+  // its last field must not collapse the disclosure while the user is editing.
+  useEffect(() => {
+    if (secondaryDates.current)
+      secondaryDates.current.open =
+        mode === "born"
+          ? !!dates.dueDate
+          : !!(dates.birthDate || dates.birthTime);
+  }, [mode]);
+  useEffect(() => {
+    if (!busy) capture();
+  }, [purpose, mode, length, timeBasis, elementPreference]);
+  useEffect(() => {
+    const field = formRef.current?.elements.candidateCount;
+    if (!busy && field && Number(field.value) > max) {
+      field.value = String(max);
+      capture();
+    }
+  }, [max, busy]);
   function validate(index = step) {
     const form = formRef.current,
       panel = form.querySelectorAll(".panel")[index];
@@ -43,7 +103,15 @@ export default function NamingForm({
       if (field) {
         const disclosure = field.closest("details");
         if (disclosure) disclosure.open = true;
-        requestAnimationFrame(() => field.focus());
+        invalidField.current?.removeAttribute("aria-invalid");
+        invalidField.current?.removeAttribute("aria-describedby");
+        invalidField.current = field;
+        field.setAttribute("aria-invalid", "true");
+        field.setAttribute("aria-describedby", "formMessage");
+        requestAnimationFrame(() => {
+          field.focus({ preventScroll: true });
+          field.scrollIntoView({ behavior: "auto", block: "center" });
+        });
       }
       return false;
     }
@@ -111,10 +179,7 @@ export default function NamingForm({
   function changePurpose(value) {
     setPurpose(value);
     setMessage("");
-    if (value === "rename") {
-      setMode("born");
-      toast("成人改名已切换到已出生信息流程。", "info");
-    }
+    if (value === "rename") setMode("born");
   }
   function changeLength(value) {
     setLength(value);
@@ -122,24 +187,69 @@ export default function NamingForm({
     const field = formRef.current.elements.candidateCount;
     if (Number(field.value) > maximum) field.value = String(maximum);
   }
+  function submitFinal() {
+    if (busy) return;
+    for (let index = 0; index < 3; index++) if (!validate(index)) return;
+    clearError();
+    const data = formRequest(formRef.current);
+    setDraft(data);
+    onDraftChange?.(data);
+    onGenerate(data);
+  }
   function submit(event) {
     event.preventDefault();
     if (busy) return;
     if (step < 2) {
-      if (validate()) setStep(step + 1);
+      navigate(step + 1);
       return;
     }
-    for (let index = 0; index < 3; index++) if (!validate(index)) return;
-    const fd = new FormData(formRef.current);
-    const data = Object.fromEntries(fd.entries());
-    data.surname = data.surname.trim();
-    data.styles = fd.getAll("style");
-    data.variant = 0;
-    try {
-      onGenerate(data);
-    } catch {
-      setMessage("页面提交未完成，请刷新后重新生成。");
-    }
+    submitFinal();
+  }
+  function dateFields(kind) {
+    const due = kind === "due",
+      dateName = due ? "dueDate" : "birthDate",
+      timeName = due ? "dueTime" : "birthTime";
+    const required = due ? !born : born;
+    return (
+      <div className="grid date-fields">
+        <label>
+          <span id={due ? "dueDateLabel" : "birthDateLabel"}>
+            {due ? "预产期日期" : "实际出生日期"}
+            {required ? "（必填）" : "（可选）"}
+          </span>
+          <input
+            name={dateName}
+            type="date"
+            min="1900-01-01"
+            max="2100-12-31"
+            required={required}
+            value={dates[dateName]}
+            onChange={(e) =>
+              setDates((v) => ({ ...v, [dateName]: e.target.value }))
+            }
+          />
+        </label>
+        <label>
+          <span id={due ? "dueTimeLabel" : "birthTimeLabel"}>
+            {due ? "预产期参考时间" : "准确出生时间"}
+          </span>
+          <input
+            name={timeName}
+            type="time"
+            required={!due && born}
+            value={dates[timeName]}
+            onChange={(e) =>
+              setDates((v) => ({ ...v, [timeName]: e.target.value }))
+            }
+          />
+          {due && (
+            <small className="field-hint">
+              默认12:00作参考；预产期允许未来日期，出生后可补充准确时间。
+            </small>
+          )}
+        </label>
+      </div>
+    );
   }
   const born = mode === "born";
   const hint =
@@ -184,9 +294,11 @@ export default function NamingForm({
         id="namingForm"
         ref={formRef}
         onSubmit={submit}
-        onChange={() =>
-          setDraft(Object.fromEntries(new FormData(formRef.current).entries()))
-        }
+        onChange={(event) => {
+          if (invalidField.current?.name === event.target.name) clearError();
+          capture();
+        }}
+        aria-busy={busy}
         noValidate
       >
         <p className="demo-notice">
@@ -197,18 +309,33 @@ export default function NamingForm({
           {LABELS.map((label, index) => (
             <React.Fragment key={label}>
               {index > 0 && <i />}
-              <span
+              <button
+                type="button"
                 className={index <= step ? "active" : ""}
                 aria-current={index === step ? "step" : undefined}
+                disabled={busy || index > furthest}
+                onClick={() => navigate(index)}
               >
                 {String(index + 1).padStart(2, "0")} <b>{label}</b>
-              </span>
+              </button>
             </React.Fragment>
           ))}
         </div>
 
-        <fieldset className={`panel ${step === 0 ? "active" : ""}`}>
-          <legend>对象与姓氏</legend>
+        <div
+          id="formMessage"
+          className="form-message error"
+          role="alert"
+          aria-live="polite"
+          hidden={!message}
+        >
+          {message}
+        </div>
+        <fieldset
+          className={`panel ${step === 0 ? "active" : ""}`}
+          disabled={busy}
+        >
+          <legend tabIndex={-1}>对象与姓氏</legend>
           <div
             className="choices purpose-choices"
             role="group"
@@ -241,40 +368,6 @@ export default function NamingForm({
               </span>
             </label>
           </div>
-          <div className="choices">
-            <label>
-              <input
-                type="radio"
-                name="mode"
-                value="due_date"
-                checked={mode === "due_date"}
-                onChange={() => {
-                  setMode("due_date");
-                  setMessage("");
-                }}
-              />
-              <strong>期</strong>
-              <span>
-                按预产期起名<small>使用预产期和默认参考时间</small>
-              </span>
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="mode"
-                value="born"
-                checked={mode === "born"}
-                onChange={() => {
-                  setMode("born");
-                  setMessage("");
-                }}
-              />
-              <strong>生</strong>
-              <span>
-                已出生起名<small>使用准确出生日期和时间</small>
-              </span>
-            </label>
-          </div>
           <div className="grid">
             <label>
               姓氏
@@ -299,13 +392,6 @@ export default function NamingForm({
                 placeholder="例如：林知远"
               />
               <small className="field-hint">仅用于对照，不参与公开展示</small>
-            </label>
-            <label>
-              父母姓氏（可选）
-              <input name="parents" maxLength={12} placeholder="例如：林、沈" />
-              <small className="field-hint">
-                默认只记录；勾选下方选项才参与用字偏好
-              </small>
             </label>
             <label>
               名的字数（不含姓氏）
@@ -361,54 +447,88 @@ export default function NamingForm({
               </small>
             </label>
           </div>
-          <label className="inline-check">
-            <input type="checkbox" name="honorParents" value="true" />
-            希望名中呼应父母姓氏（排序偏好，可不选）
-          </label>
+          <details className="family-options">
+            <summary>家庭姓氏线索（可选）</summary>{" "}
+            <label>
+              父母姓氏（可选）
+              <input name="parents" maxLength={12} placeholder="例如：林、沈" />
+              <small className="field-hint">
+                默认只记录；勾选下方选项才参与用字偏好
+              </small>
+            </label>
+            <label className="inline-check">
+              <input type="checkbox" name="honorParents" value="true" />
+              希望名中呼应父母姓氏（排序偏好，可不选）
+            </label>
+          </details>
           <button
             className="primary next"
             type="button"
             onClick={() => {
-              if (validate()) setStep(1);
+              navigate(1);
             }}
           >
             继续 →
           </button>
         </fieldset>
-        <fieldset className={`panel ${step === 1 ? "active" : ""}`}>
-          <legend>出生信息</legend>
+        <fieldset
+          className={`panel ${step === 1 ? "active" : ""}`}
+          disabled={busy}
+        >
+          <legend tabIndex={-1}>出生信息</legend>
+          <div className="choices" hidden={purpose === "rename"}>
+            <label>
+              <input
+                type="radio"
+                name="mode"
+                value="due_date"
+                disabled={purpose === "rename"}
+                checked={mode === "due_date"}
+                onChange={() => {
+                  setMode("due_date");
+                  setMessage("");
+                }}
+              />
+              <strong>期</strong>
+              <span>
+                按预产期起名<small>使用预产期和默认参考时间</small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="mode"
+                value="born"
+                checked={mode === "born"}
+                onChange={() => {
+                  setMode("born");
+                  setMessage("");
+                }}
+              />
+              <strong>生</strong>
+              <span>
+                已出生起名<small>使用准确出生日期和时间</small>
+              </span>
+            </label>
+          </div>
+          <p className="date-primary-label">
+            {born ? "按实际出生信息生成" : "先用预产期探索名字"}
+          </p>
+          {dateFields(born ? "birth" : "due")}
+          <details
+            className="secondary-dates"
+            key={born ? "due-extra" : "birth-extra"}
+            ref={secondaryDates}
+          >
+            <summary>
+              {born ? "保留预产期作对照（可选）" : "补充实际出生信息（可选）"}
+            </summary>
+            <p className="field-hint">
+              预产期和实际出生信息可以同时保留；实际信息齐全时优先使用实际时间。
+            </p>
+            {dateFields(born ? "due" : "birth")}
+          </details>
           <div className="grid">
-            <label>
-              <span id="dueDateLabel">预产期日期</span>
-              <input
-                name="dueDate"
-                type="date"
-                min="1900-01-01"
-                max="2100-12-31"
-                required={!born}
-              />
-            </label>
-            <label>
-              预产期参考时间
-              <input name="dueTime" type="time" defaultValue="12:00" />
-              <small className="field-hint">
-                默认 12:00，可修改；出生后以实际时间为准。
-              </small>
-            </label>
-            <label>
-              <span id="birthDateLabel">出生日期（已出生时填写）</span>
-              <input
-                name="birthDate"
-                type="date"
-                min="1900-01-01"
-                max="2100-12-31"
-                required={born}
-              />
-            </label>
-            <label>
-              <span id="birthTimeLabel">准确出生时间（已出生时填写）</span>
-              <input name="birthTime" type="time" required={born} />
-            </label>
             <label>
               出生地点
               <input name="place" required placeholder="例如：杭州，中国" />
@@ -490,6 +610,14 @@ export default function NamingForm({
               真太阳时同时考虑经度、历史时区/夏令时及均时差，会改变日柱或时柱；年、月柱仍以实际节气交接时刻为准。
             </p>
           </details>
+          <p className="birth-basis-preview">
+            本次时间依据：
+            {dates.birthDate && dates.birthTime
+              ? `实际出生 ${dates.birthDate} ${dates.birthTime}（优先采用）`
+              : dates.dueDate
+                ? `预产期 ${dates.dueDate} ${dates.dueTime || "12:00"}（参考）`
+                : "填写日期后会在这里确认"}
+          </p>
           <p className="hint" id="birthHint">
             {hint}
           </p>
@@ -501,25 +629,35 @@ export default function NamingForm({
               className="secondary back"
               type="button"
               onClick={() => {
-                setMessage("");
-                setStep(0);
+                openStep(0);
               }}
             >
               返回
             </button>
             <button
+              type="button"
+              className="secondary quick-generate"
+              disabled={busy}
+              onClick={submitFinal}
+            >
+              跳过偏好，先生成
+            </button>
+            <button
               className="primary next"
               type="button"
               onClick={() => {
-                if (validate()) setStep(2);
+                navigate(2);
               }}
             >
               继续 →
             </button>
           </div>
         </fieldset>
-        <fieldset className={`panel ${step === 2 ? "active" : ""}`}>
-          <legend>偏好与寓意</legend>
+        <fieldset
+          className={`panel ${step === 2 ? "active" : ""}`}
+          disabled={busy}
+        >
+          <legend tabIndex={-1}>偏好与寓意</legend>
           <label>
             希望名字传达的气质
             <textarea
@@ -603,8 +741,7 @@ export default function NamingForm({
               <button
                 type="button"
                 onClick={() => {
-                  setMessage("");
-                  setStep(0);
+                  openStep(0);
                 }}
               >
                 修改基本信息
@@ -612,8 +749,7 @@ export default function NamingForm({
               <button
                 type="button"
                 onClick={() => {
-                  setMessage("");
-                  setStep(1);
+                  openStep(1);
                 }}
               >
                 修改出生信息
@@ -644,8 +780,7 @@ export default function NamingForm({
               className="secondary back"
               type="button"
               onClick={() => {
-                setMessage("");
-                setStep(1);
+                openStep(1);
               }}
             >
               返回
@@ -663,16 +798,7 @@ export default function NamingForm({
         <p className="generation-progress" role="status" hidden={!busy}>
           正在整理名字与四柱参考，请稍候…
         </p>
-        <div
-          id="formMessage"
-          className="form-message error"
-          role="alert"
-          aria-live="polite"
-          hidden={!message}
-        >
-          {message}
-        </div>
       </form>
     </section>
   );
-}
+});

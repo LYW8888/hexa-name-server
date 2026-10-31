@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import TraditionalAnalysis, {
   SolarCorrection,
 } from "./TraditionalAnalysis.jsx";
@@ -305,14 +305,16 @@ function NameCard({
   onCopy,
   onSave,
   onKeepsake,
+  seen,
 }) {
   const computed = !!item.ranking;
   return (
-    <article className="card">
+    <article className="card" tabIndex={-1}>
       <div className="card-top">
         <span className="rank">
           {String(item.rank).padStart(2, "0")} / 名字提案
         </span>
+        {seen && <span className="seen-name">此前看过</span>}
         <span className="card-status">
           {item.source_status === "verified" ? "出处已核对" : "字义寓意"}
         </span>
@@ -385,7 +387,7 @@ function NameCard({
             aria-pressed={compared}
             disabled={compareFull && !compared}
             type="button"
-            onClick={() => onCompare(item.fullName)}
+            onClick={() => onCompare(item)}
           >
             {compared ? "移出比较" : "加入比较"}
           </button>
@@ -418,7 +420,7 @@ function NameCard({
     </article>
   );
 }
-function CandidateComparison({ items, onClear }) {
+function CandidateComparison({ items, onClear, onRemove }) {
   if (!items.length) return null;
   const rows = [
     ["名字", (x) => x.fullName],
@@ -467,7 +469,19 @@ function CandidateComparison({ items, onClear }) {
               <tr key={label}>
                 <th scope="row">{label}</th>
                 {items.map((x) => (
-                  <td key={x.fullName}>{value(x)}</td>
+                  <td key={x.fullName}>
+                    {value(x)}
+                    {label === "名字" && (
+                      <button
+                        className="comparison-remove"
+                        type="button"
+                        aria-label={`移出比较 ${x.fullName}`}
+                        onClick={() => onRemove(x)}
+                      >
+                        移出
+                      </button>
+                    )}
+                  </td>
                 ))}
               </tr>
             ))}
@@ -484,30 +498,45 @@ export default function Results({
   status,
   busy,
   saved,
-  details,
-  savedOpen,
-  onCloseSaved,
-  onRemove,
+  onSaved,
   onRegenerate,
   onDownload,
   onCopy,
   onSave,
   onKeepsake,
+  comparisonKey,
+  dirty,
+  onApply,
+  onEdit,
+  groupIndex,
+  hasPrevious,
+  hasNext,
+  hasHistory,
+  onPrevious,
+  seenNames,
 }) {
   const [compared, setCompared] = useState([]),
-    signature = candidates.map((x) => x.fullName).join("|");
-  useEffect(() => setCompared([]), [signature, analysis]);
-  function compare(name) {
+    [inView, setInView] = useState(false),
+    sectionRef = useRef(null);
+  useEffect(() => setCompared([]), [comparisonKey]);
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) =>
+      setInView(entries[0].isIntersecting),
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+  function compare(item) {
     setCompared((previous) =>
-      previous.includes(name)
-        ? previous.filter((x) => x !== name)
+      previous.some((x) => x.fullName === item.fullName)
+        ? previous.filter((x) => x.fullName !== item.fullName)
         : previous.length < 3
-          ? [...previous, name]
+          ? [...previous, item]
           : previous,
     );
   }
   return (
-    <section className="results wrap" id="results">
+    <section ref={sectionRef} className="results wrap" id="results">
       <div className="result-head">
         <div>
           <p className="eyebrow">A THOUGHTFUL SHORTLIST</p>
@@ -517,14 +546,40 @@ export default function Results({
           </p>
         </div>
         <div className="result-actions">
+          {analysis && (
+            <button type="button" className="secondary" onClick={onSaved}>
+              本机收藏 {saved.length || ""}
+            </button>
+          )}
+          {analysis && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => onEdit(2)}
+            >
+              调整偏好
+            </button>
+          )}
+          {hasHistory && (
+            <button
+              id="previousGroup"
+              type="button"
+              className="secondary"
+              disabled={busy || !hasPrevious}
+              onClick={onPrevious}
+            >
+              上一组
+            </button>
+          )}
           <button
             className="secondary"
             id="regenerate"
             type="button"
-            disabled={busy}
+            disabled={busy || (!!analysis && !hasNext)}
             onClick={onRegenerate}
           >
-            <span aria-hidden="true">↻</span> 重新生成
+            <span aria-hidden="true">↻</span>{" "}
+            {analysis && !hasNext ? "本条件已看完" : "换一组名字"}
           </button>
           <button
             className="secondary"
@@ -537,70 +592,36 @@ export default function Results({
           </button>
         </div>
       </div>
-      <section
-        id="savedPanel"
-        className="saved-panel"
-        aria-label="收藏的名字"
-        hidden={!savedOpen}
-      >
-        <div className="saved-panel-head">
+      {dirty && (
+        <section className="draft-notice" aria-label="尚未应用的修改">
           <div>
-            <strong>收藏的名字</strong>
-            <p>收藏仅保存在当前浏览器，生成的候选可加入逐项比较。</p>
+            <b>填写内容已修改</b>
+            <p>当前显示上一份方案；应用修改后，会按新的信息生成。</p>
           </div>
           <button
-            className="secondary"
-            id="closeSaved"
             type="button"
-            onClick={onCloseSaved}
+            className="primary"
+            disabled={busy}
+            onClick={onApply}
           >
-            收起
+            {busy ? "正在应用…" : "应用修改并生成"}
           </button>
-        </div>
-        <div id="savedList" className="saved-list">
-          {saved.length ? (
-            saved.map((name) => (
-              <div className="saved-item" key={name}>
-                <div>
-                  <b>{name}</b>
-                  {details[name] ? (
-                    <>
-                      <small>{details[name].pinyin}</small>
-                      <p>{details[name].meaning}</p>
-                      <small>
-                        {details[name].source_status === "verified"
-                          ? "寓意资料已记录复核"
-                          : "字义寓意说明"}
-                      </small>
-                    </>
-                  ) : (
-                    <small>旧收藏仅记录名字，可重新生成后补充寓意。</small>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="remove-saved"
-                  data-name={name}
-                  aria-label={`取消收藏 ${name}`}
-                  onClick={() => onRemove(name)}
-                >
-                  移除
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="saved-empty">
-              还没有收藏名字。生成方案后，点击名字卡片上的“收藏”。
-            </p>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
       {analysis ? (
         <div id="summary" className="summary result-context">
           <div>
             <strong>
-              {data.surname} · {analysis.purpose}
+              {data.surname} · {analysis.purpose}{" "}
+              <span className="group-number">第 {groupIndex + 1} 组</span>
             </strong>
+            <button
+              className="edit-context"
+              type="button"
+              onClick={() => onEdit(1)}
+            >
+              修改出生信息
+            </button>
             <small>
               {analysis.scenario} · {analysis.gender} · {data.place}
               <br />
@@ -631,7 +652,21 @@ export default function Results({
       <div id="cards" className="cards">
         {analysis && !candidates.length ? (
           <div className="empty-result">
-            没有符合避用字要求的候选。请减少避用字或调整名的字数，再重新生成。
+            <p>当前名的字数与避用字条件下，没有符合要求的候选。</p>
+            <button
+              className="secondary"
+              type="button"
+              onClick={() => onEdit(2, "avoidedChars")}
+            >
+              修改避用字
+            </button>
+            <button
+              className="secondary"
+              type="button"
+              onClick={() => onEdit(0, "length")}
+            >
+              调整名的字数
+            </button>
           </div>
         ) : (
           candidates.map((item) => (
@@ -639,7 +674,8 @@ export default function Results({
               key={item.fullName}
               item={item}
               saved={saved.includes(item.fullName)}
-              compared={compared.includes(item.fullName)}
+              compared={compared.some((x) => x.fullName === item.fullName)}
+              seen={seenNames?.has(item.fullName)}
               compareFull={compared.length === 3}
               onCompare={compare}
               onCopy={onCopy}
@@ -650,10 +686,11 @@ export default function Results({
         )}
       </div>
       <CandidateComparison
-        items={candidates.filter((x) => compared.includes(x.fullName))}
+        items={compared}
+        onRemove={compare}
         onClear={() => setCompared([])}
       />
-      {compared.length > 0 && (
+      {compared.length > 0 && inView && (
         <a className="comparison-jump" href="#candidateComparison">
           比较已选 {compared.length}/3 ↓
         </a>
@@ -673,9 +710,9 @@ export default function Results({
             也可以收藏或下载本次方案。
           </p>
         </div>
-        <a className="primary" href="#form">
+        <button className="primary" type="button" onClick={() => onEdit(2)}>
           调整偏好 <span>↑</span>
-        </a>
+        </button>
       </div>
     </section>
   );
