@@ -3,6 +3,7 @@ export function formRequest(form) {
   const fd = new FormData(form);
   const data = Object.fromEntries(fd.entries());
   delete data.style;
+  delete data.scenario;
   data.styles = fd.getAll("style");
   data.surname = String(data.surname || "").trim();
   if (data.mode === "born") {
@@ -103,4 +104,13 @@ export function workflowId(data = {}) {
 
 export function workflowLabel(data = {}) {
   return data.purpose === "rename" ? "改名方案" : data.mode === "born" ? "新生儿起名 · 已出生" : "新生儿起名 · 预产期";
+}
+
+// A readable default for common compound surnames; the user can correct it.
+export function inferSurname(fullName = "") {
+  const text = String(fullName).trim();
+  const compounds = new Set("万俟 司马 上官 欧阳 夏侯 诸葛 闻人 东方 赫连 皇甫 尉迟 公羊 澹台 公冶 宗政 濮阳 淳于 单于 太叔 申屠 公孙 仲孙 轩辕 令狐 钟离 宇文 长孙 慕容 鲜于 闾丘 司徒 司空 亓官 司寇 仉督 子车 颛孙 端木 巫马 公西 漆雕 乐正 壤驷 公良 拓跋 夹谷 宰父 谷梁 段干 百里 东郭 南门 呼延 归海 羊舌 微生 有琴 梁丘 左丘 东门 西门 伯赏 南宫 第五".split(" "));
+  const chars = [...text];
+  const pair = chars.slice(0, 2).join("");
+  return compounds.has(pair) ? pair : chars[0] || "";
 }

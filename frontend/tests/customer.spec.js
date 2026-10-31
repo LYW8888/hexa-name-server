@@ -2,13 +2,13 @@ import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 async function generate(page) {
   await page.locator("[name=surname]").fill("林");
-  await page.locator(".panel.active .next").click();
   await page.locator("[name=dueDate]").fill("2099-01-01");
   await page.locator("[name=place]").fill("杭州");
-  await page.locator(".time-settings summary").click();
+  await page.locator(".naming-preferences > summary").click();
+  await page.locator(".time-settings > summary").click();
   await page.locator("[name=timeBasis]").selectOption("apparent_solar");
   await page.locator("[name=locationId]").selectOption("hangzhou");
-  await page.locator(".panel.active .next").click();
+  await page.locator(".naming-constraints > summary").click();
   await page.locator("[name=elementPreference]").selectOption("水");
   await page
     .locator("button[type=submit]")

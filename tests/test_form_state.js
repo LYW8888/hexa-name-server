@@ -35,3 +35,8 @@ test('literary constraints and surname readings have distinct draft identities w
  assert.equal(nameReviewKey(base),nameReviewKey({...base,requiredChars:'安',tabooChars:'宁',numerologyMode:'strict'}));
  assert.notEqual(nameReviewKey(base),nameReviewKey({...base,surnameReading:'lǐ'}));
 });
+
+test('rename detects common compound surnames while preserving arbitrary Han surname support',async()=>{
+ const {inferSurname}=await import('../frontend/src/form-state.js');
+ for(const [name,surname] of [['欧阳明哲','欧阳'],['司马知远','司马'],['上官安宁','上官'],['李明哲','李'],['  林安  ','林'],['𠮷安','𠮷'],['','']]) assert.equal(inferSurname(name),surname);
+});
