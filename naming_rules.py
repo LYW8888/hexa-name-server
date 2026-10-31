@@ -1,4 +1,4 @@
-"""Published preference matching, distinct from destiny or favourable elements."""
+"""Preference matching from explicitly selected reference rules, never a fate score."""
 
 import json
 import re
@@ -7,7 +7,7 @@ from pathlib import Path
 import bazi
 import tradition
 
-VERSION = "naming-match-v1"
+VERSION = "naming-match-v2"
 STYLE_LABELS = {
     "classical": "清雅古典",
     "modern": "现代简洁",
@@ -38,13 +38,37 @@ def catalog():
     return {item["char"]: item for item in value["characters"]}
 
 
-def target_for(preference, gua):
+def target_for(preference, gua, assessment=None):
     if preference == "none":
         return {
             "mode": "none",
             "element": None,
             "label": "仅日常偏好",
             "explanation": "不启用字形五行排序，四柱与起卦仍可查看。",
+        }
+    if preference == "yongshen":
+        value = (assessment or {}).get("favorable", {})
+        primary = value.get("primary")
+        secondary = value.get("secondary", [])
+        enabled = value.get("status") == "rule_reference" and primary is not None
+        return {
+            "mode": "yongshen",
+            "element": primary if enabled else None,
+            "secondary": secondary if enabled else [],
+            "label": (
+                f'扶抑喜用参考 · 用{primary} / 喜{"、".join(secondary)}'
+                if enabled
+                else "喜用参考暂不参与排序"
+            ),
+            "explanation": value.get("reason", "分析未完成。")
+            + (
+                " 喜用参考字形权重：用神1、喜神0.75。"
+                if enabled
+                else " 当前仅按日常偏好排序，请先复核格局与出生时间。"
+            ),
+            "review_status": value.get("status", "review_required"),
+            "rule_version": (assessment or {}).get("version"),
+            "review_reasons": value.get("review_reasons", []),
         }
     if preference == "auto":
         body = gua["body"]
@@ -55,7 +79,7 @@ def target_for(preference, gua):
             "explanation": "按本次生辰起卦的体卦五行选取字形意象；不把体卦五行当作八字喜用神。",
         }
     if preference not in bazi.ELEMENTS:
-        raise ValueError("elementPreference must be auto, none, 木, 火, 土, 金, or 水")
+        raise ValueError("elementPreference must be auto, yongshen, none, 木, 火, 土, 金, or 水")
     return {
         "mode": "explicit",
         "element": preference,
@@ -118,14 +142,20 @@ def rank(
 
     elements = [g["element"] for g in glyphs if g["element"]]
     if target:
-        similarity = sum(
-            (
-                1
-                if g["element"] == target
-                else 0.5 if g["element"] and tradition.GENERATES[g["element"]] == target else 0
-            )
-            for g in glyphs
-        ) / len(glyphs)
+
+        def affinity(element):
+            if element == target:
+                return 1
+            if reference["mode"] == "yongshen":
+                return 0.75 if element in reference.get("secondary", []) else 0
+            return 0.5 if element and tradition.GENERATES[element] == target else 0
+
+        similarity = sum(affinity(g["element"]) for g in glyphs) / len(glyphs)
+        matching_rule = (
+            "用神参考计满、喜神参考计0.75，其他与未归类不计"
+            if reference["mode"] == "yongshen"
+            else "同类计满，生目标计半，其他与未归类不计"
+        )
         detail = "；".join(
             f"{g['char']}（{g['radical'] or '部首未收录'}）→{g['element'] or '未归类'}"
             for g in glyphs
@@ -133,9 +163,9 @@ def rank(
         add(
             "element",
             "字形五行意象",
-            round(30 * similarity),
+            round(30 * similarity, 2),
             30,
-            f"目标为{target}；{detail}。同类计满，生目标计半，其他与未归类不计；按名字字数平均。",
+            f"目标为{target}；{detail}。{matching_rule}；按名字字数平均。",
         )
     selected = set(styles) & set(item["styles"])
     add(

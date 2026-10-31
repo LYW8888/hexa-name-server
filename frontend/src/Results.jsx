@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import TraditionalAnalysis, {
+  SolarCorrection,
+} from "./TraditionalAnalysis.jsx";
 import { readingNotes } from "./utils.js";
 
 function Boundary({ boundary }) {
@@ -180,6 +183,7 @@ function Chart({ analysis }) {
       <p>
         {chart.local_time} · {analysis.zone_label || analysis.zone}
       </p>
+      <SolarCorrection chart={chart} />
       <div className="pillars">
         {chart.pillars.map((p, i) => (
           <div className="pillar" key={p.label}>
@@ -261,7 +265,7 @@ function Chart({ analysis }) {
               {Object.entries(traditional.hidden_element_counts)
                 .map(([e, c]) => `${e} ${c}`)
                 .join("、")}
-              。未赋权重。
+              。此处为原始次数，旺衰权重另列。
             </p>
             {traditional.notes.map((x) => (
               <p key={x}>{x}</p>
@@ -269,6 +273,7 @@ function Chart({ analysis }) {
           </details>
         </>
       )}
+      <TraditionalAnalysis value={analysis.mingli} />
       <Boundary boundary={chart.boundary} />
       <Gua value={analysis.gua} />
       <Comparison value={analysis.bazi_comparison} />
@@ -280,7 +285,7 @@ function Chart({ analysis }) {
         </p>
         <p>
           历法引擎 {chart.source.library} {chart.source.version}
-          ；经跨库样本对照，权威机构认证尚未完成。地点只作记录，没有真太阳时修正。
+          ；经跨库样本对照，权威机构认证尚未完成。真太阳时修正口径见上方。
         </p>
       </details>
       <p className="method-note">{analysis.method}</p>

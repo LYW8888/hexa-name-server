@@ -1,0 +1,1235 @@
+{
+  "method": "NOAA/Meeus EOT versus GAST minus JPL DE421 apparent geocentric solar RA of date, using UT1 mean solar clock",
+  "samples": 204,
+  "years": "1900–2050 every ten years, plus 2024; noon UTC on the 15th of each month",
+  "max_absolute_error_seconds": 2.86045,
+  "bound_seconds": 15,
+  "passed": true,
+  "limitations": "Sampling only; no 2051–2100 ephemeris check, no official certification. Not a verification of Mingli pattern/strength/favourable-element rules.",
+  "rows": [
+    {
+      "utc": "1900-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.55516346,
+      "jpl_minutes": -9.5632664,
+      "error_seconds": 0.486177
+    },
+    {
+      "utc": "1900-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.37547538,
+      "jpl_minutes": -14.35134367,
+      "error_seconds": -1.447903
+    },
+    {
+      "utc": "1900-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.12544212,
+      "jpl_minutes": -9.15034267,
+      "error_seconds": 1.494033
+    },
+    {
+      "utc": "1900-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.09671136,
+      "jpl_minutes": -0.11109101,
+      "error_seconds": 0.862779
+    },
+    {
+      "utc": "1900-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.82306941,
+      "jpl_minutes": 3.82421587,
+      "error_seconds": -0.068787
+    },
+    {
+      "utc": "1900-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.13322611,
+      "jpl_minutes": -0.13144924,
+      "error_seconds": -0.106612
+    },
+    {
+      "utc": "1900-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.67424315,
+      "jpl_minutes": -5.66959902,
+      "error_seconds": -0.278648
+    },
+    {
+      "utc": "1900-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.38040802,
+      "jpl_minutes": -4.36369459,
+      "error_seconds": -1.002806
+    },
+    {
+      "utc": "1900-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.70130147,
+      "jpl_minutes": 4.74791872,
+      "error_seconds": -2.797035
+    },
+    {
+      "utc": "1900-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.11789266,
+      "jpl_minutes": 14.12242334,
+      "error_seconds": -0.271841
+    },
+    {
+      "utc": "1900-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.36087231,
+      "jpl_minutes": 15.34263406,
+      "error_seconds": 1.094295
+    },
+    {
+      "utc": "1900-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.80401733,
+      "jpl_minutes": 4.82295279,
+      "error_seconds": -1.136128
+    },
+    {
+      "utc": "1910-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.37978332,
+      "jpl_minutes": -9.38365227,
+      "error_seconds": 0.232137
+    },
+    {
+      "utc": "1910-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.37818637,
+      "jpl_minutes": -14.34771809,
+      "error_seconds": -1.828097
+    },
+    {
+      "utc": "1910-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.23718513,
+      "jpl_minutes": -9.25181803,
+      "error_seconds": 0.877974
+    },
+    {
+      "utc": "1910-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.20410767,
+      "jpl_minutes": -0.21339937,
+      "error_seconds": 0.557502
+    },
+    {
+      "utc": "1910-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.8108833,
+      "jpl_minutes": 3.81428732,
+      "error_seconds": -0.204241
+    },
+    {
+      "utc": "1910-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.06674552,
+      "jpl_minutes": -0.07051871,
+      "error_seconds": 0.226391
+    },
+    {
+      "utc": "1910-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.653681,
+      "jpl_minutes": -5.66543543,
+      "error_seconds": 0.705265
+    },
+    {
+      "utc": "1910-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.47924928,
+      "jpl_minutes": -4.49019261,
+      "error_seconds": 0.6566
+    },
+    {
+      "utc": "1910-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.54387146,
+      "jpl_minutes": 4.55731551,
+      "error_seconds": -0.806643
+    },
+    {
+      "utc": "1910-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.02537645,
+      "jpl_minutes": 13.99868239,
+      "error_seconds": 1.601644
+    },
+    {
+      "utc": "1910-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.44741732,
+      "jpl_minutes": 15.40617703,
+      "error_seconds": 2.474417
+    },
+    {
+      "utc": "1910-12-15T12:00:00+00:00",
+      "estimate_minutes": 5.03086241,
+      "jpl_minutes": 5.04518071,
+      "error_seconds": -0.859098
+    },
+    {
+      "utc": "1920-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.19943559,
+      "jpl_minutes": -9.19583183,
+      "error_seconds": -0.216225
+    },
+    {
+      "utc": "1920-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.37483207,
+      "jpl_minutes": -14.34226173,
+      "error_seconds": -1.954221
+    },
+    {
+      "utc": "1920-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.06432086,
+      "jpl_minutes": -9.07945965,
+      "error_seconds": 0.908328
+    },
+    {
+      "utc": "1920-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.0668422,
+      "jpl_minutes": -0.07185672,
+      "error_seconds": 0.300871
+    },
+    {
+      "utc": "1920-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.79065957,
+      "jpl_minutes": 3.80499488,
+      "error_seconds": -0.860119
+    },
+    {
+      "utc": "1920-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.21239792,
+      "jpl_minutes": -0.19903929,
+      "error_seconds": -0.801518
+    },
+    {
+      "utc": "1920-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.73594107,
+      "jpl_minutes": -5.72535661,
+      "error_seconds": -0.635068
+    },
+    {
+      "utc": "1920-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.38311928,
+      "jpl_minutes": -4.37280252,
+      "error_seconds": -0.619006
+    },
+    {
+      "utc": "1920-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.74048513,
+      "jpl_minutes": 4.77155727,
+      "error_seconds": -1.864328
+    },
+    {
+      "utc": "1920-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.15565089,
+      "jpl_minutes": 14.14161581,
+      "error_seconds": 0.842105
+    },
+    {
+      "utc": "1920-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.36019137,
+      "jpl_minutes": 15.32700391,
+      "error_seconds": 1.991248
+    },
+    {
+      "utc": "1920-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.77506116,
+      "jpl_minutes": 4.7888839,
+      "error_seconds": -0.829365
+    },
+    {
+      "utc": "1930-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.38543025,
+      "jpl_minutes": -9.38312144,
+      "error_seconds": -0.138529
+    },
+    {
+      "utc": "1930-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.33449407,
+      "jpl_minutes": -14.29100788,
+      "error_seconds": -2.609171
+    },
+    {
+      "utc": "1930-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.17621275,
+      "jpl_minutes": -9.17534403,
+      "error_seconds": -0.052123
+    },
+    {
+      "utc": "1930-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.17225294,
+      "jpl_minutes": -0.15622004,
+      "error_seconds": -0.961974
+    },
+    {
+      "utc": "1930-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.78101024,
+      "jpl_minutes": 3.81407171,
+      "error_seconds": -1.983688
+    },
+    {
+      "utc": "1930-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.14527349,
+      "jpl_minutes": -0.12036643,
+      "error_seconds": -1.494424
+    },
+    {
+      "utc": "1930-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.71716904,
+      "jpl_minutes": -5.70767293,
+      "error_seconds": -0.569766
+    },
+    {
+      "utc": "1930-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.48420056,
+      "jpl_minutes": -4.48106075,
+      "error_seconds": -0.188388
+    },
+    {
+      "utc": "1930-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.58232965,
+      "jpl_minutes": 4.6067791,
+      "error_seconds": -1.466967
+    },
+    {
+      "utc": "1930-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.06428933,
+      "jpl_minutes": 14.05035808,
+      "error_seconds": 0.835876
+    },
+    {
+      "utc": "1930-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.448634,
+      "jpl_minutes": 15.42362779,
+      "error_seconds": 1.500373
+    },
+    {
+      "utc": "1930-12-15T12:00:00+00:00",
+      "estimate_minutes": 5.00227644,
+      "jpl_minutes": 5.03371095,
+      "error_seconds": -1.886071
+    },
+    {
+      "utc": "1940-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.20457969,
+      "jpl_minutes": -9.19173008,
+      "error_seconds": -0.770977
+    },
+    {
+      "utc": "1940-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.33039204,
+      "jpl_minutes": -14.29195706,
+      "error_seconds": -2.306099
+    },
+    {
+      "utc": "1940-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.00316121,
+      "jpl_minutes": -9.02094623,
+      "error_seconds": 1.067101
+    },
+    {
+      "utc": "1940-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.03686021,
+      "jpl_minutes": -0.0562967,
+      "error_seconds": 1.166189
+    },
+    {
+      "utc": "1940-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.75836795,
+      "jpl_minutes": 3.7454973,
+      "error_seconds": 0.772239
+    },
+    {
+      "utc": "1940-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.29148861,
+      "jpl_minutes": -0.30947996,
+      "error_seconds": 1.079481
+    },
+    {
+      "utc": "1940-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.79763932,
+      "jpl_minutes": -5.81307758,
+      "error_seconds": 0.926296
+    },
+    {
+      "utc": "1940-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.38593876,
+      "jpl_minutes": -4.38844284,
+      "error_seconds": 0.150245
+    },
+    {
+      "utc": "1940-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.77955568,
+      "jpl_minutes": 4.80918165,
+      "error_seconds": -1.777559
+    },
+    {
+      "utc": "1940-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.1933814,
+      "jpl_minutes": 14.18212163,
+      "error_seconds": 0.675586
+    },
+    {
+      "utc": "1940-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.35953565,
+      "jpl_minutes": 15.33356276,
+      "error_seconds": 1.558373
+    },
+    {
+      "utc": "1940-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.74609782,
+      "jpl_minutes": 4.76747295,
+      "error_seconds": -1.282508
+    },
+    {
+      "utc": "1950-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.3905527,
+      "jpl_minutes": -9.37806473,
+      "error_seconds": -0.749278
+    },
+    {
+      "utc": "1950-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.29018537,
+      "jpl_minutes": -14.25546984,
+      "error_seconds": -2.082932
+    },
+    {
+      "utc": "1950-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.11506313,
+      "jpl_minutes": -9.12996655,
+      "error_seconds": 0.894205
+    },
+    {
+      "utc": "1950-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.14079935,
+      "jpl_minutes": -0.15274116,
+      "error_seconds": 0.716509
+    },
+    {
+      "utc": "1950-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.75052975,
+      "jpl_minutes": 3.7514355,
+      "error_seconds": -0.054345
+    },
+    {
+      "utc": "1950-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.22391492,
+      "jpl_minutes": -0.22997637,
+      "error_seconds": 0.363687
+    },
+    {
+      "utc": "1950-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.78008858,
+      "jpl_minutes": -5.79163259,
+      "error_seconds": 0.692641
+    },
+    {
+      "utc": "1950-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.48850602,
+      "jpl_minutes": -4.49903393,
+      "error_seconds": 0.631674
+    },
+    {
+      "utc": "1950-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.6208941,
+      "jpl_minutes": 4.63617055,
+      "error_seconds": -0.916587
+    },
+    {
+      "utc": "1950-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.10265914,
+      "jpl_minutes": 14.08212568,
+      "error_seconds": 1.232008
+    },
+    {
+      "utc": "1950-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.44904869,
+      "jpl_minutes": 15.42009442,
+      "error_seconds": 1.737256
+    },
+    {
+      "utc": "1950-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.97344891,
+      "jpl_minutes": 5.00447902,
+      "error_seconds": -1.861807
+    },
+    {
+      "utc": "1960-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.20983898,
+      "jpl_minutes": -9.22406815,
+      "error_seconds": 0.85375
+    },
+    {
+      "utc": "1960-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.28608185,
+      "jpl_minutes": -14.27150013,
+      "error_seconds": -0.874903
+    },
+    {
+      "utc": "1960-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.94197999,
+      "jpl_minutes": -8.97467022,
+      "error_seconds": 1.961414
+    },
+    {
+      "utc": "1960-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.00667328,
+      "jpl_minutes": -0.02434231,
+      "error_seconds": 1.060142
+    },
+    {
+      "utc": "1960-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.72630658,
+      "jpl_minutes": 3.72921101,
+      "error_seconds": -0.174266
+    },
+    {
+      "utc": "1960-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.3704784,
+      "jpl_minutes": -0.36490065,
+      "error_seconds": -0.334665
+    },
+    {
+      "utc": "1960-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.85942109,
+      "jpl_minutes": -5.85223361,
+      "error_seconds": -0.431249
+    },
+    {
+      "utc": "1960-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.38895899,
+      "jpl_minutes": -4.37359972,
+      "error_seconds": -0.921556
+    },
+    {
+      "utc": "1960-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.8184949,
+      "jpl_minutes": 4.86350749,
+      "error_seconds": -2.700755
+    },
+    {
+      "utc": "1960-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.23114588,
+      "jpl_minutes": 14.23708778,
+      "error_seconds": -0.356514
+    },
+    {
+      "utc": "1960-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.3589858,
+      "jpl_minutes": 15.3501895,
+      "error_seconds": 0.527778
+    },
+    {
+      "utc": "1960-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.71714065,
+      "jpl_minutes": 4.75029583,
+      "error_seconds": -1.98931
+    },
+    {
+      "utc": "1970-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.39507183,
+      "jpl_minutes": -9.41023559,
+      "error_seconds": 0.909826
+    },
+    {
+      "utc": "1970-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.2451864,
+      "jpl_minutes": -14.22085494,
+      "error_seconds": -1.459887
+    },
+    {
+      "utc": "1970-03-15T12:00:00+00:00",
+      "estimate_minutes": -9.05372934,
+      "jpl_minutes": -9.07052885,
+      "error_seconds": 1.007971
+    },
+    {
+      "utc": "1970-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.10980695,
+      "jpl_minutes": -0.11489706,
+      "error_seconds": 0.305407
+    },
+    {
+      "utc": "1970-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.71937626,
+      "jpl_minutes": 3.72986275,
+      "error_seconds": -0.62919
+    },
+    {
+      "utc": "1970-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.30267484,
+      "jpl_minutes": -0.29557426,
+      "error_seconds": -0.426035
+    },
+    {
+      "utc": "1970-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.8423897,
+      "jpl_minutes": -5.83932941,
+      "error_seconds": -0.183618
+    },
+    {
+      "utc": "1970-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.49211941,
+      "jpl_minutes": -4.4853421,
+      "error_seconds": -0.406639
+    },
+    {
+      "utc": "1970-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.65956884,
+      "jpl_minutes": 4.69136535,
+      "error_seconds": -1.907791
+    },
+    {
+      "utc": "1970-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.14045405,
+      "jpl_minutes": 14.12842007,
+      "error_seconds": 0.722039
+    },
+    {
+      "utc": "1970-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.44862983,
+      "jpl_minutes": 15.41842845,
+      "error_seconds": 1.812083
+    },
+    {
+      "utc": "1970-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.94438142,
+      "jpl_minutes": 4.95999397,
+      "error_seconds": -0.936753
+    },
+    {
+      "utc": "1980-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.21525206,
+      "jpl_minutes": -9.20221989,
+      "error_seconds": -0.78193
+    },
+    {
+      "utc": "1980-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.24193323,
+      "jpl_minutes": -14.20496649,
+      "error_seconds": -2.218005
+    },
+    {
+      "utc": "1980-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.88077703,
+      "jpl_minutes": -8.89358647,
+      "error_seconds": 0.768567
+    },
+    {
+      "utc": "1980-04-15T12:00:00+00:00",
+      "estimate_minutes": 0.02374091,
+      "jpl_minutes": 0.01878352,
+      "error_seconds": 0.297443
+    },
+    {
+      "utc": "1980-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.69449253,
+      "jpl_minutes": 3.70880957,
+      "error_seconds": -0.859022
+    },
+    {
+      "utc": "1980-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.44937051,
+      "jpl_minutes": -0.43391769,
+      "error_seconds": -0.927169
+    },
+    {
+      "utc": "1980-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.9212953,
+      "jpl_minutes": -5.90750188,
+      "error_seconds": -0.827605
+    },
+    {
+      "utc": "1980-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.39217796,
+      "jpl_minutes": -4.38163167,
+      "error_seconds": -0.632777
+    },
+    {
+      "utc": "1980-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.85730995,
+      "jpl_minutes": 4.8843213,
+      "error_seconds": -1.620681
+    },
+    {
+      "utc": "1980-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.26894059,
+      "jpl_minutes": 14.24501109,
+      "error_seconds": 1.43577
+    },
+    {
+      "utc": "1980-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.35852193,
+      "jpl_minutes": 15.31499126,
+      "error_seconds": 2.61184
+    },
+    {
+      "utc": "1980-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.68817733,
+      "jpl_minutes": 4.69137289,
+      "error_seconds": -0.191733
+    },
+    {
+      "utc": "1990-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.39898935,
+      "jpl_minutes": -9.38472671,
+      "error_seconds": -0.855758
+    },
+    {
+      "utc": "1990-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.1995146,
+      "jpl_minutes": -14.1530522,
+      "error_seconds": -2.787744
+    },
+    {
+      "utc": "1990-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.9922229,
+      "jpl_minutes": -8.99270488,
+      "error_seconds": 0.028919
+    },
+    {
+      "utc": "1990-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.07926218,
+      "jpl_minutes": -0.07136888,
+      "error_seconds": -0.473598
+    },
+    {
+      "utc": "1990-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.68758396,
+      "jpl_minutes": 3.70562667,
+      "error_seconds": -1.082563
+    },
+    {
+      "utc": "1990-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.38153402,
+      "jpl_minutes": -0.37637448,
+      "error_seconds": -0.309572
+    },
+    {
+      "utc": "1990-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.9040993,
+      "jpl_minutes": -5.91163009,
+      "error_seconds": 0.451848
+    },
+    {
+      "utc": "1990-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.49509184,
+      "jpl_minutes": -4.50398836,
+      "error_seconds": 0.533791
+    },
+    {
+      "utc": "1990-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.6983317,
+      "jpl_minutes": 4.71586682,
+      "error_seconds": -1.052107
+    },
+    {
+      "utc": "1990-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.17770838,
+      "jpl_minutes": 14.15957972,
+      "error_seconds": 1.08772
+    },
+    {
+      "utc": "1990-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.44744743,
+      "jpl_minutes": 15.4216698,
+      "error_seconds": 1.546658
+    },
+    {
+      "utc": "1990-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.91510182,
+      "jpl_minutes": 4.94832159,
+      "error_seconds": -1.993186
+    },
+    {
+      "utc": "2000-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.22077594,
+      "jpl_minutes": -9.2201155,
+      "error_seconds": -0.039626
+    },
+    {
+      "utc": "2000-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.19788538,
+      "jpl_minutes": -14.16711725,
+      "error_seconds": -1.846088
+    },
+    {
+      "utc": "2000-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.81953641,
+      "jpl_minutes": -8.83721313,
+      "error_seconds": 1.060603
+    },
+    {
+      "utc": "2000-04-15T12:00:00+00:00",
+      "estimate_minutes": 0.05432923,
+      "jpl_minutes": 0.04696843,
+      "error_seconds": 0.441648
+    },
+    {
+      "utc": "2000-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.6628447,
+      "jpl_minutes": 3.6700832,
+      "error_seconds": -0.43431
+    },
+    {
+      "utc": "2000-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.5281888,
+      "jpl_minutes": -0.52299923,
+      "error_seconds": -0.311374
+    },
+    {
+      "utc": "2000-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.98319354,
+      "jpl_minutes": -5.97923643,
+      "error_seconds": -0.237427
+    },
+    {
+      "utc": "2000-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.39550004,
+      "jpl_minutes": -4.38371423,
+      "error_seconds": -0.707148
+    },
+    {
+      "utc": "2000-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.89603055,
+      "jpl_minutes": 4.93845524,
+      "error_seconds": -2.545481
+    },
+    {
+      "utc": "2000-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.30669614,
+      "jpl_minutes": 14.30905798,
+      "error_seconds": -0.141711
+    },
+    {
+      "utc": "2000-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.3580281,
+      "jpl_minutes": 15.35069935,
+      "error_seconds": 0.439725
+    },
+    {
+      "utc": "2000-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.65917395,
+      "jpl_minutes": 4.69919554,
+      "error_seconds": -2.401296
+    },
+    {
+      "utc": "2010-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.40238765,
+      "jpl_minutes": -9.39078463,
+      "error_seconds": -0.696181
+    },
+    {
+      "utc": "2010-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.15327473,
+      "jpl_minutes": -14.11386038,
+      "error_seconds": -2.364861
+    },
+    {
+      "utc": "2010-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.93057064,
+      "jpl_minutes": -8.93727055,
+      "error_seconds": 0.401995
+    },
+    {
+      "utc": "2010-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.04908036,
+      "jpl_minutes": -0.0531925,
+      "error_seconds": 0.246728
+    },
+    {
+      "utc": "2010-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.65527933,
+      "jpl_minutes": 3.66015763,
+      "error_seconds": -0.292698
+    },
+    {
+      "utc": "2010-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.46045378,
+      "jpl_minutes": -0.46632358,
+      "error_seconds": 0.352188
+    },
+    {
+      "utc": "2010-07-15T12:00:00+00:00",
+      "estimate_minutes": -5.96531572,
+      "jpl_minutes": -5.97699901,
+      "error_seconds": 0.700997
+    },
+    {
+      "utc": "2010-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.49756052,
+      "jpl_minutes": -4.50760219,
+      "error_seconds": 0.6025
+    },
+    {
+      "utc": "2010-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.73713978,
+      "jpl_minutes": 4.75189613,
+      "error_seconds": -0.885381
+    },
+    {
+      "utc": "2010-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.21451567,
+      "jpl_minutes": 14.18801726,
+      "error_seconds": 1.589905
+    },
+    {
+      "utc": "2010-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.4456577,
+      "jpl_minutes": 15.40870055,
+      "error_seconds": 2.217429
+    },
+    {
+      "utc": "2010-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.88565738,
+      "jpl_minutes": 4.9052957,
+      "error_seconds": -1.178299
+    },
+    {
+      "utc": "2020-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.22629453,
+      "jpl_minutes": -9.217854,
+      "error_seconds": -0.506432
+    },
+    {
+      "utc": "2020-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.15379873,
+      "jpl_minutes": -14.12855308,
+      "error_seconds": -1.514739
+    },
+    {
+      "utc": "2020-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.75823117,
+      "jpl_minutes": -8.78566817,
+      "error_seconds": 1.64622
+    },
+    {
+      "utc": "2020-04-15T12:00:00+00:00",
+      "estimate_minutes": 0.08497372,
+      "jpl_minutes": 0.06876037,
+      "error_seconds": 0.972801
+    },
+    {
+      "utc": "2020-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.6312017,
+      "jpl_minutes": 3.63593389,
+      "error_seconds": -0.283931
+    },
+    {
+      "utc": "2020-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.60697108,
+      "jpl_minutes": -0.59842329,
+      "error_seconds": -0.512867
+    },
+    {
+      "utc": "2020-07-15T12:00:00+00:00",
+      "estimate_minutes": -6.04498387,
+      "jpl_minutes": -6.03542704,
+      "error_seconds": -0.57341
+    },
+    {
+      "utc": "2020-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.39875698,
+      "jpl_minutes": -4.38695227,
+      "error_seconds": -0.708283
+    },
+    {
+      "utc": "2020-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.93470152,
+      "jpl_minutes": 4.97104482,
+      "error_seconds": -2.180598
+    },
+    {
+      "utc": "2020-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.34429154,
+      "jpl_minutes": 14.33866649,
+      "error_seconds": 0.337503
+    },
+    {
+      "utc": "2020-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.35731753,
+      "jpl_minutes": 15.33999561,
+      "error_seconds": 1.039315
+    },
+    {
+      "utc": "2020-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.63008343,
+      "jpl_minutes": 4.65875751,
+      "error_seconds": -1.720445
+    },
+    {
+      "utc": "2024-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.22912316,
+      "jpl_minutes": -9.22843887,
+      "error_seconds": -0.041058
+    },
+    {
+      "utc": "2024-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.14686123,
+      "jpl_minutes": -14.11633787,
+      "error_seconds": -1.831401
+    },
+    {
+      "utc": "2024-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.7462547,
+      "jpl_minutes": -8.76141852,
+      "error_seconds": 0.90983
+    },
+    {
+      "utc": "2024-04-15T12:00:00+00:00",
+      "estimate_minutes": 0.09261472,
+      "jpl_minutes": 0.08632389,
+      "error_seconds": 0.37745
+    },
+    {
+      "utc": "2024-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.6267695,
+      "jpl_minutes": 3.63244573,
+      "error_seconds": -0.340574
+    },
+    {
+      "utc": "2024-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.62235099,
+      "jpl_minutes": -0.62376058,
+      "error_seconds": 0.084575
+    },
+    {
+      "utc": "2024-07-15T12:00:00+00:00",
+      "estimate_minutes": -6.05877597,
+      "jpl_minutes": -6.06385885,
+      "error_seconds": 0.304973
+    },
+    {
+      "utc": "2024-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.40109872,
+      "jpl_minutes": -4.40007603,
+      "error_seconds": -0.061362
+    },
+    {
+      "utc": "2024-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.94203676,
+      "jpl_minutes": 4.97337599,
+      "error_seconds": -1.880354
+    },
+    {
+      "utc": "2024-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.35293627,
+      "jpl_minutes": 14.34369624,
+      "error_seconds": 0.554402
+    },
+    {
+      "utc": "2024-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.3587758,
+      "jpl_minutes": 15.341018,
+      "error_seconds": 1.065468
+    },
+    {
+      "utc": "2024-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.6246105,
+      "jpl_minutes": 4.65505701,
+      "error_seconds": -1.82679
+    },
+    {
+      "utc": "2030-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.40541253,
+      "jpl_minutes": -9.41847946,
+      "error_seconds": 0.784016
+    },
+    {
+      "utc": "2030-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.1066361,
+      "jpl_minutes": -14.08379368,
+      "error_seconds": -1.370545
+    },
+    {
+      "utc": "2030-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.8688084,
+      "jpl_minutes": -8.8897722,
+      "error_seconds": 1.257828
+    },
+    {
+      "utc": "2030-04-15T12:00:00+00:00",
+      "estimate_minutes": -0.01912353,
+      "jpl_minutes": -0.02963669,
+      "error_seconds": 0.63079
+    },
+    {
+      "utc": "2030-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.62265372,
+      "jpl_minutes": 3.62396273,
+      "error_seconds": -0.07854
+    },
+    {
+      "utc": "2030-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.53938479,
+      "jpl_minutes": -0.54296603,
+      "error_seconds": 0.214875
+    },
+    {
+      "utc": "2030-07-15T12:00:00+00:00",
+      "estimate_minutes": -6.02618784,
+      "jpl_minutes": -6.03052278,
+      "error_seconds": 0.260097
+    },
+    {
+      "utc": "2030-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.49971889,
+      "jpl_minutes": -4.493424,
+      "error_seconds": -0.377693
+    },
+    {
+      "utc": "2030-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.77593919,
+      "jpl_minutes": 4.81465055,
+      "error_seconds": -2.322682
+    },
+    {
+      "utc": "2030-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.25100886,
+      "jpl_minutes": 14.25047658,
+      "error_seconds": 0.031937
+    },
+    {
+      "utc": "2030-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.44346926,
+      "jpl_minutes": 15.42941026,
+      "error_seconds": 0.84354
+    },
+    {
+      "utc": "2030-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.85610418,
+      "jpl_minutes": 4.88852976,
+      "error_seconds": -1.945535
+    },
+    {
+      "utc": "2040-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.23164313,
+      "jpl_minutes": -9.23440082,
+      "error_seconds": 0.165461
+    },
+    {
+      "utc": "2040-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.10948561,
+      "jpl_minutes": -14.08560885,
+      "error_seconds": -1.432605
+    },
+    {
+      "utc": "2040-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.69683002,
+      "jpl_minutes": -8.71785583,
+      "error_seconds": 1.261549
+    },
+    {
+      "utc": "2040-04-15T12:00:00+00:00",
+      "estimate_minutes": 0.11551634,
+      "jpl_minutes": 0.10690775,
+      "error_seconds": 0.516515
+    },
+    {
+      "utc": "2040-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.59935696,
+      "jpl_minutes": 3.61144231,
+      "error_seconds": -0.725121
+    },
+    {
+      "utc": "2040-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.68575972,
+      "jpl_minutes": -0.67150217,
+      "error_seconds": -0.855453
+    },
+    {
+      "utc": "2040-07-15T12:00:00+00:00",
+      "estimate_minutes": -6.10649842,
+      "jpl_minutes": -6.09201351,
+      "error_seconds": -0.869095
+    },
+    {
+      "utc": "2040-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.40174447,
+      "jpl_minutes": -4.3868864,
+      "error_seconds": -0.891484
+    },
+    {
+      "utc": "2040-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.9733723,
+      "jpl_minutes": 5.00873811,
+      "error_seconds": -2.121948
+    },
+    {
+      "utc": "2040-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.38157961,
+      "jpl_minutes": 14.36682536,
+      "error_seconds": 0.885255
+    },
+    {
+      "utc": "2040-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.35617293,
+      "jpl_minutes": 15.32567774,
+      "error_seconds": 1.829711
+    },
+    {
+      "utc": "2040-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.60085657,
+      "jpl_minutes": 4.6160654,
+      "error_seconds": -0.91253
+    },
+    {
+      "utc": "2050-01-15T12:00:00+00:00",
+      "estimate_minutes": -9.408242,
+      "jpl_minutes": -9.39036317,
+      "error_seconds": -1.07273
+    },
+    {
+      "utc": "2050-02-15T12:00:00+00:00",
+      "estimate_minutes": -14.05979605,
+      "jpl_minutes": -14.01212188,
+      "error_seconds": -2.86045
+    },
+    {
+      "utc": "2050-03-15T12:00:00+00:00",
+      "estimate_minutes": -8.80697312,
+      "jpl_minutes": -8.8028685,
+      "error_seconds": -0.246277
+    },
+    {
+      "utc": "2050-04-15T12:00:00+00:00",
+      "estimate_minutes": 0.01076992,
+      "jpl_minutes": 0.02617627,
+      "error_seconds": -0.924381
+    },
+    {
+      "utc": "2050-05-15T12:00:00+00:00",
+      "estimate_minutes": 3.58992213,
+      "jpl_minutes": 3.61934615,
+      "error_seconds": -1.765441
+    },
+    {
+      "utc": "2050-06-15T12:00:00+00:00",
+      "estimate_minutes": -0.61827777,
+      "jpl_minutes": -0.59937805,
+      "error_seconds": -1.133983
+    },
+    {
+      "utc": "2050-07-15T12:00:00+00:00",
+      "estimate_minutes": -6.08688296,
+      "jpl_minutes": -6.07945413,
+      "error_seconds": -0.44573
+    },
+    {
+      "utc": "2050-08-15T12:00:00+00:00",
+      "estimate_minutes": -4.50177493,
+      "jpl_minutes": -4.49977565,
+      "error_seconds": -0.119957
+    },
+    {
+      "utc": "2050-09-15T12:00:00+00:00",
+      "estimate_minutes": 4.81467678,
+      "jpl_minutes": 4.83805834,
+      "error_seconds": -1.402894
+    },
+    {
+      "utc": "2050-10-15T12:00:00+00:00",
+      "estimate_minutes": 14.28733163,
+      "jpl_minutes": 14.26944166,
+      "error_seconds": 1.073398
+    },
+    {
+      "utc": "2050-11-15T12:00:00+00:00",
+      "estimate_minutes": 15.44109807,
+      "jpl_minutes": 15.41253263,
+      "error_seconds": 1.713926
+    },
+    {
+      "utc": "2050-12-15T12:00:00+00:00",
+      "estimate_minutes": 4.82649496,
+      "jpl_minutes": 4.85148761,
+      "error_seconds": -1.499559
+    }
+  ]
+}

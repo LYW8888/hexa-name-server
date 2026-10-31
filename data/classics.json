@@ -106,5 +106,11 @@
     "version": "traditional-reference-v1",
     "rule": "年支序数+农历月+农历日取上卦，加时支数取下卦与动爻；体卦五行可作为可关闭的字形意象偏好，所有候选共用同一时间起卦。",
     "source_review": "梅花易数类常见年月日时口径；古籍版本、篇章解释未完成复核，不标为周易原文推导。"
+  },
+  "mingli_policy": {
+    "status": "implemented_reference",
+    "version": "month-pattern-fuyi-v1",
+    "classical_source_status": "pending",
+    "rule": "月令取格、藏干与月令权重量化、扶抑喜用参考；数值是工程参数，不是古籍定量结论。特殊、临界或中和情况不强指定用神。"
   }
 }

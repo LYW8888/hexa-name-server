@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import LOCATIONS from "../../data/locations.json";
 import { getClockInZone } from "./utils.js";
 
 const LABELS = ["对象与姓氏", "出生信息", "偏好与寓意"];
@@ -15,7 +16,8 @@ export default function NamingForm({
     [mode, setMode] = useState("due_date"),
     [length, setLength] = useState("2"),
     [draft, setDraft] = useState({}),
-    [elementPreference, setElementPreference] = useState("auto");
+    [elementPreference, setElementPreference] = useState("yongshen"),
+    [timeBasis, setTimeBasis] = useState("civil");
   const formRef = useRef(null);
   const max = Math.max(1, Math.min(11, Number(counts[length]) || 11));
   useEffect(() => {
@@ -38,7 +40,11 @@ export default function NamingForm({
     function fail(text, field) {
       setStep(index);
       setMessage(text);
-      if (field) requestAnimationFrame(() => field.focus());
+      if (field) {
+        const disclosure = field.closest("details");
+        if (disclosure) disclosure.open = true;
+        requestAnimationFrame(() => field.focus());
+      }
       return false;
     }
     const invalid = [...panel.querySelectorAll("input,select,textarea")].find(
@@ -416,6 +422,74 @@ export default function NamingForm({
               </select>
             </label>
           </div>
+          <details className="time-settings">
+            <summary>
+              排盘时间设置 · {timeBasis === "civil" ? "民用时钟" : "真太阳时"}
+            </summary>
+            <label>
+              日柱与时柱的时间口径
+              <select
+                name="timeBasis"
+                value={timeBasis}
+                onChange={(e) => setTimeBasis(e.target.value)}
+              >
+                <option value="civil">当地民用时钟</option>
+                <option value="apparent_solar">
+                  真太阳时（按出生地经度修正）
+                </option>
+              </select>
+            </label>
+            {timeBasis === "apparent_solar" && (
+              <div className="grid solar-fields">
+                <label>
+                  快速选择城市中心（可选）
+                  <select
+                    name="locationId"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const city = LOCATIONS.cities.find(
+                        (x) => x.id === e.target.value,
+                      );
+                      if (city) {
+                        const f = formRef.current;
+                        f.elements.longitude.value = String(city.longitude);
+                        f.elements.place.value = city.name;
+                        f.elements.zone.value = city.zone;
+                      }
+                    }}
+                  >
+                    <option value="">手动输入经度</option>
+                    {LOCATIONS.cities.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} · {c.longitude}°E
+                      </option>
+                    ))}
+                  </select>
+                  <small className="field-hint">
+                    城市中心仅为近似位置，可以修改为医院或实际出生地经度。
+                  </small>
+                </label>
+                <label>
+                  出生地经度（东经为正）
+                  <input
+                    name="longitude"
+                    type="number"
+                    min="-180"
+                    max="180"
+                    step="0.000001"
+                    required
+                    placeholder="例如：120.16"
+                  />
+                  <small className="field-hint">
+                    西经输入负数；无需定位授权。经度只用于本次计算。
+                  </small>
+                </label>
+              </div>
+            )}
+            <p className="hint">
+              真太阳时同时考虑经度、历史时区/夏令时及均时差，会改变日柱或时柱；年、月柱仍以实际节气交接时刻为准。
+            </p>
+          </details>
           <p className="hint" id="birthHint">
             {hint}
           </p>
@@ -504,6 +578,7 @@ export default function NamingForm({
               value={elementPreference}
               onChange={(e) => setElementPreference(e.target.value)}
             >
+              <option value="yongshen">按格局与扶抑喜用参考（规则试算）</option>
               <option value="auto">按生辰起卦的体卦五行意象</option>
               <option value="none">仅按读音、风格和心意用字</option>
               {["木", "火", "土", "金", "水"].map((x) => (
@@ -513,11 +588,13 @@ export default function NamingForm({
               ))}
             </select>
             <small className="field-hint">
-              {elementPreference === "auto"
-                ? "生辰按年月日时起卦，再与汉字部首规则匹配。体卦五行不等于八字喜用神。"
-                : elementPreference === "none"
-                  ? "四柱和起卦仍会计算，字形五行不参与排序。"
-                  : "按你的选择匹配字形意象，不作补缺或运势判断。"}
+              {elementPreference === "yongshen"
+                ? "依据月令、藏干权重与扶抑规则试算；临界、特殊格局或中和时不强指定喜用，只按日常偏好排序。"
+                : elementPreference === "auto"
+                  ? "生辰按年月日时起卦，再与汉字部首规则匹配。体卦五行不等于八字喜用神。"
+                  : elementPreference === "none"
+                    ? "四柱和起卦仍会计算，字形五行不参与排序。"
+                    : "按你的选择匹配字形意象，不作补缺或运势判断。"}
             </small>
           </label>
           <section className="request-review" aria-label="生成前确认">
@@ -551,6 +628,12 @@ export default function NamingForm({
                 ? `采用实际出生 ${draft.birthDate} ${draft.birthTime}`
                 : `预产期参考 ${draft.dueDate || "待填写"} ${draft.dueTime || "12:00"}`}{" "}
               · {draft.place || "待填写地点"}
+            </p>
+            <p>
+              时间口径：
+              {timeBasis === "civil"
+                ? "当地民用时钟"
+                : `真太阳时 · 经度 ${draft.longitude || "待填写"}°`}
             </p>
             <small>
               预产期与出生信息可以并存；两者齐全时，采用实际出生时间。出生信息不会自动保存。

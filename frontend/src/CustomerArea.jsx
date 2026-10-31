@@ -22,6 +22,9 @@ const FIELDS = [
   "variant",
   "elementPreference",
   "honorParents",
+  "timeBasis",
+  "longitude",
+  "locationId",
 ];
 const newKey = () => globalThis.crypto?.randomUUID?.() || null;
 const displayDate = (value) =>

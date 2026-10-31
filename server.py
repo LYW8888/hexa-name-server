@@ -10,6 +10,8 @@ import bazi
 import phonetics
 import tradition
 import naming_rules
+import mingli
+import solar_time
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -199,11 +201,12 @@ def analyze(payload: dict) -> dict:
     styles = payload.get("styles", []) or []
     if not isinstance(styles, list) or any(not isinstance(style, str) for style in styles):
         raise ValueError("styles must be a list of strings")
-    chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete)
+    clock_options = solar_time.options(payload)
+    chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete, **clock_options)
     comparison = None
     if actual_complete and due_date:
         try:
-            reference_chart = bazi.calculate(due_date, due_time, zone, reference=True)
+            reference_chart = bazi.calculate(due_date, due_time, zone, reference=True, **clock_options)
             differences = [{"label": actual["label"], "reference": expected["ganzhi"],
                             "actual": actual["ganzhi"], "changed": expected["ganzhi"] != actual["ganzhi"]}
                            for expected, actual in zip(reference_chart["pillars"], chart["pillars"])]
@@ -226,12 +229,13 @@ def analyze(payload: dict) -> dict:
         raise ValueError("variant must be an integer from 0 to 100000") from exc
     if not 0 <= variant <= 100000:
         raise ValueError("variant must be an integer from 0 to 100000")
-    gua = tradition.cast(basis_date, basis_time, zone, reference=chart["reference"])
+    gua = tradition.cast(basis_date, basis_time, zone, reference=chart["reference"], solar_clock=chart["time_correction"]["clock_time"] if chart["time_correction"]["applied"] else None)
     traditional = tradition.chart_details(chart)
+    assessment = mingli.analyze(chart, traditional)
     element_preference = payload.get("elementPreference", "auto")
     if not isinstance(element_preference, str):
-        raise ValueError("elementPreference must be auto, none, 木, 火, 土, 金, or 水")
-    naming_reference = naming_rules.target_for(element_preference, gua)
+        raise ValueError("elementPreference must be auto, yongshen, none, 木, 火, 土, 金, or 水")
+    naming_reference = naming_rules.target_for(element_preference, gua, assessment)
     family_chars = set()
     if payload.get("honorParents") in (True, "1", "on", "true"):
         family_chars = {char for char in parents if phonetics.is_han(char)} - avoided
@@ -281,10 +285,10 @@ def analyze(payload: dict) -> dict:
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = (
         f"{'预产期参考，出生后请重新确认实际时间' if chart['reference'] else '采用实际出生信息'}；"
-        f"时区：{zone_label}；四柱按立春、十二节与当地23:00换日计算。"
+        f"时区：{zone_label}；四柱按立春、十二节与所选钟面23:00换日计算。"
         f"阴阳、藏干及十神按公开干支规则计算；年月日时起卦得到{gua['hexagram']}，动{gua['moving_line']}爻、变{gua['changed_hexagram']}。"
         f"候选按{naming_reference['label']}、字形部首、读音和文字偏好计算匹配值。"
-        "未计算格局旺衰、调候或喜用神；古籍版本与字形资料仍需复核，不预测运势。"
+        f"采用{'真太阳钟' if chart['time_correction']['applied'] else '民用时钟'}确定日/时柱；月令格局与扶抑喜用按{assessment['version']}试算。古籍版本、权重和格局判断仍待专业复核，匹配值不代表运势。"
     )
     return {
         "analysis": {
@@ -293,6 +297,7 @@ def analyze(payload: dict) -> dict:
             "bazi": chart,
             "bazi_comparison": comparison,
             "traditional": traditional,
+            "mingli": assessment,
             "gua": gua,
             "naming_reference": naming_reference,
             "ranking_version": naming_rules.VERSION,

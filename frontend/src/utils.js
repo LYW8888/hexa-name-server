@@ -1,3 +1,4 @@
+import { calculationLines } from "./traditional-report.js";
 export function getClockInZone(zone) {
   try {
     const parts = new Intl.DateTimeFormat("zh-CN", {
@@ -137,6 +138,13 @@ export function friendlyError(message) {
       /(likedChars|avoidedChars) must contain/i,
       "喜欢和避开的字请填写汉字，可用空格、顿号或逗号分隔。",
     ],
+    [/longitude is required/i, "启用真太阳时后，请选择城市或填写出生地经度。"],
+    [
+      /longitude must be/i,
+      "出生地经度请输入 −180 到 180 之间的数字，东经为正、西经为负。",
+    ],
+    [/timeBasis must be/i, "请选择民用时钟或真太阳时。"],
+    [/locationId must/i, "请选择列表中的城市，或手动填写经度。"],
     [/elementPreference must be/i, "请选择列表中的传统文化选字参考。"],
     [/request too large/i, "提交内容过大，请减少文字后重试。"],
   ];
@@ -237,6 +245,7 @@ export function downloadReportFile(
           `选字参考：${analysis.naming_reference.label}；${analysis.naming_reference.explanation}`,
         ]
       : []),
+    ...calculationLines(analysis),
     ...comparisonLines,
     "",
     `说明：${analysis.method || "传统文化参考，不承诺确定性运势结果。"}`,

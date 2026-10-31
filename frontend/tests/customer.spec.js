@@ -5,6 +5,9 @@ async function generate(page) {
   await page.locator(".panel.active .next").click();
   await page.locator("[name=dueDate]").fill("2099-01-01");
   await page.locator("[name=place]").fill("杭州");
+  await page.locator(".time-settings summary").click();
+  await page.locator("[name=timeBasis]").selectOption("apparent_solar");
+  await page.locator("[name=locationId]").selectOption("hangzhou");
   await page.locator(".panel.active .next").click();
   await page.locator("[name=elementPreference]").selectOption("水");
   await page
@@ -52,6 +55,8 @@ test("免费体验免登录，主动确认保存，刷新找回、下载及删�
   expect(report).toContain("四柱阴阳");
   expect(report).toContain("起卦方法");
   expect(report).toContain("选字参考：自选水意象");
+  expect(report).toContain("真太阳钟");
+  expect(report).toContain("格局线索");
   await account.getByRole("button", { name: "删除", exact: true }).click();
   await account.getByRole("button", { name: "确认删除", exact: true }).click();
   await expect(account.locator(".customer-records li")).toHaveCount(0);

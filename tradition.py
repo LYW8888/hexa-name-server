@@ -1,6 +1,7 @@
 """Reproducible cultural rules; no strength, favourable-element or fate claims."""
 
 from collections import Counter
+from datetime import datetime
 from lunar_python import Solar
 from lunar_python.util import LunarUtil
 import bazi
@@ -101,9 +102,9 @@ def chart_details(chart):
         "month_main_element": details[1]["hidden_stems"][0]["element"],
         "notes": [
             "阴阳按十天干、十二地支的固定阴阳属性逐项计数，共八项。",
-            "藏干顺序沿用 lunar_python 1.4.8 的地支藏干表，未赋旺衰权重；藏干次数不能与表面八字次数混为强弱。",
+            "藏干顺序沿用 lunar_python 1.4.8 的地支藏干表；此处展示原始次数，独立旺衰试算另列权重，二者不混加。",
             "十神由日干与其他天干的五行生克及阴阳同异计算；这是关系名称，不是吉凶评分。",
-            "未计算格局、调候、用神或大运，不按缺哪一行就补哪一行起名。",
+            "格局、旺衰与扶抑喜用的试算见独立规则分析；不按缺哪一行就补哪一行起名。",
         ],
         "source": {
             "library": "lunar_python",
@@ -125,10 +126,13 @@ def trigram(index):
     }
 
 
-def cast(date_text, time_text, zone_name, reference=False):
+def cast(date_text, time_text, zone_name, reference=False, *, solar_clock=None):
     local = bazi._local_moment(date_text, time_text, zone_name)
+    civil = local
+    if solar_clock is not None:
+        local = datetime.fromisoformat(solar_clock)
     lunar = Solar.fromYmdHms(
-        local.year, local.month, local.day, local.hour, local.minute, 0
+        local.year, local.month, local.day, local.hour, local.minute, local.second
     ).getLunar()
     year_number, month, day = lunar.getYearZhiIndex() + 1, abs(lunar.getMonth()), lunar.getDay()
     hour_number = ((local.hour + 1) // 2) % 12 + 1
@@ -145,7 +149,13 @@ def cast(date_text, time_text, zone_name, reference=False):
         "version": VERSION,
         "method": "年月日时起卦（梅花易数类口径）",
         "reference": reference,
-        "local_time": local.strftime("%Y-%m-%d %H:%M %z"),
+        "local_time": (
+            local.strftime("%Y-%m-%d %H:%M:%S") + " 真太阳钟"
+            if solar_clock
+            else local.strftime("%Y-%m-%d %H:%M %z")
+        ),
+        "clock_basis": "apparent_solar" if solar_clock else "civil",
+        "civil_time": civil.strftime("%Y-%m-%d %H:%M %z"),
         "inputs": {
             "lunar_year": lunar.getYear(),
             "year_branch": BRANCHES[year_number - 1],
@@ -181,7 +191,7 @@ def cast(date_text, time_text, zone_name, reference=False):
             "上卦取年数加月数加日数除8的余数；下卦再加时支数除8；动爻取总数除6。余0分别作8或6。",
             "先天卦序：乾1、兑2、离3、震4、巽5、坎6、艮7、坤8；爻从下往上编号。",
             "动爻所在卦为用卦，另一卦为体卦；变卦仅翻转该动爻。",
-            "起卦农历日期按00:00换日，四柱日柱仍按23:00换日，两种规则不混用。",
+            f"起卦按所选{'真太阳钟' if solar_clock else '民用时钟'}日期00:00换农历日，四柱日柱仍按23:00换日，两种规则不混用。",
         ],
         "limitations": "这是公开口径的传统文化计算，不是《周易》文本直接规定的唯一方法；古籍版本与解释仍待复核，不预测运势。",
     }

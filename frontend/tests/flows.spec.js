@@ -444,3 +444,103 @@ for (const width of [1280, 390])
     await expect(page.locator("#resultStatus")).toContainText("第 1 轮");
     await expect(comparison).toHaveCount(0);
   });
+
+for (const width of [1280, 390])
+  test(`真太阳时与扶抑喜用全链路在 ${width}px 可用`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 950 });
+    await page.goto("/");
+    await page.locator("[name=surname]").fill("林");
+    await page.locator(".panel.active .next").click();
+    await page.locator("[name=dueDate]").fill("2099-12-23");
+    await page.locator("[name=birthDate]").fill("2024-02-10");
+    await page.locator("[name=birthTime]").fill("23:05");
+    await page.locator(".time-settings summary").click();
+    await page.locator("[name=timeBasis]").selectOption("apparent_solar");
+    await page.locator("[name=locationId]").selectOption("kashgar");
+    await expect(page.locator("[name=longitude]")).toHaveValue("75.99");
+    await expect(page.locator("[name=place]")).toHaveValue("喀什");
+    await page.locator(".panel.active .next").click();
+    await expect(
+      page.getByRole("region", { name: "生成前确认" }),
+    ).toContainText("真太阳时 · 经度 75.99°");
+    await page.locator("#namingForm button[type=submit]").click();
+    await expect(page.locator("#cards .card")).toHaveCount(3);
+    const solar = page.getByRole("region", { name: "排盘时间修正" });
+    await expect(solar).toContainText("真太阳时修正");
+    await expect(solar).toContainText("日柱、时柱有变化");
+    await expect(solar).toContainText("23:05:00");
+    const mingli = page.getByRole("region", { name: "格局旺衰与喜用参考" });
+    await expect(mingli).toContainText("规则试算");
+    await mingli.locator(".strength-evidence summary").click();
+    await expect(mingli).toContainText("每项天干与藏干");
+    await expect(mingli).toContainText("敏感性检查");
+    const pending = page.waitForEvent("download");
+    await page.locator("#downloadReport").click();
+    const report = await readFile(await (await pending).path(), "utf8");
+    for (const value of [
+      "真太阳钟",
+      "经度 75.99",
+      "原始时间",
+      "规则试算",
+      "格局线索",
+      "扶抑喜用参考",
+      "匹配值不代表运势",
+    ])
+      expect(report).toContain(value);
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBeTruthy();
+  });
+
+test("明确的扶抑参考参与选字，中和盘不强行指定", async ({ page }) => {
+  await page.goto("/");
+  await generate(page, {
+    due: "2024-01-05",
+    dueTime: "12:00",
+    birth: "",
+    birthTime: "",
+  });
+  await expect(page.locator("[name=elementPreference]")).toHaveValue(
+    "yongshen",
+  );
+  await expect(page.locator(".result-context")).toContainText("用火 / 喜土");
+  const evidence = page.getByRole("region", { name: "格局旺衰与喜用参考" });
+  await expect(evidence).toContainText("用火 · 喜土");
+  await page.locator("#cards .name-evidence summary").first().click();
+  await expect(page.locator("#cards .name-evidence").first()).toContainText(
+    "喜神参考计0.75",
+  );
+  await page.getByRole("button", { name: "修改出生信息" }).click();
+  await page.locator("[name=dueDate]").fill("2024-02-10");
+  await page.locator(".panel.active .next").click();
+  await page.locator("#namingForm button[type=submit]").click();
+  await expect(page.locator(".result-context")).toContainText(
+    "喜用参考暂不参与排序",
+  );
+  await expect(evidence).toContainText("暂不指定单一喜用");
+});
+
+test("启用真太阳时后缺失或越界经度会定位填写处", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("[name=surname]").fill("林");
+  await page.locator(".panel.active .next").click();
+  await page.locator("[name=dueDate]").fill("2099-12-23");
+  await page.locator("[name=place]").fill("杭州");
+  await page.locator(".time-settings summary").click();
+  await page.locator("[name=timeBasis]").selectOption("apparent_solar");
+  await page.locator(".time-settings summary").click();
+  await page.locator(".panel.active .next").click();
+  await expect(page.locator(".time-settings")).toHaveAttribute("open", "");
+  await expect(page.locator("#formMessage")).toContainText("出生地经度");
+  await page.locator("[name=longitude]").fill("181");
+  await page.locator(".panel.active .next").click();
+  await expect(page.locator(".panel.active legend")).toHaveText("出生信息");
+  await page.locator("[name=longitude]").fill("120.16");
+  await page.locator(".panel.active .next").click();
+  await page.locator("#namingForm button[type=submit]").click();
+  await expect(page.locator("#cards .card")).toHaveCount(3);
+});

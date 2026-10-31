@@ -157,15 +157,18 @@ class CustomerTest(TestCase):
 
     def test_saved_report_preserves_reference_rule_and_new_evidence(self):
         self.sign_in()
-        response=self.save(elementPreference='水',honorParents='true',parents='安')
+        response=self.save(elementPreference='水',honorParents='true',parents='安',timeBasis='apparent_solar',longitude='120.16',locationId='hangzhou')
         self.assertEqual(response.status_code,201)
         report=self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
         self.assertEqual(report['data']['elementPreference'],'水')
         self.assertEqual(report['data']['honorParents'],'true')
+        self.assertTrue(report['analysis']['bazi']['time_correction']['applied'])
+        self.assertEqual(report['data']['longitude'],'120.16')
+        self.assertEqual(report['analysis']['mingli']['classical_source_status'],'pending')
         self.assertEqual(report['analysis']['naming_reference']['element'],'水')
         self.assertIn('polarity_counts',report['analysis']['traditional'])
         self.assertIn('arithmetic',report['analysis']['gua'])
-        self.assertTrue(all(n['ranking']['version']=='naming-match-v1' for n in report['candidates']))
+        self.assertTrue(all(n['ranking']['version']=='naming-match-v2' for n in report['candidates']))
 
     def test_other_customer_cannot_list_retrieve_or_delete_record(self):
         self.sign_in(); record=self.save().json()['record']['id']

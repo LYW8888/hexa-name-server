@@ -10,6 +10,9 @@
 - `classics.json`：八卦象意、阴阳和五行规则的来源索引与核验状态。
 - 四柱由 `bazi.py`、阴阳/藏干/十神及时间起卦由 `tradition.py` 实时计算；`naming_rules.py` 计算偏好分项，无预设基础分。详细口径、手算例子与来源见 [ALGORITHM.md](ALGORITHM.md)。后续仍需权威历表、字表、古籍版本及谐音词表复核。
 
+- `locations.json`：20个城市中心的近似经度，供用户选择和手动修正，不是地址解析。
+- `mingli-rules.json`：限定流派的月令格局与扶抑权重，参数由本项目声明，尚待专家校准；完整边界见 [MINGLI_RULES.md](MINGLI_RULES.md)。
+
 ## `verification_status`
 
 - `demo`：仅用于当前原型演示。
