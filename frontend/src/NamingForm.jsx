@@ -13,7 +13,9 @@ export default function NamingForm({
   const [step, setStep] = useState(0),
     [purpose, setPurpose] = useState("newborn"),
     [mode, setMode] = useState("due_date"),
-    [length, setLength] = useState("2");
+    [length, setLength] = useState("2"),
+    [draft, setDraft] = useState({}),
+    [elementPreference, setElementPreference] = useState("auto");
   const formRef = useRef(null);
   const max = Math.max(1, Math.min(11, Number(counts[length]) || 11));
   useEffect(() => {
@@ -22,15 +24,13 @@ export default function NamingForm({
   }, [max]);
   useEffect(() => {
     if (message)
-      formRef.current
-        ?.querySelector("#formMessage")
-        ?.scrollIntoView({
-          behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "auto"
-            : "smooth",
-          block: "nearest",
-        });
+      formRef.current?.querySelector("#formMessage")?.scrollIntoView({
+        behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
+          .matches
+          ? "auto"
+          : "smooth",
+        block: "nearest",
+      });
   }, [message]);
   function validate(index = step) {
     const form = formRef.current,
@@ -151,10 +151,10 @@ export default function NamingForm({
           <br />
           这个名字要陪谁走一生。
         </h2>
-        <p>先选择起名场景并填写信息，当前版本提供演示候选和寓意参考。</p>
+        <p>从家庭心意开始，把传统计算和日常读写一起考虑。</p>
         <div className="form-helper">
           <b>先填最少信息也能开始</b>
-          <span>姓氏、场景和时间是必填；父母姓氏与偏好可以之后补充。</span>
+          <span>约 1 分钟完成；预产期可用未来日期，偏好可以留空。</span>
         </div>
         <div className="journey" aria-hidden="true">
           {[
@@ -174,10 +174,18 @@ export default function NamingForm({
           ))}
         </div>
       </div>
-      <form id="namingForm" ref={formRef} onSubmit={submit} noValidate>
+      <form
+        id="namingForm"
+        ref={formRef}
+        onSubmit={submit}
+        onChange={() =>
+          setDraft(Object.fromEntries(new FormData(formRef.current).entries()))
+        }
+        noValidate
+      >
         <p className="demo-notice">
-          <b>排盘口径</b> 年柱以立春、月柱以节气交接为界，日柱采用当地时间 23:00
-          换日。候选名、评分及卦象仍是待核验的演示资料。
+          <b>每个名字都有理由</b>{" "}
+          四柱、阴阳五行与生辰起卦可以展开复算；匹配值用于比较偏好，不能代表运势。
         </p>
         <div className="progress" aria-label="起名步骤">
           {LABELS.map((label, index) => (
@@ -288,9 +296,9 @@ export default function NamingForm({
             </label>
             <label>
               父母姓氏（可选）
-              <input name="parents" maxLength={4} placeholder="例如：林、沈" />
+              <input name="parents" maxLength={12} placeholder="例如：林、沈" />
               <small className="field-hint">
-                仅记录家庭线索，暂不参与候选排序
+                默认只记录；勾选下方选项才参与用字偏好
               </small>
             </label>
             <label>
@@ -304,7 +312,15 @@ export default function NamingForm({
                 <option value="1">单字名</option>
                 <option value="3">三字名</option>
               </select>
-              <small className="field-hint">例如“林知衡”选择两字名</small>
+              <small className="field-hint">
+                全名示例：{draft.surname || "林"}
+                {length === "1"
+                  ? "桐"
+                  : length === "2"
+                    ? "沐安"
+                    : "沐知安"}，共{" "}
+                {[...(draft.surname || "林")].length + Number(length)} 字
+              </small>
             </label>
             <label>
               生成名字数量
@@ -324,7 +340,7 @@ export default function NamingForm({
                   : length === "2"
                     ? "两字名"
                     : "三字名"}
-                可生成 1–{max} 个，候选资料仍待核验。
+                可生成 1–{max} 个；不足时只展示实际匹配的候选。
               </small>
             </label>
             <label>
@@ -334,9 +350,15 @@ export default function NamingForm({
                 <option value="male">男</option>
                 <option value="female">女</option>
               </select>
-              <small className="field-hint">未知也可以生成中性方案</small>
+              <small className="field-hint">
+                未知不限制性别倾向；也适合尚未确定时使用
+              </small>
             </label>
           </div>
+          <label className="inline-check">
+            <input type="checkbox" name="honorParents" value="true" />
+            希望名中呼应父母姓氏（排序偏好，可不选）
+          </label>
           <button
             className="primary next"
             type="button"
@@ -475,6 +497,65 @@ export default function NamingForm({
               </label>
             ))}
           </div>
+          <label className="reference-choice">
+            传统文化选字参考
+            <select
+              name="elementPreference"
+              value={elementPreference}
+              onChange={(e) => setElementPreference(e.target.value)}
+            >
+              <option value="auto">按生辰起卦的体卦五行意象</option>
+              <option value="none">仅按读音、风格和心意用字</option>
+              {["木", "火", "土", "金", "水"].map((x) => (
+                <option key={x} value={x}>
+                  自选{x}意象
+                </option>
+              ))}
+            </select>
+            <small className="field-hint">
+              {elementPreference === "auto"
+                ? "生辰按年月日时起卦，再与汉字部首规则匹配。体卦五行不等于八字喜用神。"
+                : elementPreference === "none"
+                  ? "四柱和起卦仍会计算，字形五行不参与排序。"
+                  : "按你的选择匹配字形意象，不作补缺或运势判断。"}
+            </small>
+          </label>
+          <section className="request-review" aria-label="生成前确认">
+            <div>
+              <b>生成前，再看一眼</b>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setStep(0);
+                }}
+              >
+                修改基本信息
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setStep(1);
+                }}
+              >
+                修改出生信息
+              </button>
+            </div>
+            <p>
+              {draft.surname || "待填写姓氏"} · {length} 字名（不含姓） ·{" "}
+              {draft.candidateCount || 3} 个候选
+            </p>
+            <p>
+              {draft.birthDate && draft.birthTime
+                ? `采用实际出生 ${draft.birthDate} ${draft.birthTime}`
+                : `预产期参考 ${draft.dueDate || "待填写"} ${draft.dueTime || "12:00"}`}{" "}
+              · {draft.place || "待填写地点"}
+            </p>
+            <small>
+              预产期与出生信息可以并存；两者齐全时，采用实际出生时间。出生信息不会自动保存。
+            </small>
+          </section>
           <div className="actions">
             <button
               className="secondary back"

@@ -6,6 +6,7 @@ async function generate(page) {
   await page.locator("[name=dueDate]").fill("2099-01-01");
   await page.locator("[name=place]").fill("杭州");
   await page.locator(".panel.active .next").click();
+  await page.locator("[name=elementPreference]").selectOption("水");
   await page
     .locator("button[type=submit]")
     .filter({ hasText: "生成名字方案" })
@@ -48,7 +49,9 @@ test("免费体验免登录，主动确认保存，刷新找回、下载及删�
   const report = await readFile(await (await pending).path(), "utf8");
   expect(report).toContain("姓氏：林");
   expect(report).toContain("2099-01-01");
-  expect(report).toContain("四柱");
+  expect(report).toContain("四柱阴阳");
+  expect(report).toContain("起卦方法");
+  expect(report).toContain("选字参考：自选水意象");
   await account.getByRole("button", { name: "删除", exact: true }).click();
   await account.getByRole("button", { name: "确认删除", exact: true }).click();
   await expect(account.locator(".customer-records li")).toHaveCount(0);

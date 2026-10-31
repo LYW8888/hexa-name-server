@@ -273,7 +273,7 @@ function renderComparison(comparison) {
   const referenceBoundary = comparison.reference.boundary;
   const boundary = referenceBoundary ? `<p class="comparison-warning">${escapeHTML(referenceBoundary.warning)} ${escapeHTML(referenceBoundary.term)} ${escapeHTML(referenceBoundary.local_time)}；交接前 ${escapeHTML(referenceBoundary.alternatives[0].year)}年 ${escapeHTML(referenceBoundary.alternatives[0].month)}月，交接后 ${escapeHTML(referenceBoundary.alternatives[1].year)}年 ${escapeHTML(referenceBoundary.alternatives[1].month)}月。</p>` : '';
   const boundaryNotice = comparison.near_boundary ? '<p class="comparison-warning">其中一组时间接近节气交接，年柱或月柱的对照结果可能随节气时刻核对而变化。</p>' : '';
-  return `<section class="bazi-comparison" aria-label="预产期与出生信息对照"><div class="comparison-heading"><h3>预产期与实际出生对照</h3><span>${comparison.near_boundary ? '靠近节气，需复核' : comparison.has_changes ? '四柱中有变化' : '四柱相同'}</span></div><p>预产期参考 ${escapeHTML(comparison.reference.local_time)}；主排盘采用实际出生时间。</p><div class="comparison-table-wrap"><table><caption>预产期参考与实际出生的四柱对照</caption><thead><tr><th scope="col">时间依据</th>${headings}</tr></thead><tbody><tr><th scope="row">预产期参考</th>${reference}</tr><tr><th scope="row">实际出生</th>${actual}</tr><tr><th scope="row">对照</th>${changed}</tr></tbody></table></div>${boundaryNotice}${boundary}<p class="comparison-note">仅比较两次输入对应的四柱，不判断运势好坏；当前候选名排序未使用四柱。</p></section>`;
+  return `<section class="bazi-comparison" aria-label="预产期与出生信息对照"><div class="comparison-heading"><h3>预产期与实际出生对照</h3><span>${comparison.near_boundary ? '靠近节气，需复核' : comparison.has_changes ? '四柱中有变化' : '四柱相同'}</span></div><p>预产期参考 ${escapeHTML(comparison.reference.local_time)}；主排盘采用实际出生时间。</p><div class="comparison-table-wrap"><table><caption>预产期参考与实际出生的四柱对照</caption><thead><tr><th scope="col">时间依据</th>${headings}</tr></thead><tbody><tr><th scope="row">预产期参考</th>${reference}</tr><tr><th scope="row">实际出生</th>${actual}</tr><tr><th scope="row">对照</th>${changed}</tr></tbody></table></div>${boundaryNotice}${boundary}<p class="comparison-note">仅比较两次输入对应的四柱，不判断运势好坏；生辰起卦与选字采用主排盘时间。</p></section>`;
 }
 
 function renderSummary(data, analysis) {
@@ -347,7 +347,7 @@ function renderCards(data, analysis, selected) {
     const fullName = escapeHTML(item.fullName);
     const isSaved = saved.includes(item.fullName);
     const reading = readingNotes(item.pronunciation).map((note) => `<p>${escapeHTML(note)}</p>`).join('');
-    return `<article class="card"><div class="card-top"><span class="rank">${String(item.rank).padStart(2, '0')} / 名字提案</span><span class="card-status">${item.source_status === 'verified' ? '寓意已复核' : '寓意待核验'}</span></div><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>查看演示意象与资料状态</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">候选名评分和卦象为演示数据，未依据出生信息起卦；四柱排盘见上方</small></details><div class="card-foot"><span class="score">演示评分 ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="make-keepsake" data-name="${fullName}" type="button">做心愿卡</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
+    return `<article class="card"><div class="card-top"><span class="rank">${String(item.rank).padStart(2, '0')} / 名字提案</span><span class="card-status">${item.source_status === 'verified' ? '寓意已复核' : '寓意待核验'}</span></div><h3>${fullName}</h3><div class="pinyin">姓氏 ${escapeHTML(data.surname || '林')} · 名 ${escapeHTML(item.pinyin)}</div><p class="meaning">${escapeHTML(item.meaning)}</p><div class="chips">${item.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join('')}</div><details><summary>查看读音与字形提醒</summary>${reading}</details><details><summary>${item.ranking ? "查看选字依据与资料状态" : "查看演示意象与资料状态"}</summary><p>${escapeHTML(item.elementEvidence)}</p><p>${escapeHTML(item.guaEvidence)}</p><p>${escapeHTML(item.yinyangEvidence)}</p><p>${escapeHTML(item.scoreEvidence)}</p><p>寓意资料状态：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${escapeHTML(item.source)}</p><p>${escapeHTML(item.analysis)}</p><small class="evidence-disclaimer">${item.ranking ? "匹配值不代表运势；四柱与生辰起卦采用主排盘时间。" : "此旧版记录的评分和卦象为演示数据。"}</small></details><div class="card-foot"><span class="score">${item.ranking ? "偏好匹配" : "演示评分"} ${escapeHTML(item.score)} <small>/ 100</small></span><div class="card-tools"><button class="copy-name" data-name="${fullName}" type="button">复制名字</button><button class="make-keepsake" data-name="${fullName}" type="button">做心愿卡</button><button class="save ${isSaved ? 'saved' : ''}" data-name="${fullName}" type="button">${isSaved ? '已收藏' : '收藏 ♡'}</button></div></div></article>`;
   }).join('');
   upgradePanel.hidden = false;
   upgradePanel.innerHTML = `<div><strong>已展示 ${freeList.length} 个候选</strong><p>可以展开每个候选查看资料状态，收藏喜欢的名字或下载当前方案。</p></div><a class="primary" href="#pricing">查看服务状态 <span>→</span></a>`;
@@ -472,7 +472,7 @@ form.addEventListener('submit', async (event) => {
     lastAnalysis = analysis;
     downloadReport.disabled = !freeCount;
     const requestedCount = Number(data.candidateCount || 3);
-    resultStatus.textContent = freeCount ? `已生成 ${freeCount} 个方向，可展开卡片查看演示意象及资料状态。${freeCount < requestedCount ? `当前字数和避用字条件下，演示字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
+    resultStatus.textContent = freeCount ? `已生成 ${freeCount} 个方向，可展开卡片查看选字依据与资料状态。${freeCount < requestedCount ? `当前字数和避用字条件下，当前字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
     document.querySelector('#results').scrollIntoView({ behavior: scrollBehavior() });
     showToast(freeCount ? '名字方案已生成，先收藏喜欢的方向。' : '请调整避用字或名字字数后重试。', freeCount ? 'success' : 'info');
   } catch (error) {
@@ -502,7 +502,7 @@ regenerate.addEventListener('click', async () => {
       renderSummary(nextRequest, analysis);
       downloadReport.disabled = !freeCount;
       const requestedCount = Number(nextRequest.candidateCount || 3);
-      resultStatus.textContent = freeCount ? `已按第 ${nextRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数和避用字条件下，演示字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
+      resultStatus.textContent = freeCount ? `已按第 ${nextRequest.variant} 轮重新整理 ${freeCount} 个方案。${freeCount < requestedCount ? `当前字数和避用字条件下，当前字库仅匹配 ${freeCount} 个。` : ''}` : '四柱已计算，当前条件下没有符合要求的候选。';
       showToast(freeCount ? '已重新整理候选方向。' : '请调整避用字或名字字数后重试。', 'info');
     } catch (error) {
       showToast(friendlyError(error.message || ''), 'info');
@@ -534,7 +534,7 @@ function downloadReportFile() {
       `四柱对照：${comparison.differences.map(item => `${item.label}${item.changed ? '有变化' : '相同'}`).join('、')}`,
       ...(comparison.near_boundary ? ['节气边界提示：其中一组时间接近节气交接，年柱或月柱的对照结果可能随节气时刻核对而变化。'] : []),
       ...(referenceBoundary ? [`预产期参考边界：${referenceBoundary.warning} ${referenceBoundary.term} ${referenceBoundary.local_time}`, `交接前：${referenceBoundary.alternatives[0].year}年 ${referenceBoundary.alternatives[0].month}月；交接后：${referenceBoundary.alternatives[1].year}年 ${referenceBoundary.alternatives[1].month}月`] : []),
-      '对照只比较四柱，不判断运势好坏；当前候选排序未使用四柱。'
+      '对照只比较四柱，不判断运势好坏；起卦和选字采用实际出生时间。'
     ];
   const lines = [
     '# 序名 · 命名参考方案',
@@ -569,14 +569,14 @@ function downloadReportFile() {
     readingNotes(item.pronunciation).forEach(note => lines.push(`- ${note}`));
     lines.push(`- 寓意：${item.meaning}`);
     lines.push(`- 标签：${item.tags.join('、')}`);
-    lines.push(`- 演示评分：${item.score}/100`);
+    lines.push(`- ${item.ranking ? "偏好匹配" : "演示评分"}：${item.score}/100`);
     lines.push(`- 演示意象：${item.elementEvidence}`);
     lines.push(`- 易经象意：${item.guaEvidence}`);
     lines.push(`- 阴阳：${item.yinyangEvidence}`);
     lines.push(`- 评分构成：${item.scoreEvidence}`);
     lines.push(`- 寓意资料：${item.source_status === 'verified' ? '已记录复核' : '待核验'}；${item.source}`);
     if (item.source_reference?.url) lines.push(`- 参考来源：${item.source_reference.url}`);
-    lines.push('- 评分和卦象关联仍为演示资料。');
+    lines.push(item.ranking ? item.ranking.notice : '- 此旧版记录的评分和卦象关联为演示资料。');
     lines.push('');
   });
   const blob = new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/markdown;charset=utf-8' });

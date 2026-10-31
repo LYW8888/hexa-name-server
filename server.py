@@ -8,6 +8,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 import bazi
 import phonetics
+import tradition
+import naming_rules
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -60,7 +62,6 @@ def load_names() -> list[dict]:
     for item in names:
         given = item.get("given")
         source = item.get("meaning_source", {})
-        associations = item.get("demo_associations")
         if (not isinstance(given, str) or not 1 <= len(given) <= 3 or given in seen
             or not isinstance(item.get("pinyin"), str) or not item["pinyin"]
             or not isinstance(item.get("meaning"), str) or not item["meaning"]
@@ -68,10 +69,8 @@ def load_names() -> list[dict]:
             or any(not isinstance(tag, str) for tag in item["tags"])
             or not isinstance(item.get("styles"), list) or any(not isinstance(style, str) for style in item["styles"])
             or not isinstance(item.get("genders"), list) or any(g not in ("unknown", "male", "female") for g in item["genders"])
-            or not isinstance(item.get("base_score"), int) or not 0 <= item["base_score"] <= 99
             or not valid_source(source)
-            or (associations is not None and (not isinstance(associations, dict) or associations.get("verification_status") != "demo" or not associations.get("gua")
-            or not associations.get("gua_meaning") or not isinstance(associations.get("strokes"), int)))):
+            ):
             raise ValueError(f"candidate catalog contains invalid record: {given!r}")
         seen.add(given)
     return names
@@ -81,12 +80,17 @@ def init_db() -> None:
     # Keep the existing SQLite catalog for compatibility; the checked-in JSON
     # is the authoritative source for both selection and presentation.
     DATA.mkdir(exist_ok=True)
-    rows = [(item["given"], item["meaning"], item["tags"][0], ",".join(item["styles"]), item["base_score"]) for item in load_names()]
+    facts = naming_rules.catalog()
+    # Legacy base_score remains zero; current ranking has no preset score.
+    rows = []
+    for item in load_names():
+        elements = dict.fromkeys(facts.get(char, {}).get("element") for char in item["given"])
+        rows.append((item["given"], item["meaning"], ",".join(e for e in elements if e), ",".join(item["styles"]), 0))
     with sqlite3.connect(DB) as conn:
         conn.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         conn.execute("CREATE TABLE IF NOT EXISTS candidates (given TEXT PRIMARY KEY, meaning TEXT, element TEXT, styles TEXT, base_score INTEGER)")
         conn.executemany("INSERT OR REPLACE INTO candidates VALUES (?,?,?,?,?)", rows)
-        conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("schema_version", "1.0.0"))
+        conn.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("schema_version", "2.0.0"))
         conn.commit()
 
 def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
@@ -222,37 +226,96 @@ def analyze(payload: dict) -> dict:
         raise ValueError("variant must be an integer from 0 to 100000") from exc
     if not 0 <= variant <= 100000:
         raise ValueError("variant must be an integer from 0 to 100000")
+    gua = tradition.cast(basis_date, basis_time, zone, reference=chart["reference"])
+    traditional = tradition.chart_details(chart)
+    element_preference = payload.get("elementPreference", "auto")
+    if not isinstance(element_preference, str):
+        raise ValueError("elementPreference must be auto, none, 木, 火, 土, 金, or 水")
+    naming_reference = naming_rules.target_for(element_preference, gua)
+    family_chars = set()
+    if payload.get("honorParents") in (True, "1", "on", "true"):
+        family_chars = {char for char in parents if phonetics.is_han(char)} - avoided
     result = []
     for item in pool:
         given = item["given"]
-        base = item["base_score"]
-        gender_boost = 2 if gender == "unknown" or gender in item["genders"] else 0
-        preference_boost = 2 if any(char in meaning or char in liked for char in given) else 0
-        style_boost = 2 if set(styles) & set(item["styles"]) else 0
-        score = base + style_boost + gender_boost + preference_boost
-        evidence = f"演示评分构成：基础 {base}；风格偏好 +{style_boost}；性别倾向 +{gender_boost}；文字偏好 +{preference_boost}。重新生成时轮换候选；避用字已过滤；未计算喜用神。"
-        assoc = item["demo_associations"]
-        if assoc:
-            polarity = "阴" if assoc["strokes"] % 2 == 0 else "阳"
-            gua_evidence = f"演示库人工关联的八卦象意：{assoc['gua']}卦，{assoc['gua_meaning']}。并非依出生信息起卦；《周易·说卦传》来源及释义待核验。"
-            yinyang_evidence = f"演示笔画奇偶参考：候选名暂记 {assoc['strokes']} 画，按奇偶标为{polarity}；笔画和对应规则均待核验，不能用于判断运势。"
-        else:
-            gua_evidence = "尚无经核验的卦象资料；并非依出生信息起卦。"
-            yinyang_evidence = "尚无经核验的笔画和阴阳资料。"
+        pronunciation = phonetics.check(surname, given, item["pinyin"])
+        matched = naming_rules.rank(
+            item,
+            surname,
+            pronunciation,
+            chart,
+            gua,
+            naming_reference,
+            liked,
+            family_chars,
+            meaning,
+            styles,
+            gender,
+        )
         source = item["meaning_source"]
         reference = source.get("reference") if source["verification_status"] == "verified" else None
-        source_text = source["description"] if not reference else f"{source['description']}（{reference['title']}，{reference['edition']}，{reference['citation']}；复核：{reference['reviewed_by']}，{reference['reviewed_at']}）"
-        result.append({"name": surname + given, "given": given, "pinyin": item["pinyin"], "pronunciation": phonetics.check(surname, given, item["pinyin"]), "meaning": item["meaning"], "tags": item["tags"], "element": item["tags"][0], "score": max(0, min(score, 99)), "score_evidence": evidence, "source_status": source["verification_status"], "source": source_text, "source_reference": reference, "element_evidence": f"演示字库意象分类：{item['tags'][0]}；归类尚未核验，不代表生辰五行。", "gua_evidence": gua_evidence, "yinyang_evidence": yinyang_evidence})
+        source_text = (
+            source["description"]
+            if not reference
+            else f"{source['description']}（{reference['title']}，{reference['edition']}，{reference['citation']}；复核：{reference['reviewed_by']}，{reference['reviewed_at']}）"
+        )
+        result.append(
+            {
+                "name": surname + given,
+                "given": given,
+                "pinyin": item["pinyin"],
+                "pronunciation": pronunciation,
+                "meaning": item["meaning"],
+                "tags": matched["elements"] + item["tags"],
+                "element": matched["elements"][0] if matched["elements"] else None,
+                **matched,
+                "source_status": source["verification_status"],
+                "source": source_text,
+                "source_reference": reference,
+            }
+        )
     result.sort(key=lambda item: (-item["score"], item["given"]))
     if variant and result:
         offset = (variant * effective_count) % len(result)
         result = result[offset:] + result[:offset]
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
-    method = (f"{'预产期参考排盘，出生后请以实际出生时间重新计算' if chart['reference'] else '按实际出生日期和时间排盘'}；"
-              f"时区：{zone_label}；年柱以立春、月柱以十二节的交接时刻为界；"
-              "日柱以当地民用时间 23:00 换日。五行仅统计四柱表面八字，不含藏干，不判定旺衰或喜用神；"
-              "候选名评分及字的五行归类仍为待核验的演示规则。")
-    return {"analysis": {"primary": None, "support": None, "bazi": chart, "bazi_comparison": comparison, "family": bool(parents), "purpose": purpose_label, "current_name": current_name, "scenario": scenario, "gender": gender_label, "zone": zone, "zone_label": zone_label, "time": basis_time, "due_date": due_date, "due_time": due_time if due_date else "", "birth_date": birth_date, "birth_time": birth_time, "candidate_count": effective_count, "requested_candidate_count": candidate_count, "available_candidate_count": len(pool), "method": method}, "candidates": result[:effective_count]}
+    method = (
+        f"{'预产期参考，出生后请重新确认实际时间' if chart['reference'] else '采用实际出生信息'}；"
+        f"时区：{zone_label}；四柱按立春、十二节与当地23:00换日计算。"
+        f"阴阳、藏干及十神按公开干支规则计算；年月日时起卦得到{gua['hexagram']}，动{gua['moving_line']}爻、变{gua['changed_hexagram']}。"
+        f"候选按{naming_reference['label']}、字形部首、读音和文字偏好计算匹配值。"
+        "未计算格局旺衰、调候或喜用神；古籍版本与字形资料仍需复核，不预测运势。"
+    )
+    return {
+        "analysis": {
+            "primary": None,
+            "support": None,
+            "bazi": chart,
+            "bazi_comparison": comparison,
+            "traditional": traditional,
+            "gua": gua,
+            "naming_reference": naming_reference,
+            "ranking_version": naming_rules.VERSION,
+            "has_more_candidates": len(pool) > effective_count,
+            "family": bool(parents),
+            "purpose": purpose_label,
+            "current_name": current_name,
+            "scenario": scenario,
+            "gender": gender_label,
+            "zone": zone,
+            "zone_label": zone_label,
+            "time": basis_time,
+            "due_date": due_date,
+            "due_time": due_time if due_date else "",
+            "birth_date": birth_date,
+            "birth_time": birth_time,
+            "candidate_count": effective_count,
+            "requested_candidate_count": candidate_count,
+            "available_candidate_count": len(pool),
+            "method": method,
+        },
+        "candidates": result[:effective_count],
+    }
 
 
 class Handler(SimpleHTTPRequestHandler):

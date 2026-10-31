@@ -1,7 +1,7 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "title": "传统象意参考索引",
-  "source_policy": "These mappings are cultural reference data. They are not deterministic predictions and require source review before production.",
+  "source_policy": "生辰起卦采用公开声明的年月日时规则，和四柱节气规则分开；不以索引关键词冒充经核验古籍引文，不预测运势。",
   "sources": [
     {
       "id": "zhouyi-shuogua",
@@ -11,21 +11,100 @@
     }
   ],
   "bagua": [
-    {"name":"乾","image":"天","keywords":["健","刚健"],"element":"金","source_id":"zhouyi-shuogua"},
-    {"name":"坤","image":"地","keywords":["厚","承载"],"element":"土","source_id":"zhouyi-shuogua"},
-    {"name":"震","image":"雷","keywords":["动","发动"],"element":"木","source_id":"zhouyi-shuogua"},
-    {"name":"巽","image":"风","keywords":["入","渐进"],"element":"木","source_id":"zhouyi-shuogua"},
-    {"name":"坎","image":"水","keywords":["流行","守正"],"element":"水","source_id":"zhouyi-shuogua"},
-    {"name":"离","image":"火","keywords":["明","文明"],"element":"火","source_id":"zhouyi-shuogua"},
-    {"name":"艮","image":"山","keywords":["止","安定"],"element":"土","source_id":"zhouyi-shuogua"},
-    {"name":"兑","image":"泽","keywords":["悦","和悦"],"element":"金","source_id":"zhouyi-shuogua"}
+    {
+      "name": "乾",
+      "image": "天",
+      "keywords": [
+        "健",
+        "刚健"
+      ],
+      "element": "金",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "坤",
+      "image": "地",
+      "keywords": [
+        "厚",
+        "承载"
+      ],
+      "element": "土",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "震",
+      "image": "雷",
+      "keywords": [
+        "动",
+        "发动"
+      ],
+      "element": "木",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "巽",
+      "image": "风",
+      "keywords": [
+        "入",
+        "渐进"
+      ],
+      "element": "木",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "坎",
+      "image": "水",
+      "keywords": [
+        "流行",
+        "守正"
+      ],
+      "element": "水",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "离",
+      "image": "火",
+      "keywords": [
+        "明",
+        "文明"
+      ],
+      "element": "火",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "艮",
+      "image": "山",
+      "keywords": [
+        "止",
+        "安定"
+      ],
+      "element": "土",
+      "source_id": "zhouyi-shuogua"
+    },
+    {
+      "name": "兑",
+      "image": "泽",
+      "keywords": [
+        "悦",
+        "和悦"
+      ],
+      "element": "金",
+      "source_id": "zhouyi-shuogua"
+    }
   ],
   "yin_yang_policy": {
-    "status": "pending",
-    "rule": "候选名笔画奇偶仅作为传统数理参考，阳/阴标签不能替代完整命理排盘。"
+    "status": "implemented_rule",
+    "rule": "阴阳由四柱干支的固定阴阳属性计算，天干相对日主的十神按五行生克与阴阳同异计算；不使用未核验的姓名笔画奇偶。"
   },
   "five_elements_policy": {
-    "status": "pending",
-    "rule": "字的五行归类必须绑定统一字典、版本和复核记录；当前原型仅使用演示归类。"
+    "status": "implemented_radical_rule",
+    "rule": "四柱表面计数和藏干次数分开展示。选字仅按 data/character-catalog.json 声明的直接部首规则分组，非唯一权威汉字五行或八字喜用神；数据来源及异体字仍待复核。"
+  },
+  "gua_method": {
+    "status": "implemented_rule",
+    "module": "tradition.py",
+    "version": "traditional-reference-v1",
+    "rule": "年支序数+农历月+农历日取上卦，加时支数取下卦与动爻；体卦五行可作为可关闭的字形意象偏好，所有候选共用同一时间起卦。",
+    "source_review": "梅花易数类常见年月日时口径；古籍版本、篇章解释未完成复核，不标为周易原文推导。"
   }
 }

@@ -150,7 +150,9 @@ test("候选为空、偏好冲突和服务不可用时给出清晰结果", async
   await page.locator(".panel.active .next").click();
   await page
     .locator("[name=avoidedChars]")
-    .fill("安 澄 明 宁 远 知 衡 清 景 和 嘉 书 舒 川 若");
+    .fill(
+      "安 澄 明 宁 远 知 衡 清 景 和 嘉 书 舒 川 若 桐 柏 煜 烨 培 均 钧 铭 沐 泽",
+    );
   await page.locator("button[type=submit]").click();
   await expect(page.locator("#cards .empty-result")).toBeVisible();
   await expect(page.locator("#downloadReport")).toBeDisabled();
@@ -358,3 +360,87 @@ test("保留的旧版完整页面也能正常提交未来预产期", async ({ pa
   await page.locator("#namingForm button[type=submit]").click();
   await expect(page.locator("#cards .card")).toHaveCount(3);
 });
+
+for (const width of [1280, 390])
+  test(`生成确认、真实依据与候选比较在 ${width}px 可用`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await page.locator("[name=surname]").fill("欧阳");
+    await expect(page.locator("#namingForm")).toContainText(
+      "欧阳沐安，共 4 字",
+    );
+    await page.locator(".panel.active .next").click();
+    await page.locator("[name=dueDate]").fill("2099-12-23");
+    await page.locator("[name=place]").fill("杭州");
+    await page.locator(".panel.active .next").click();
+    const review = page.getByRole("region", { name: "生成前确认" });
+    await expect(review).toContainText("2099-12-23 12:00");
+    await review.getByRole("button", { name: "修改基本信息" }).click();
+    await page.locator("[name=candidateCount]").fill("4");
+    await page.locator(".panel.active .next").click();
+    await page.locator(".panel.active .next").click();
+    await page.locator("[name=elementPreference]").selectOption("水");
+    await page.locator("#namingForm button[type=submit]").click();
+    await expect(page.locator("#cards .card")).toHaveCount(4);
+    const cards = page.locator("#cards .card");
+    expect(
+      await page
+        .locator(".result-context")
+        .evaluate((el) => getComputedStyle(el).display),
+    ).toBe("flex");
+    await expect(cards.first()).toContainText("偏好匹配");
+    await expect(cards.first()).not.toContainText("演示评分");
+    await cards.first().locator(".name-evidence summary").click();
+    await expect(cards.first().locator(".name-evidence")).toContainText(
+      "字形五行意象",
+    );
+    await expect(page.locator(".polarity-summary")).toContainText("四柱阴阳");
+    await page.locator(".hidden-stems summary").click();
+    await expect(page.locator(".hidden-stems")).toContainText("天干十神");
+    await expect(
+      page.getByRole("region", { name: "生辰起卦依据" }),
+    ).toContainText("动第");
+    expect(
+      await page.evaluate(
+        () =>
+          !!(
+            document
+              .querySelector("#cards")
+              .compareDocumentPosition(
+                document.querySelector("#traditionalBasis"),
+              ) & Node.DOCUMENT_POSITION_FOLLOWING
+          ),
+      ),
+    ).toBeTruthy();
+    for (let i = 0; i < 3; i++)
+      await cards.nth(i).locator(".compare-name").click();
+    await expect(cards.nth(3).locator(".compare-name")).toBeDisabled();
+    const comparison = page.getByRole("region", { name: "候选名字比较" });
+    await expect(comparison).toContainText("已选 3/3");
+    await expect(comparison).toContainText("不是运势分");
+    await cards.first().locator(".compare-name").click();
+    await expect(cards.nth(3).locator(".compare-name")).toBeEnabled();
+    await expect(comparison).toContainText("已选 2/3");
+    const pending = page.waitForEvent("download");
+    await page.locator("#downloadReport").click();
+    const report = await readFile(await (await pending).path(), "utf8");
+    for (const text of [
+      "四柱阴阳",
+      "藏干单独计数",
+      "起卦方法",
+      "选字参考：自选水意象",
+      "偏好匹配",
+    ])
+      expect(report).toContain(text);
+    expect(report).not.toContain("评分和卦象关联仍为演示");
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBeTruthy();
+    await page.locator("#regenerate").click();
+    await expect(page.locator("#resultStatus")).toContainText("第 1 轮");
+    await expect(comparison).toHaveCount(0);
+  });

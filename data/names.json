@@ -1,13 +1,12 @@
 {
-  "schema_version": "1.0.0",
-  "description": "候选名字人工整理数据，尚未完成出处和读音核验，演示参考，非喜用神分析。",
+  "schema_version": "2.0.0",
+  "description": "人工整理的名字与现代寓意；排序由公开规则计算，不含预设吉凶分数或人工关联卦象。寓意出处待复核。",
   "names": [
     {
       "given": "知衡",
       "pinyin": "ZHĪ HÉNG",
       "meaning": "知其所来，守心而衡；清醒而有分寸。",
       "tags": [
-        "木",
         "明辨",
         "端正"
       ],
@@ -19,16 +18,9 @@
         "unknown",
         "male"
       ],
-      "base_score": 94,
       "meaning_source": {
         "description": "“知”与“衡”取知行与持守之意，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "巽",
-        "gua_meaning": "巽为风，取渐入、通达之象",
-        "strokes": 24,
-        "verification_status": "demo"
       }
     },
     {
@@ -36,7 +28,6 @@
       "pinyin": "JǐNG HÉ",
       "meaning": "景是光明与敬意，和是从容与相处。",
       "tags": [
-        "火",
         "光明",
         "和雅"
       ],
@@ -49,16 +40,9 @@
         "male",
         "female"
       ],
-      "base_score": 92,
       "meaning_source": {
         "description": "“景”和“和”为常用汉字义项，经典出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取明亮、依附之象",
-        "strokes": 20,
-        "verification_status": "demo"
       }
     },
     {
@@ -66,7 +50,6 @@
       "pinyin": "YǓ ĀN",
       "meaning": "予人以善意，也为自己留一方安定。",
       "tags": [
-        "土",
         "安定",
         "温润"
       ],
@@ -78,16 +61,9 @@
         "unknown",
         "female"
       ],
-      "base_score": 90,
       "meaning_source": {
         "description": "依据现代汉语常用义项生成，未宣称特定经典出处。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坤",
-        "gua_meaning": "坤为地，取厚重、承载之象",
-        "strokes": 10,
-        "verification_status": "demo"
       }
     },
     {
@@ -95,7 +71,6 @@
       "pinyin": "QĪNG YÀN",
       "meaning": "清澈而坚定，晏然自得，心有晴明。",
       "tags": [
-        "水",
         "清澈",
         "从容"
       ],
@@ -107,16 +82,9 @@
         "unknown",
         "female"
       ],
-      "base_score": 89,
       "meaning_source": {
         "description": "“晏”取安宁、和柔之义，具体出处需由资料库确认。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坎",
-        "gua_meaning": "坎为水，取流行、守正之象",
-        "strokes": 21,
-        "verification_status": "demo"
       }
     },
     {
@@ -124,7 +92,6 @@
       "pinyin": "YÁN CHUĀN",
       "meaning": "言有所守，心有远川；诚实而开阔。",
       "tags": [
-        "水",
         "开阔",
         "诚明"
       ],
@@ -136,16 +103,9 @@
         "unknown",
         "male"
       ],
-      "base_score": 88,
       "meaning_source": {
         "description": "结合字面意象和读音生成，未使用未经核验的古籍引文。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坎",
-        "gua_meaning": "坎为水，取流动、深思之象",
-        "strokes": 10,
-        "verification_status": "demo"
       }
     },
     {
@@ -153,7 +113,6 @@
       "pinyin": "ZHĀO NÍNG",
       "meaning": "昭示光亮，宁静笃定，温柔而有力量。",
       "tags": [
-        "火",
         "光亮",
         "笃定"
       ],
@@ -165,16 +124,9 @@
         "unknown",
         "female"
       ],
-      "base_score": 87,
       "meaning_source": {
         "description": "“昭”“宁”取明亮、安宁义项，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取明亮、文明之象",
-        "strokes": 23,
-        "verification_status": "demo"
       }
     },
     {
@@ -182,7 +134,6 @@
       "pinyin": "ĀN",
       "meaning": "安定、从容，也保留给未来的空间。",
       "tags": [
-        "土",
         "安定"
       ],
       "styles": [
@@ -194,16 +145,9 @@
         "female",
         "male"
       ],
-      "base_score": 86,
       "meaning_source": {
         "description": "依据现代汉语常用义项生成，未宣称特定经典出处。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坤",
-        "gua_meaning": "坤为地，取安厚、承载之象",
-        "strokes": 6,
-        "verification_status": "demo"
       }
     },
     {
@@ -211,7 +155,6 @@
       "pinyin": "CHÉNG",
       "meaning": "澄明而不喧，保有清醒和宁静。",
       "tags": [
-        "水",
         "澄明"
       ],
       "styles": [
@@ -223,16 +166,9 @@
         "female",
         "male"
       ],
-      "base_score": 85,
       "meaning_source": {
         "description": "依据字面意象生成，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坎",
-        "gua_meaning": "坎为水，取澄明、流行之象",
-        "strokes": 16,
-        "verification_status": "demo"
       }
     },
     {
@@ -240,7 +176,6 @@
       "pinyin": "ZHĪ XÍNG",
       "meaning": "知与行相互照见，把理解带入生活。",
       "tags": [
-        "木",
         "实践",
         "明辨"
       ],
@@ -252,16 +187,9 @@
         "unknown",
         "male"
       ],
-      "base_score": 91,
       "meaning_source": {
         "description": "“知行”是常见思想表达，具体出处需由资料库确认。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "震",
-        "gua_meaning": "震为雷，取发动、实践之象",
-        "strokes": 14,
-        "verification_status": "demo"
       }
     },
     {
@@ -269,7 +197,6 @@
       "pinyin": "JǐNG HÉ ĀN",
       "meaning": "有光明、有和意，也有安定的落点。",
       "tags": [
-        "火",
         "和雅",
         "安定"
       ],
@@ -282,16 +209,9 @@
         "female",
         "male"
       ],
-      "base_score": 88,
       "meaning_source": {
         "description": "按字面义项组合，经典出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取光明、和合之象",
-        "strokes": 26,
-        "verification_status": "demo"
       }
     },
     {
@@ -299,7 +219,6 @@
       "pinyin": "QĪNG YÀN NÍNG",
       "meaning": "清澈、安宁而坚定，温柔中有力量。",
       "tags": [
-        "水",
         "从容",
         "笃定"
       ],
@@ -311,16 +230,9 @@
         "unknown",
         "female"
       ],
-      "base_score": 87,
       "meaning_source": {
         "description": "按字面义项组合，经典出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坎",
-        "gua_meaning": "坎为水，取清明、安宁之象",
-        "strokes": 35,
-        "verification_status": "demo"
       }
     },
     {
@@ -328,7 +240,6 @@
       "pinyin": "MÍNG YUǍN",
       "meaning": "明辨而有远志，心有光亮与方向。",
       "tags": [
-        "火",
         "明朗",
         "远志"
       ],
@@ -340,16 +251,9 @@
         "unknown",
         "male"
       ],
-      "base_score": 88,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取明亮、远见之象",
-        "strokes": 20,
-        "verification_status": "demo"
       }
     },
     {
@@ -357,7 +261,6 @@
       "pinyin": "SHŪ NÍNG",
       "meaning": "以书明理，以宁守心，知性而安定。",
       "tags": [
-        "木",
         "知性",
         "安定"
       ],
@@ -370,16 +273,9 @@
         "female",
         "male"
       ],
-      "base_score": 86,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "巽",
-        "gua_meaning": "巽为风，取文理、渐进之象",
-        "strokes": 18,
-        "verification_status": "demo"
       }
     },
     {
@@ -387,7 +283,6 @@
       "pinyin": "RUÒ CHUĀN",
       "meaning": "如水有度，心有远川；柔和而开阔。",
       "tags": [
-        "水",
         "自然",
         "开阔"
       ],
@@ -400,16 +295,9 @@
         "female",
         "male"
       ],
-      "base_score": 87,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坎",
-        "gua_meaning": "坎为水，取流行、开阔之象",
-        "strokes": 11,
-        "verification_status": "demo"
       }
     },
     {
@@ -417,7 +305,6 @@
       "pinyin": "JIĀ YÁN",
       "meaning": "嘉善之言，诚明有礼，温厚而端正。",
       "tags": [
-        "木",
         "端正",
         "明辨"
       ],
@@ -430,16 +317,9 @@
         "female",
         "male"
       ],
-      "base_score": 86,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "震",
-        "gua_meaning": "震为雷，取发动、明辨之象",
-        "strokes": 21,
-        "verification_status": "demo"
       }
     },
     {
@@ -447,7 +327,6 @@
       "pinyin": "CHÉNG ĀN",
       "meaning": "承其厚重，守一方安定，踏实而有担当。",
       "tags": [
-        "土",
         "承载",
         "安定"
       ],
@@ -459,16 +338,9 @@
         "unknown",
         "male"
       ],
-      "base_score": 85,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坤",
-        "gua_meaning": "坤为地，取承载、安厚之象",
-        "strokes": 14,
-        "verification_status": "demo"
       }
     },
     {
@@ -476,7 +348,6 @@
       "pinyin": "YÚN SHŪ",
       "meaning": "云卷云舒，从容自在，心境开阔。",
       "tags": [
-        "水",
         "从容",
         "自然"
       ],
@@ -488,16 +359,9 @@
         "unknown",
         "female"
       ],
-      "base_score": 84,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "巽",
-        "gua_meaning": "巽为风，取舒展、渐进之象",
-        "strokes": 21,
-        "verification_status": "demo"
       }
     },
     {
@@ -505,7 +369,6 @@
       "pinyin": "TÍNG XUĀN",
       "meaning": "庭院端正，轩然开阔，稳重而有气度。",
       "tags": [
-        "土",
         "开阔",
         "端正"
       ],
@@ -517,16 +380,9 @@
         "unknown",
         "male"
       ],
-      "base_score": 84,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "艮",
-        "gua_meaning": "艮为山，取端正、安止之象",
-        "strokes": 20,
-        "verification_status": "demo"
       }
     },
     {
@@ -534,7 +390,6 @@
       "pinyin": "JIǍN NÍNG",
       "meaning": "简而有致，宁静坚定，清醒而从容。",
       "tags": [
-        "火",
         "简静",
         "笃定"
       ],
@@ -547,16 +402,9 @@
         "female",
         "male"
       ],
-      "base_score": 83,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取简明、文明之象",
-        "strokes": 25,
-        "verification_status": "demo"
       }
     },
     {
@@ -564,7 +412,6 @@
       "pinyin": "MÍNG",
       "meaning": "明亮、明辨，心有清晰方向。",
       "tags": [
-        "火",
         "明朗"
       ],
       "styles": [
@@ -576,16 +423,9 @@
         "male",
         "female"
       ],
-      "base_score": 84,
       "meaning_source": {
         "description": "依据现代汉语常用义项生成，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取明亮、文明之象",
-        "strokes": 8,
-        "verification_status": "demo"
       }
     },
     {
@@ -593,7 +433,6 @@
       "pinyin": "NÍNG",
       "meaning": "安宁、平静，保有内在力量。",
       "tags": [
-        "火",
         "安定"
       ],
       "styles": [
@@ -605,16 +444,9 @@
         "male",
         "female"
       ],
-      "base_score": 83,
       "meaning_source": {
         "description": "依据现代汉语常用义项生成，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取安宁、守静之象",
-        "strokes": 14,
-        "verification_status": "demo"
       }
     },
     {
@@ -622,7 +454,6 @@
       "pinyin": "YUǍN",
       "meaning": "远志、远见，也保留探索空间。",
       "tags": [
-        "土",
         "远志"
       ],
       "styles": [
@@ -634,16 +465,9 @@
         "male",
         "female"
       ],
-      "base_score": 82,
       "meaning_source": {
         "description": "依据现代汉语常用义项生成，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坤",
-        "gua_meaning": "坤为地，取厚重、远志之象",
-        "strokes": 17,
-        "verification_status": "demo"
       }
     },
     {
@@ -651,7 +475,6 @@
       "pinyin": "MÍNG YUǍN ĀN",
       "meaning": "明亮有远志，安定而有方向感。",
       "tags": [
-        "火",
         "远志",
         "安定"
       ],
@@ -664,16 +487,9 @@
         "male",
         "female"
       ],
-      "base_score": 84,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "离",
-        "gua_meaning": "离为火，取明亮、远志、安定之象",
-        "strokes": 26,
-        "verification_status": "demo"
       }
     },
     {
@@ -681,7 +497,6 @@
       "pinyin": "RUÒ CHUĀN NÍNG",
       "meaning": "如川开阔，心境宁静，柔韧而坚定。",
       "tags": [
-        "水",
         "自然",
         "笃定"
       ],
@@ -693,16 +508,9 @@
         "unknown",
         "female"
       ],
-      "base_score": 83,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "坎",
-        "gua_meaning": "坎为水，取流行、清宁之象",
-        "strokes": 25,
-        "verification_status": "demo"
       }
     },
     {
@@ -710,7 +518,6 @@
       "pinyin": "SHŪ NÍNG ĀN",
       "meaning": "知性、宁静而安定，温和有分寸。",
       "tags": [
-        "木",
         "知性",
         "安定"
       ],
@@ -723,16 +530,9 @@
         "female",
         "male"
       ],
-      "base_score": 82,
       "meaning_source": {
         "description": "依据现代汉语常用义项组合，出处待人工核验。",
         "verification_status": "pending"
-      },
-      "demo_associations": {
-        "gua": "巽",
-        "gua_meaning": "巽为风，取文理、安定、渐进之象",
-        "strokes": 24,
-        "verification_status": "demo"
       }
     },
     {
@@ -740,7 +540,6 @@
       "pinyin": "ZHĪ",
       "meaning": "明辨、求知，也保有探索的好奇。",
       "tags": [
-        "木",
         "字义参考"
       ],
       "styles": [
@@ -752,19 +551,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "衡",
       "pinyin": "HÉNG",
       "meaning": "平衡、有度，做事持稳而有分寸。",
       "tags": [
-        "土",
         "字义参考"
       ],
       "styles": [
@@ -776,19 +572,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "清",
       "pinyin": "QĪNG",
       "meaning": "清澈、清正，心境明朗。",
       "tags": [
-        "水",
         "字义参考"
       ],
       "styles": [
@@ -800,19 +593,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "景",
       "pinyin": "JǏNG",
       "meaning": "取景象与光明之意，心怀开阔。",
       "tags": [
-        "火",
         "字义参考"
       ],
       "styles": [
@@ -824,19 +614,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "和",
       "pinyin": "HÉ",
       "meaning": "和雅、温厚，待人平和。",
       "tags": [
-        "木",
         "字义参考"
       ],
       "styles": [
@@ -848,19 +635,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "嘉",
       "pinyin": "JIĀ",
       "meaning": "美好、嘉善，心向善意。",
       "tags": [
-        "木",
         "字义参考"
       ],
       "styles": [
@@ -872,19 +656,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "书",
       "pinyin": "SHŪ",
       "meaning": "书写、阅读，保有求知的心。",
       "tags": [
-        "木",
         "字义参考"
       ],
       "styles": [
@@ -896,19 +677,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "舒",
       "pinyin": "SHŪ",
       "meaning": "舒展、从容，心境自在。",
       "tags": [
-        "水",
         "字义参考"
       ],
       "styles": [
@@ -920,19 +698,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "川",
       "pinyin": "CHUĀN",
       "meaning": "取河川之象，寓意开阔与流动。",
       "tags": [
-        "水",
         "字义参考"
       ],
       "styles": [
@@ -944,19 +719,16 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
     },
     {
       "given": "若",
       "pinyin": "RUÒ",
       "meaning": "取柔和、自然之意，留下想象空间。",
       "tags": [
-        "木",
         "字义参考"
       ],
       "styles": [
@@ -968,12 +740,694 @@
         "male",
         "female"
       ],
-      "base_score": 80,
       "meaning_source": {
         "description": "按常见字面含义整理；读音和义项尚待词典复核。",
         "verification_status": "pending"
-      },
-      "demo_associations": null
+      }
+    },
+    {
+      "given": "桐",
+      "pinyin": "TÓNG",
+      "meaning": "梧桐舒展，取向上生长与温和的心意。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "柏",
+      "pinyin": "BǍI",
+      "meaning": "柏木常青，取坚定、持守的心意。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "煜",
+      "pinyin": "YÙ",
+      "meaning": "明亮而温暖，愿心中常有光。",
+      "tags": [
+        "明朗",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "烨",
+      "pinyin": "YÈ",
+      "meaning": "光明灿然，愿表达清朗而有力量。",
+      "tags": [
+        "明朗",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "培",
+      "pinyin": "PÉI",
+      "meaning": "培育与积累，愿踏实成长。",
+      "tags": [
+        "安定",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "均",
+      "pinyin": "JŪN",
+      "meaning": "均衡有度，愿处事公允从容。",
+      "tags": [
+        "安定",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "钧",
+      "pinyin": "JŪN",
+      "meaning": "取分量与分寸之意，愿言行有度。",
+      "tags": [
+        "端正",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "铭",
+      "pinyin": "MÍNG",
+      "meaning": "铭记与珍重，愿记得来路。",
+      "tags": [
+        "端正",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "沐",
+      "pinyin": "MÙ",
+      "meaning": "沐浴润泽，取清新、舒展的心意。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "泽",
+      "pinyin": "ZÉ",
+      "meaning": "润泽与包容，愿善待自己和他人。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "桐安",
+      "pinyin": "TÓNG ĀN",
+      "meaning": "桐木舒展，安然有度；愿生活从容生长。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "柏宁",
+      "pinyin": "BǍI NÍNG",
+      "meaning": "持守如柏，心有安宁；坚定而平和。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "梓言",
+      "pinyin": "ZǏ YÁN",
+      "meaning": "以成长为心意，以诚恳为表达。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "煜安",
+      "pinyin": "YÙ ĀN",
+      "meaning": "心有光亮，行有所安；温暖而踏实。",
+      "tags": [
+        "明朗",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "烨宁",
+      "pinyin": "YÈ NÍNG",
+      "meaning": "明朗而不张扬，心境宁静坚定。",
+      "tags": [
+        "明朗",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "书煜",
+      "pinyin": "SHŪ YÙ",
+      "meaning": "以阅读拓宽眼界，让心意明亮。",
+      "tags": [
+        "明朗",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "培宁",
+      "pinyin": "PÉI NÍNG",
+      "meaning": "慢慢积累，安宁成长；重视踏实与耐心。",
+      "tags": [
+        "安定",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "均和",
+      "pinyin": "JŪN HÉ",
+      "meaning": "持守分寸，和而有度；公允而温厚。",
+      "tags": [
+        "安定",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "城安",
+      "pinyin": "CHÉNG ĀN",
+      "meaning": "心有守护，生活有安；稳重而温暖。",
+      "tags": [
+        "安定",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "铭安",
+      "pinyin": "MÍNG ĀN",
+      "meaning": "铭记珍贵，安然前行；心有来路和归处。",
+      "tags": [
+        "端正",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "锦宁",
+      "pinyin": "JǏN NÍNG",
+      "meaning": "珍惜生活的丰盛，也保有内心安宁。",
+      "tags": [
+        "端正",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "知钧",
+      "pinyin": "ZHĪ JŪN",
+      "meaning": "明辨而有分寸，让理解落在行动中。",
+      "tags": [
+        "端正",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "沐安",
+      "pinyin": "MÙ ĀN",
+      "meaning": "沐有润泽，安有定力；温柔而有方向。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "泽宁",
+      "pinyin": "ZÉ NÍNG",
+      "meaning": "心怀润泽，行止安宁；宽厚而从容。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "泓安",
+      "pinyin": "HÓNG ĀN",
+      "meaning": "胸有清水，心有安处；沉静而开阔。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "桐知安",
+      "pinyin": "TÓNG ZHĪ ĀN",
+      "meaning": "如桐生长，知所珍重，安然前行。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "煜书宁",
+      "pinyin": "YÙ SHŪ NÍNG",
+      "meaning": "光亮与书香相伴，愿心境澄明安宁。",
+      "tags": [
+        "明朗",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "培知安",
+      "pinyin": "PÉI ZHĪ ĀN",
+      "meaning": "以积累增长见识，以安定照顾生活。",
+      "tags": [
+        "安定",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "锦知宁",
+      "pinyin": "JǏN ZHĪ NÍNG",
+      "meaning": "珍重美好，明辨取舍，心有宁静。",
+      "tags": [
+        "端正",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "bright"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
+    },
+    {
+      "given": "沐知安",
+      "pinyin": "MÙ ZHĪ ĀN",
+      "meaning": "清润地成长，明白自己的方向，心有所安。",
+      "tags": [
+        "自然",
+        "从容"
+      ],
+      "styles": [
+        "classical",
+        "modern",
+        "nature"
+      ],
+      "genders": [
+        "unknown",
+        "male",
+        "female"
+      ],
+      "meaning_source": {
+        "description": "本项目撰写的现代字义组合说明，不宣称特定古籍出处。",
+        "verification_status": "pending"
+      }
     }
   ]
 }

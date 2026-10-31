@@ -157,10 +157,10 @@ export default function App() {
         requested = Number(data.candidateCount || 3);
       const prefix = isRegenerate
         ? `已按第 ${data.variant} 轮重新整理 ${count} 个方案。`
-        : `已生成 ${count} 个方向，可展开卡片查看演示意象及资料状态。`;
+        : `已生成 ${count} 个方向，可加入比较，或展开卡片查看选字依据。`;
       setStatus(
         count
-          ? `${prefix}${count < requested ? `当前字数和避用字条件下，演示字库仅匹配 ${count} 个。` : ""}`
+          ? `${prefix}${count < requested ? `当前字数和避用字条件下，当前字库仅匹配 ${count} 个。` : ""}`
           : "四柱已计算，当前条件下没有符合要求的候选。",
       );
       if (!isRegenerate) scroll("#results");

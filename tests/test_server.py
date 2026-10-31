@@ -97,7 +97,7 @@ class ServerRulesTest(unittest.TestCase):
     def test_candidate_count_is_customizable_end_to_end(self):
         result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":5, "gender":"unknown"})
         self.assertEqual(result["analysis"]["candidate_count"], 5)
-        self.assertEqual(result["analysis"]["available_candidate_count"], 15)
+        self.assertEqual(result["analysis"]["available_candidate_count"], 30)
         self.assertEqual(len(result["candidates"]), 5)
     def test_candidate_count_range_is_validated(self):
         with self.assertRaisesRegex(ValueError, "candidateCount"):
@@ -106,21 +106,21 @@ class ServerRulesTest(unittest.TestCase):
         result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":3, "candidateCount":11, "gender":"unknown"})
         self.assertEqual(result["analysis"]["requested_candidate_count"], 11)
         self.assertEqual(result["analysis"]["candidate_count"], len(result["candidates"]))
-        self.assertEqual(result["analysis"]["candidate_count"], 5)
-        self.assertEqual(result["analysis"]["available_candidate_count"], 5)
+        self.assertEqual(result["analysis"]["candidate_count"], 10)
+        self.assertEqual(result["analysis"]["available_candidate_count"], 10)
         self.assertLess(result["analysis"]["candidate_count"], 11)
     def test_avoid_characters_are_hard_constraints_and_counts_are_honest(self):
         base = {"mode":"due_date", "surname":"安", "dueDate":"2099-01-01", "place":"杭州", "length":2, "candidateCount":11, "avoidedChars":"安、宁"}
         for variant in range(4):
             result = server.analyze({**base, "variant": variant})
             self.assertTrue(result["candidates"])
-            self.assertEqual(result["analysis"]["available_candidate_count"], len(result["candidates"]))
+            self.assertEqual(len(result["candidates"]), min(11, result["analysis"]["available_candidate_count"]))
             for item in result["candidates"]:
                 self.assertNotIn("安", item["given"])
                 self.assertNotIn("宁", item["given"])
                 self.assertTrue(item["name"].startswith("安"))  # Surname is not filtered.
     def test_no_matches_is_an_empty_result_not_a_different_length(self):
-        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":3, "avoidedChars":"安 澄 明 宁 远 知 衡 清 景 和 嘉 书 舒 川 若"})
+        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":3, "avoidedChars":"安 澄 明 宁 远 知 衡 清 景 和 嘉 书 舒 川 若 桐 柏 煜 烨 培 均 钧 铭 沐 泽"})
         self.assertEqual(result["candidates"], [])
         self.assertEqual(result["analysis"]["candidate_count"], 0)
         self.assertEqual(result["analysis"]["available_candidate_count"], 0)
@@ -129,7 +129,7 @@ class ServerRulesTest(unittest.TestCase):
         explicit = server.analyze({**base, "likedChars":"清", "avoidedChars":"安、宁"})
         legacy = server.analyze({**base, "chars":"喜欢‘清’，避开‘安、宁’"})
         self.assertEqual(explicit["candidates"], legacy["candidates"])
-        self.assertTrue(any(item["given"] == "清晏" and "文字偏好 +2" in item["score_evidence"] for item in explicit["candidates"]))
+        self.assertTrue(any(item["given"] == "清晏" and any(c["id"] == "characters" and c["points"] > 0 for c in item["ranking"]["criteria"]) for item in explicit["candidates"]))
         with self.assertRaisesRegex(ValueError, "cannot overlap"):
             server.analyze({**base, "likedChars":"安", "avoidedChars":"安"})
         with self.assertRaisesRegex(ValueError, "avoidedChars must contain"):
@@ -142,13 +142,15 @@ class ServerRulesTest(unittest.TestCase):
         for item in first["candidates"] + second["candidates"]:
             self.assertNotIn("安", item["given"])
             self.assertIn(item["source_status"], ("pending", "demo"))
-            self.assertIn("并非依出生信息起卦", item["gua_evidence"])
+            self.assertIn("本次候选共用此时间起卦", item["gua_evidence"])
             self.assertTrue(item["pinyin"] and item["source"])
     def test_new_single_names_do_not_invent_classical_associations(self):
         result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":1, "candidateCount":11, "likedChars":"知"})
         name = next(item for item in result["candidates"] if item["given"] == "知")
-        self.assertIn("尚无经核验", name["gua_evidence"])
-        self.assertIn("尚无经核验", name["yinyang_evidence"])
+        self.assertIn("年月日时起卦", name["gua_evidence"])
+        self.assertIn("按干支属性计算", name["yinyang_evidence"])
+        self.assertIsNone(name["characters"][0]["element"])
+        self.assertEqual(name["source_status"], "pending")
     def test_catalog_must_have_unique_names_and_no_unsubstantiated_verified_status(self):
         import json
         with tempfile.TemporaryDirectory() as temp:

@@ -20,6 +20,8 @@ const FIELDS = [
   "avoidedChars",
   "styles",
   "variant",
+  "elementPreference",
+  "honorParents",
 ];
 const newKey = () => globalThis.crypto?.randomUUID?.() || null;
 const displayDate = (value) =>
