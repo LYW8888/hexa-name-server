@@ -63,16 +63,18 @@ def check_site(base_url, timeout=10, expected_modules=None):
     if json_request('/api/health').get('status')!='ok':raise CheckFailure('应用健康检查未通过。')
     # Synthetic due-date data only; this endpoint computes a preview and never
     # creates an account, saved report, payment or order.
-    result=json_request('/api/analyze',{'surname':'林','mode':'due_date','dueDate':'2099-01-01','dueTime':'12:00','place':'杭州','gender':'unknown','length':2,'candidateCount':3})
+    result=json_request('/api/analyze',{'algorithm':'literary_v3','surname':'林','mode':'due_date','dueDate':'2099-01-01','dueTime':'12:00','place':'杭州','gender':'unknown','length':2,'candidateCount':3})
     analysis=result.get('analysis')
     chart=analysis.get('bazi') if isinstance(analysis,dict) else None
     candidates=result.get('candidates')
     if not isinstance(chart,dict) or not isinstance(chart.get('pillars'),list) or len(chart['pillars'])!=4 or not isinstance(candidates,list) or len(candidates)!=3 or any(not isinstance(item,dict) or not isinstance(item.get('given'),str) or len(item['given'])!=2 for item in candidates):
         raise CheckFailure('起名接口未返回完整四柱和所选字数的 3 个候选，请确认前后端来自同一提交。')
+    if analysis.get('algorithm')!='literary_v3' or analysis.get('ranking_version')!='literary-match-v3':
+        raise CheckFailure('古籍取名v3算法尚未加载，请更新服务和参考资料库。')
     if analysis.get('workflow',{}).get('id')!='newborn_due_date' or chart.get('reference') is not True:
         raise CheckFailure('预产期场景标识或时间依据错误，请更新后端服务。')
     # Also exercise the born and rename paths; no reports are persisted.
-    born={'purpose':'newborn','mode':'born','surname':'李','birthDate':'1998-08-13','birthTime':'13:48','place':'河南南阳'}
+    born={'algorithm':'literary_v3','purpose':'newborn','mode':'born','surname':'李','birthDate':'1998-08-13','birthTime':'13:48','place':'河南南阳'}
     actual=json_request('/api/analyze',born)
     if actual.get('analysis',{}).get('workflow',{}).get('id')!='newborn_born' or actual.get('analysis',{}).get('bazi',{}).get('reference') is not False:
         raise CheckFailure('已出生场景标识或时间依据错误。')
@@ -80,6 +82,11 @@ def check_site(base_url, timeout=10, expected_modules=None):
     review=original.get('analysis',{})
     if review.get('workflow',{}).get('id')!='rename' or review.get('phase')!='name_review' or review.get('name_review',{}).get('full_name')!='李景和' or original.get('candidates')!=[]:
         raise CheckFailure('改名现名分析接口未完整部署，请更新服务与代理路由。')
+    if review.get('algorithm')!='literary_v3':
+        raise CheckFailure('改名接口尚未加载古籍取名v3算法。')
+    corpus=json_request('/api/naming-corpus')
+    if corpus.get('character_records')!=3636 or not corpus.get('selected_phrases'):
+        raise CheckFailure('古籍参考资料库未完整导入。')
     return {'module':page.modules[0],'asset_count':len(set(page.assets)),'candidate_count':len(candidates),'workflows_checked':3}
 
 

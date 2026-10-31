@@ -1,0 +1,136 @@
+{
+  "scope": "12个顺序合成场景，本地功能与单请求计时；非真实用户体验或并发容量测试。",
+  "algorithm": "literary_v3",
+  "scenarios": [
+    {
+      "scenario": "due",
+      "seconds": 0.3395,
+      "returned": 11,
+      "available": 1032,
+      "sample": [
+        "李盛德",
+        "李经纶",
+        "李则迁"
+      ]
+    },
+    {
+      "scenario": "born",
+      "seconds": 0.3378,
+      "returned": 11,
+      "available": 1032,
+      "sample": [
+        "李盛德",
+        "李经纶",
+        "李则迁"
+      ]
+    },
+    {
+      "scenario": "rename",
+      "seconds": 0.3338,
+      "returned": 11,
+      "available": 1031,
+      "sample": [
+        "李盛德",
+        "李经纶",
+        "李则迁"
+      ]
+    },
+    {
+      "scenario": "single",
+      "seconds": 0.0271,
+      "returned": 11,
+      "available": 122,
+      "sample": [
+        "李倩",
+        "李坤",
+        "李宜"
+      ]
+    },
+    {
+      "scenario": "three",
+      "seconds": 0.6897,
+      "returned": 11,
+      "available": 1798,
+      "sample": [
+        "李均正则",
+        "李正灵均",
+        "李正则均"
+      ]
+    },
+    {
+      "scenario": "compound",
+      "seconds": 0.3234,
+      "returned": 11,
+      "available": 1032,
+      "sample": [
+        "欧阳待时",
+        "欧阳若英",
+        "欧阳落英"
+      ]
+    },
+    {
+      "scenario": "generation",
+      "seconds": 0.0195,
+      "returned": 11,
+      "available": 67,
+      "sample": [
+        "李和安",
+        "李明安",
+        "李恒安"
+      ]
+    },
+    {
+      "scenario": "family",
+      "seconds": 0.0192,
+      "returned": 11,
+      "available": 67,
+      "sample": [
+        "李和安",
+        "李明安",
+        "李恒安"
+      ]
+    },
+    {
+      "scenario": "strict",
+      "seconds": 0.2557,
+      "returned": 11,
+      "available": 200,
+      "sample": [
+        "李育德",
+        "李厚德",
+        "李行健"
+      ]
+    },
+    {
+      "scenario": "explicit_water",
+      "seconds": 0.3439,
+      "returned": 11,
+      "available": 1046,
+      "sample": [
+        "李洲求",
+        "李求江",
+        "李沐清"
+      ]
+    },
+    {
+      "scenario": "solar",
+      "seconds": 0.2982,
+      "returned": 11,
+      "available": 1032,
+      "sample": [
+        "李盛德",
+        "李经纶",
+        "李则迁"
+      ]
+    },
+    {
+      "scenario": "uncovered",
+      "seconds": 0.002,
+      "returned": 0,
+      "available": 0,
+      "sample": []
+    }
+  ],
+  "median_seconds": 0.3108,
+  "max_seconds": 0.6897
+}

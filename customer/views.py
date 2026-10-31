@@ -20,7 +20,7 @@ from . import sms
 from .models import CustomerProfile, SmsChallenge, ServiceRecord, CustomerEvent, Gate
 
 INPUT_FIELDS = {'surname','mode','purpose','gender','zone','dueDate','dueTime','birthDate','birthTime',
-                'length','candidateCount','place','parents','currentName','meaning','likedChars','avoidedChars','styles','variant','elementPreference','honorParents','timeBasis','longitude','locationId'}
+                'algorithm','requiredChars','tabooChars','tabooHomophones','surnameReading','numerologyMode','length','candidateCount','place','parents','currentName','meaning','likedChars','avoidedChars','styles','variant','elementPreference','honorParents','timeBasis','longitude','locationId'}
 
 
 def error(message, status=400, **extra):

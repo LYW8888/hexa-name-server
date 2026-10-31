@@ -1,5 +1,7 @@
 # 计算规则和资料边界
 
+版本说明：本页主要记录legacy_v2。新表单使用literary_v3，新增典故证据与六维规则见[NAMING_V3.md](NAMING_V3.md)，未指定算法的旧客户端继续按本页规则计算。
+
 规则版本：`traditional-reference-v1` / `naming-match-v2`（喜用与真太阳时扩展见 [MINGLI_RULES.md](MINGLI_RULES.md)）。
 
 ## 从时间到计算

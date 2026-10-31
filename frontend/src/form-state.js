@@ -18,6 +18,8 @@ export function formRequest(form) {
 }
 export function requestKey(data = {}) {
   const defaults = {
+    algorithm: "legacy_v2",
+    numerologyMode: "reference",
     purpose: "newborn",
     mode: "due_date",
     gender: "unknown",
@@ -29,6 +31,11 @@ export function requestKey(data = {}) {
     timeBasis: "civil",
   };
   const names = [
+    "algorithm",
+    "requiredChars",
+    "tabooChars",
+    "surnameReading",
+    "numerologyMode",
     "surname",
     "purpose",
     "mode",
@@ -76,6 +83,7 @@ export function requestKey(data = {}) {
   normalized.styles = [
     ...new Set(Array.isArray(data.styles) ? data.styles : []),
   ].sort();
+  normalized.tabooHomophones = [true,"true","1","on"].includes(data.tabooHomophones);
   normalized.honorParents = [true, "true", "1", "on"].includes(
     data.honorParents,
   );
@@ -85,7 +93,7 @@ export function requestKey(data = {}) {
 // Existing-name analysis depends on identity and birth facts, not future-name preferences.
 export function nameReviewKey(data = {}) {
   return requestKey({
-    ...Object.fromEntries(["surname", "purpose", "mode", "currentName", "birthDate", "birthTime", "gender", "place", "zone", "timeBasis", "longitude", "locationId"].map(key => [key, data[key]])),
+    ...Object.fromEntries(["algorithm", "surnameReading", "surname", "purpose", "mode", "currentName", "birthDate", "birthTime", "gender", "place", "zone", "timeBasis", "longitude", "locationId"].map(key => [key, data[key]])),
     styles: [],
   });
 }

@@ -1,5 +1,7 @@
 # 序名 · 现代东方命名
 
+当前新表单默认使用古籍取名v3：原句取意、受控组合、六维评分、必用字/避讳、康熙笔画与可配置五格。完整口径见[古籍取名规则](data/NAMING_V3.md)，数据与出处说明见[资料说明](data/naming/README.md)。旧客户端未传算法字段时仍按v2重算，下面历史规则说明适用于对应版本。
+
 响应式中文起名与改名原型。前端使用 React 19 与 Vite 8，后端使用 Python。已接入四柱、干支阴阳、地支藏干、十神与年月日时起卦，并将明确的部首五行规则和用户偏好用于候选排序。经典规则已完成15处固定版本录文对照，数值采用公开的序名分析参数；提供可选真太阳时、月令取格与扶抑分析，名字寓意按现代字义整理。
 
 ## 安装与运行
@@ -10,6 +12,7 @@
 python3 -m pip install -r requirements.txt
 npm ci --prefix frontend
 npm run build --prefix frontend
+python3 scripts/import_naming_corpus.py
 python3 server.py
 ```
 
@@ -103,3 +106,14 @@ python3 scripts/verify_classical_sources.py --fetch  # 从固定Git提交重新�
 本轮实际页面走查、已修复的问题及验证范围见 [体验走查记录](reports/ux-review.md)。
 
 起名与改名的当前业务边界、现名分析顺序、接口兼容变化及部署验收见[场景流程修正](reports/workflow-correction.md)。
+
+
+## 古籍取名v3接口
+
+新表单提交 `algorithm=literary_v3`。接口保留原有三条业务流程，支持新增字段：`requiredChars`（每字必用）、`tabooChars`（家族避讳）、`tabooHomophones`（普通话同音避讳）、`surnameReading`（指定多音姓读音）、`numerologyMode=off/reference/strict`。避用与必用冲突直接报错；缺少可引用义项返回实际空结果及原因，不换字数补足。
+
+`/api/naming-corpus` 返回真实资料统计；`/api/name-counts?algorithm=literary_v3` 返回基础受控候选池数量，具体筛选数量以分析响应为准。`analysis.corpus/search/filters/page_size` 分别记录资料版本、搜索范围、筛选计数和分页大小。新名字的 `citations/source_kind/numerology/pronunciation.evaluation` 保存原句行号与SHA、取字类型、五格与完整读音；六维评分见 `ranking.criteria`。所有报告下载及账号主动保存均保留这些字段。
+
+资料库含3,636条字典记录、5,543条正文、82个编辑取名片段、121个正向义项。自动推荐按这些可解释义项生成，不将3,636字任意拼成名字。原句对照不自动等于底本逐字精校；近五年用字热度及真实重名概率没有输入统计数据，未启用。
+
+本地合成场景验证：`python3 scripts/validate_literary_naming.py`。部署前运行资料导入，再重启命名服务及客户服务；只读参考数据不改变账号、客服和财务权限隔离。

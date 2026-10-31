@@ -24,6 +24,7 @@ React 版必须构建 `frontend/dist`，只拉取 Git 并重启不能保证前�
 git pull --ff-only origin main
 npm ci --prefix frontend
 npm run build --prefix frontend
+python3 scripts/import_naming_corpus.py
 ```
 
 然后重启当前运行 `server.py` 的应用服务（服务名取决于实际部署）。Nginx 首页应代理到该进程，不应直接返回仓库根目录保留的旧 `index.html`，也不要只上传某个 `app.js` 或 CSS 文件。
@@ -38,3 +39,12 @@ python3 scripts/check_site.py --url https://实际网站域名
 自检会核对 React 首页、同一构建的入口与预加载资源、健康接口，并使用虚构的姓氏和未来预产期实际生成 3 个候选；不会创建账号、订单、收费或保存客户报告。若本机通过而域名失败，检查 Nginx 路由和 CDN；若浏览器仍显示旧页面，使用页面更新提示中的刷新按钮重新获取完整页面。本地收藏不会因此被清除。
 
 表单当前会在最后提交时重新校验所有步骤；起名请求最长等待 15 秒，超时、接口未接通或代理返回 HTML 时会显示明确错误并允许重试。旧页面加载新脚本时会提示版本不一致，避免缺失元素导致提交中断。
+
+
+## 古籍取名v3资料库
+
+部署时运行 `python3 scripts/import_naming_corpus.py`，从仓库中的上传原文、82个取名片段、121个正向义项和规则配置重建 `data/naming-corpus.sqlite3`。原文SHA-256不符或取字片段无法逐条匹配时导入失败，不替换原库。命名服务也能在启动时补建，但应在重启客户服务与交付进程前预先完成导入。
+
+此库仅含公共参考资料，不含客户信息，生成文件权限0644；客户服务和交付进程只读打开，不需要放宽它们的 `ReadWritePaths`。更新后重启命名服务、客户服务及实际调用算法的常驻进程，以刷新每个进程的版本快照。保留现有客户身份、财务、客服数据目录和权限隔离。
+
+验证 `/api/naming-corpus` 和 `/api/name-counts?algorithm=literary_v3` 的实际资料版本；原始文件、字典全文和SQLite仍不通过命名HTTP服务公开。

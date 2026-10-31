@@ -24,3 +24,8 @@ test('original-name report retains observations, directions and catalog source w
  const value={full_name:'李龘',findings:[{title:'字形五行依据',detail:'本规则未归类'}],directions:['保留姓氏'],notice:'出生四柱不随改名改变'};
  const text=nameReviewLines(value).join('\n');assert.ok(text.includes('现用姓名：李龘'));assert.ok(text.includes('本规则未归类'));assert.ok(!text.includes('已收录寓意'));
 });
+
+test('literary report keeps verbatim quotes, source hashes and raw versus normalized grids',async()=>{
+ const {candidateEvidenceLines}=await import('../frontend/src/candidate-evidence-report.js');const text=candidateEvidenceLines({source_kind:'cross_passage',citations:[{work:'诗经',chapter:'天保',quote:'如月之恒，如日之升',line:876,sha256:'abc'}],numerology:{status:'complete',grids:{总格:{raw:81,number:1,label:'吉'}},sancai:['木','火','土'],convention:'测试口径'},characters:[{char:'清',kangxi_strokes:null}],pronunciation:{evaluation:{full_pinyin:'lǐ qīng',pattern:'3-1'}}}).join('\n');
+ for(const value of ['跨篇取字组合','如月之恒，如日之升','第876行','SHA-256：abc','总格81（归一1','清 未确定','lǐ qīng']) assert.ok(text.includes(value),value);
+});

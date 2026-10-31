@@ -2,6 +2,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -42,6 +43,13 @@ export default forwardRef(function NamingForm(
   const locked = busy || reviewBusy;
   const reviewCurrent = !!review && nameReviewKey(draft) === review.key;
   const max = Math.max(1, Math.min(11, Number(counts[length]) || 11));
+  useLayoutEffect(() => {
+    if (message && !invalidField.current) {
+      const element = formRef.current?.querySelector("#formMessage");
+      element?.focus({ preventScroll: true });
+      element?.scrollIntoView({ behavior: "instant", block: "start" });
+    }
+  }, [message]);
   function capture() {
     if (!formRef.current) return;
     const data = formRequest(formRef.current);
@@ -67,10 +75,7 @@ export default forwardRef(function NamingForm(
       if (disclosure) disclosure.open = true;
       field?.focus({ preventScroll: true });
       field?.scrollIntoView({
-        behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
-          .matches
-          ? "auto"
-          : "smooth",
+        behavior: "instant",
         block: "start",
       });
     });
@@ -142,7 +147,7 @@ export default forwardRef(function NamingForm(
         field.setAttribute("aria-describedby", "formMessage");
         requestAnimationFrame(() => {
           field.focus({ preventScroll: true });
-          field.scrollIntoView({ behavior: "auto", block: "center" });
+          field.scrollIntoView({ behavior: "instant", block: "center" });
         });
       }
       return false;
@@ -209,6 +214,12 @@ export default forwardRef(function NamingForm(
             form.elements.birthTime,
           );
       }
+    }
+    if (index === preferenceStep) {
+      const getChars = (name) => new Set([...(form.elements[name]?.value || "")].filter(c => /\p{Script=Han}/u.test(c)));
+      const required = getChars("requiredChars"), excluded = new Set([...getChars("avoidedChars"), ...getChars("tabooChars")]);
+      if (required.size > Number(length)) return fail("必用字的不同汉字数量不能超过名的字数。", form.elements.requiredChars);
+      if ([...required].some(c => excluded.has(c))) return fail("必用字与避用字或家族避讳字有冲突，请调整。", form.elements.requiredChars);
     }
     setMessage("");
     return true;
@@ -350,6 +361,7 @@ export default forwardRef(function NamingForm(
         aria-busy={locked}
         noValidate
       >
+        <input type="hidden" name="algorithm" value="literary_v3" />
         <p className="demo-notice">
           <b>每个名字都有理由</b>{" "}
           四柱、阴阳五行与生辰起卦可以展开复算；匹配指数帮助比较本次用字偏好。
@@ -373,6 +385,7 @@ export default forwardRef(function NamingForm(
 
         <div
           id="formMessage"
+          tabIndex={-1}
           className="form-message error"
           role="alert"
           aria-live="polite"
@@ -498,13 +511,17 @@ export default forwardRef(function NamingForm(
             </label>
           </div>
           <details className="family-options">
-            <summary>家庭姓氏线索（可选）</summary>{" "}
+            <summary>家庭姓氏与读音设置（可选）</summary>{" "}
             <label>
               父母姓氏（可选）
               <input name="parents" maxLength={12} placeholder="例如：林、沈" />
               <small className="field-hint">
                 默认只记录；勾选下方选项才参与用字偏好
               </small>
+            </label>
+            <label>姓氏读音（多音姓可填）
+              <input name="surnameReading" maxLength={32} placeholder="例如：shàn；复姓读音用空格分开" />
+              <small className="field-hint">留空按字典及常用姓氏读音；单、解、区等姓氏可指定自家读法。</small>
             </label>
             <label className="inline-check">
               <input type="checkbox" name="honorParents" value="true" />
@@ -737,6 +754,15 @@ export default forwardRef(function NamingForm(
               </small>
             </label>
           </div>
+          <details className="naming-constraints">
+            <summary>必用字、家族避讳与数理设置（可选）</summary>
+            <div className="grid">
+              <label>辈分或必用字<input name="requiredChars" maxLength={30} placeholder="例如：知（每个字至少出现一次）" /><small className="field-hint">严格满足，与“喜欢的字”排序偏好分别处理。</small></label>
+              <label>家族避讳字<input name="tabooChars" maxLength={100} placeholder="只填需要避开的字，不必提供长辈完整姓名" /><small className="field-hint">仅排除名中用字，不排除姓氏。</small></label>
+            </div>
+            <label className="inline-check"><input type="checkbox" name="tabooHomophones" value="true" />同时避开这些字的普通话同音字</label>
+            <label>五格数理<select name="numerologyMode" defaultValue="reference"><option value="reference">展示计算参考</option><option value="strict">严格筛选人格、地格、总格</option><option value="off">关闭五格展示</option></select><small className="field-hint">使用有记录的康熙笔画。严格模式会排除三格含凶数或笔画不完整的候选，可能减少数量。</small></label>
+          </details>
           <div className="tags">
             <span>偏好风格</span>
             {[

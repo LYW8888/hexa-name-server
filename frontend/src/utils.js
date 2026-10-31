@@ -1,3 +1,4 @@
+import { candidateEvidenceLines } from "./candidate-evidence-report.js";
 import { nameReviewLines } from "./name-review-report.js";
 import { workflowLabel } from "./form-state.js";
 import { calculationLines } from "./traditional-report.js";
@@ -107,6 +108,13 @@ export function friendlyError(message) {
       /surname must contain one or two (?:Chinese )?characters/i,
       "姓氏需要填写 1–2 个汉字。",
     ],
+    [/algorithm must be/i, "当前命名服务版本不匹配，请刷新页面后重试。"],
+    [/surnameReading must/i, "姓氏读音未匹配字典，请检查多音姓设置；可以留空使用常用姓氏读音。"],
+    [/requiredChars exceed/i, "必用字数量不能超过名的字数。"],
+    [/requiredChars conflict/i, "必用字与避用字或家族避讳有冲突。"],
+    [/requiredChars must/i, "必用字只支持汉字及分隔符。"],
+    [/tabooChars must/i, "家族避讳字只支持汉字及分隔符。"],
+    [/numerologyMode must/i, "请选择数理参考、严格筛选或关闭。"],
     [/mode must be due_date or born/i, "请选择预产期或已出生流程。"],
     [/purpose must be newborn or rename/i, "请选择新生儿起名或改名。"],
     [/rename purpose requires born mode/i, "改名必须使用实际出生信息。"],
@@ -208,6 +216,9 @@ export function downloadReportFile(
     `喜欢的字：${lastRequest.likedChars || "未填写"}（排序偏好）`,
     `避用字：${lastRequest.avoidedChars || "未填写"}（仅作用于名）`,
     `候选数量：${lastCandidates.length}`,
+    `算法版本：${analysis.ranking_version || "历史记录"}`,
+    ...(analysis.corpus ? [`资料版本：${analysis.corpus.version}；${analysis.corpus.character_records}条字典记录；${analysis.corpus.selected_phrases}个取名片段`] : []),
+    ...(lastRequest.algorithm === "literary_v3" ? [`必用字：${lastRequest.requiredChars || "未指定"}`,`家族避讳字：${lastRequest.tabooChars || "未指定"}`,`数理模式：${lastRequest.numerologyMode || "reference"}`] : []),
     `四柱：${chart.pillars.map((item) => `${item.label} ${item.ganzhi}`).join("　")}`,
     `日主：${chart.day_master.stem}（${chart.day_master.element}）`,
     `表面八字五行计数：${Object.entries(chart.element_counts)
@@ -250,6 +261,7 @@ export function downloadReportFile(
           `选字参考：${analysis.naming_reference.label}；${analysis.naming_reference.explanation}`,
         ]
       : []),
+    ...(analysis.auxiliary_tradition ? [`生肖辅助资料：${analysis.auxiliary_tradition.zodiac}`,...analysis.auxiliary_tradition.pillars.map(p => `${p.label}纳音：${p.nayin}；十二长生：${p.changsheng}`),analysis.auxiliary_tradition.notice] : []),
     ...calculationLines(analysis),
     ...comparisonLines,
     "",
@@ -264,6 +276,7 @@ export function downloadReportFile(
     lines.push(`- 拼音：${item.pinyin}`);
     readingNotes(item.pronunciation).forEach((note) => lines.push(`- ${note}`));
     lines.push(`- 寓意：${item.meaning}`);
+    lines.push(...candidateEvidenceLines(item));
     if (item.rename_comparison) lines.push(`- 与现名比较：${item.rename_comparison.detail}`);
     lines.push(`- 标签：${item.tags.join("、")}`);
     lines.push(
@@ -274,7 +287,7 @@ export function downloadReportFile(
     lines.push(`- 阴阳：${item.yinyangEvidence}`);
     lines.push(`- 评分构成：${item.scoreEvidence}`);
     lines.push(
-      `- ${item.source_status === "verified" ? "出处记录" : "字义寓意说明"}：${item.source}`,
+      `- ${["verified","text_matched"].includes(item.source_status) ? "出处记录" : "字义寓意说明"}：${item.source}`,
     );
     if (item.source_reference?.url)
       lines.push(`- 参考来源：${item.source_reference.url}`);

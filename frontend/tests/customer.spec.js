@@ -40,7 +40,7 @@ test("免费体验免登录，主动确认保存，刷新找回、下载及删�
   await expect(account.locator(".customer-records li")).toHaveCount(1);
   await save.click();
   await expect(account.locator(".customer-records li")).toHaveCount(1);
-  const publicRequest = page.waitForRequest("**/api/name-counts");
+  const publicRequest = page.waitForRequest("**/api/name-counts*");
   await page.reload();
   expect((await (await publicRequest).allHeaders()).cookie || "").not.toContain(
     "xuming_customer",

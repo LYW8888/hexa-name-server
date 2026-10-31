@@ -13,3 +13,5 @@ frontend/playwright-report/
 .env.*
 *.env
 .private-customer/
+
+*.sqlite3.lock

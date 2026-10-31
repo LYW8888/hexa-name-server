@@ -43,11 +43,13 @@ function behavior() {
     ? "auto"
     : "smooth";
 }
-function scroll(id) {
+function scroll(id, immediate = false) {
   requestAnimationFrame(() =>
-    document
-      .querySelector(id)
-      ?.scrollIntoView({ behavior: behavior(), block: "start" }),
+    (() => {
+      const element = document.querySelector(id);
+      if (immediate) element?.focus({ preventScroll: true });
+      element?.scrollIntoView({ behavior: immediate ? "instant" : behavior(), block: "start" });
+    })(),
   );
 }
 export default function App() {
@@ -82,7 +84,7 @@ export default function App() {
   useEffect(() => () => window.clearTimeout(timer.current), []);
   useEffect(() => {
     let active = true;
-    fetch("/api/name-counts")
+    fetch("/api/name-counts?algorithm=literary_v3")
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
@@ -213,7 +215,7 @@ export default function App() {
         : `已生成 ${count} 个方向，可加入比较，或展开卡片查看选字依据。`;
       setStatus(
         count
-          ? `${prefix}${count < requested ? `当前字数和避用字条件下，当前字库仅匹配 ${count} 个。` : ""}`
+          ? `${prefix}${count < requested ? `当前条件下，字库实际匹配 ${count} 个。` : ""}`
           : "四柱已计算，当前条件下没有符合要求的候选。",
       );
       if (!isRegenerate) scroll("#results");
@@ -237,7 +239,7 @@ export default function App() {
             : "暂时无法生成方案。",
         );
         setMessage(friendlyError(error.message || ""));
-        scroll("#formMessage");
+        // NamingForm positions the alert after React commits its visible content.
       }
     } finally {
       inFlight.current = false;
@@ -256,7 +258,7 @@ export default function App() {
       setStatus(`正在查看第 ${index + 1} 组候选，条件保持不变。`);
       return;
     }
-    const size = Number(result.analysis.candidate_count) || 1;
+    const size = Number(result.analysis.page_size || result.analysis.candidate_count) || 1;
     const pages = Math.ceil(
       (Number(result.analysis.available_candidate_count) || 0) / size,
     );
@@ -351,7 +353,7 @@ export default function App() {
               session.index + 1 <
                 Math.ceil(
                   result.analysis.available_candidate_count /
-                    (result.analysis.candidate_count || 1),
+                    (result.analysis.page_size || result.analysis.candidate_count || 1),
                 ))
           }
           onPrevious={previousGroup}

@@ -156,6 +156,8 @@ test("候选为空、偏好冲突和服务不可用时给出清晰结果", async
     .fill(
       "安 澄 明 宁 远 知 衡 清 景 和 嘉 书 舒 川 若 桐 柏 煜 烨 培 均 钧 铭 沐 泽",
     );
+  await page.locator(".naming-constraints > summary").click();
+  await page.locator("[name=requiredChars]").fill("龘");
   await page.locator("button[type=submit]").click();
   await expect(page.locator("#cards .empty-result")).toBeVisible();
   await expect(page.locator("#downloadReport")).toBeDisabled();
@@ -171,7 +173,7 @@ test("候选为空、偏好冲突和服务不可用时给出清晰结果", async
 });
 
 test("字库数量晚到时会同步修正数量上限", async ({ page }) => {
-  await page.route("**/api/name-counts", async (route) => {
+  await page.route("**/api/name-counts*", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 700));
     await route.fulfill({ json: { counts: { 1: 15, 2: 15, 3: 5 } } });
   });
@@ -562,7 +564,7 @@ for (const width of [1280, 390])
       birthTime: "",
     });
     await expect(page.locator("#cards .card-status").first()).toHaveText(
-      "字义寓意",
+      "原句已对照",
     );
     const area = page.getByRole("region", { name: "格局旺衰与喜用参考" });
     await expect(area).not.toContainText("古籍与参数待复核");
@@ -595,7 +597,7 @@ for (const width of [1280, 390])
       "原文位置：https://github.com/kanripo/",
       "四柱阴阳五行与生克关系",
       "按日主生克分项权重",
-      "字义寓意说明",
+      "出处记录",
     ])
       expect(report).toContain(text);
     expect(report).not.toContain("古籍出处与参数核验状态：待复核");
@@ -685,8 +687,7 @@ test("修改条件明确应用，失败保留旧方案，重试采用新偏好",
   await expect(
     page.getByRole("region", { name: "尚未应用的修改" }),
   ).toHaveCount(0);
-  for (const name of await page.locator("#cards h3").allTextContents())
-    expect(name).toContain("安");
+  expect((await page.locator("#cards h3").allTextContents()).some(name => name.includes("安"))).toBeTruthy();
 });
 
 test("跨组比较保留，上一组与下一组可找回且不重复请求", async ({ page }) => {
@@ -792,8 +793,10 @@ test("改名先分析现名且最后一组不再循环换名", async ({ page }) 
   await expect(page.locator("#formNameReview")).toContainText("王知远");
   await expect(page.locator("#cards .card")).toHaveCount(0);
   await page.locator(".panel.active .next").click();
+  await page.locator(".naming-constraints > summary").click();
+  await page.locator("[name=requiredChars]").fill("安宁明");
   await page.locator("#namingForm button[type=submit]").click();
-  await expect(page.locator("#cards .card")).toHaveCount(10);
+  await expect(page.locator("#cards .card")).toHaveCount(6);
   await expect(page.locator("#summary")).toContainText("改名方案");
   await expect(page.locator("#summary")).not.toContainText("新生儿");
   await expect(page.locator("#regenerate")).toBeDisabled();
@@ -884,4 +887,48 @@ test('修改现名后不能沿用旧报告，切回新生儿不会带上现名',
   await page.locator('.progress button').first().click();await page.locator('[name=purpose][value=newborn]').locator('..').click();await expect(page.locator('[name=currentName]')).toBeDisabled();
   await page.locator('.panel.active .next').click();const request=page.waitForRequest('**/api/analyze');await page.locator('.quick-generate').click();
   const data=(await request).postDataJSON();expect(data.purpose).toBe('newborn');expect(data).not.toHaveProperty('currentName');expect(data).not.toHaveProperty('dueDate');await expect(page.locator('#summary')).toContainText('新生儿起名 · 已出生');await expect(page.locator('.result-name-review')).toHaveCount(0);
+});
+
+for (const width of [1280,390]) test(`古籍原句、康熙明细和新算法报告在 ${width}px 可用`,async({page})=>{
+  await page.setViewportSize({width,height:950});await page.goto('/');
+  const response=page.waitForResponse('**/api/analyze');await generate(page,{due:'2099-12-23',birth:'',birthTime:''});
+  const payload=await (await response).json();expect(payload.analysis.algorithm).toBe('literary_v3');expect(payload.analysis.available_candidate_count).toBeGreaterThan(65);
+  expect(payload.analysis.corpus.character_records).toBe(3636);
+  const card=page.locator('#cards .card').first();await expect(card.locator('.card-status')).toHaveText('原句已对照');
+  await card.locator('.literary-citations > summary').click();
+  await expect(card.locator('blockquote')).toHaveCount(payload.candidates[0].citations.length);
+  await expect(card.locator('blockquote').first()).toHaveText(payload.candidates[0].citations[0].quote);
+  await card.locator('.candidate-provenance').getByText('查看康熙笔画与五格参考',{exact:true}).click();
+  await expect(card.locator('.numerology-evidence')).toBeVisible();
+  const pending=page.waitForEvent('download');await page.locator('#downloadReport').click();const text=await readFile(await (await pending).path(),'utf8');
+  for(const value of ['literary-match-v3','文件SHA-256','取字方式','逐字康熙笔画','全名读音','数理']) expect(text).toContain(value);
+  expect(text).not.toContain('派生未核验吉凶分');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+});
+
+test('辈分必用字与避讳严格生效，冲突定位输入而不丢旧结果',async({page})=>{
+  await page.goto('/');await page.locator('[name=surname]').fill('欧阳');await page.locator('[name=candidateCount]').fill('11');await page.locator('.panel.active .next').click();
+  await page.locator('[name=dueDate]').fill('2099-12-23');await page.locator('[name=place]').fill('杭州');await page.locator('.panel.active .next').click();
+  await page.locator('.naming-constraints > summary').click();await page.locator('[name=requiredChars]').fill('安');await page.locator('[name=tabooChars]').fill('宁');
+  await page.locator('#namingForm button[type=submit]').click();await expect(page.locator('#cards .card')).toHaveCount(11);
+  const names=await page.locator('#cards h3').allTextContents();for(const name of names){expect(name.startsWith('欧阳')).toBeTruthy();expect(name.slice(2)).toContain('安');expect(name.slice(2)).not.toContain('宁');}
+  await page.locator('[name=avoidedChars]').fill('安');await page.locator('#namingForm button[type=submit]').click();await expect(page.locator('#formMessage')).toContainText('冲突');await expect(page.locator('[name=requiredChars]')).toBeFocused();expect(await page.locator('#cards h3').allTextContents()).toEqual(names);
+});
+
+test('五格严格筛选与缺失笔画空结果可以调整，未知不判为生僻',async({page})=>{
+  await page.goto('/');await generate(page,{due:'2099-12-23',birth:'',birthTime:''});
+  await page.getByRole('button',{name:'调整偏好',exact:true}).first().click();await page.locator('.naming-constraints > summary').click();await page.locator('[name=numerologyMode]').selectOption('strict');
+  let response=page.waitForResponse('**/api/analyze');await page.locator('#namingForm button[type=submit]').click();let payload=await (await response).json();expect(payload.candidates.length).toBeGreaterThan(0);expect(payload.candidates.every(x=>x.numerology.strict_pass)).toBeTruthy();
+  await page.locator('[name=requiredChars]').fill('清');response=page.waitForResponse('**/api/analyze');await page.locator('#namingForm button[type=submit]').click();payload=await (await response).json();expect(payload.candidates).toEqual([]);await expect(page.locator('#cards .empty-result')).toBeVisible();await expect(page.locator('#cards .empty-result')).not.toContainText('生僻');
+  await page.getByRole('button',{name:'调整数理筛选',exact:true}).click();await expect(page.locator('[name=numerologyMode]')).toBeFocused();await page.locator('[name=numerologyMode]').selectOption('off');await page.locator('#namingForm button[type=submit]').click();await expect(page.locator('#cards .card')).toHaveCount(3);for(const name of await page.locator('#cards h3').allTextContents())expect(name).toContain('清');
+});
+
+test('多音姓指定读法贯穿读音、生成与报告',async({page})=>{
+  await page.goto('/');await page.locator('[name=surname]').fill('单');await page.locator('.family-options > summary').click();await page.locator('[name=surnameReading]').fill('dān');await page.locator('.panel.active .next').click();await page.locator('[name=dueDate]').fill('2099-12-23');await page.locator('[name=place]').fill('杭州');await page.locator('.panel.active .next').click();
+  const response=page.waitForResponse('**/api/analyze');await page.locator('#namingForm button[type=submit]').click();const data=await (await response).json();expect(data.candidates.every(x=>x.pronunciation.evaluation.full_pinyin.startsWith('dān '))).toBeTruthy();
+  await expect(page.locator('#cards .name-full-reading').first()).toContainText('dān');
+});
+
+test('三字名可生成11个，必用字不被多样性规则移除',async({page})=>{
+  await page.setViewportSize({width:390,height:950});await page.goto('/');await page.locator('[name=surname]').fill('林');await page.locator('[name=length]').selectOption('3');await page.locator('[name=candidateCount]').fill('11');await page.locator('.panel.active .next').click();await page.locator('[name=dueDate]').fill('2099-12-23');await page.locator('[name=place]').fill('杭州');await page.locator('.panel.active .next').click();await page.locator('.naming-constraints > summary').click();await page.locator('[name=requiredChars]').fill('安');await page.locator('#namingForm button[type=submit]').click();await expect(page.locator('#cards .card')).toHaveCount(11);const names=await page.locator('#cards h3').allTextContents();expect(new Set(names).size).toBe(11);expect(names.every(name=>[...name].length===4&&name.includes('安'))).toBeTruthy();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
 });

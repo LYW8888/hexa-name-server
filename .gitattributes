@@ -1,0 +1,2 @@
+# Uploaded source hashes cover the exact original bytes, including CRLF.
+data/naming/raw/* -text -diff

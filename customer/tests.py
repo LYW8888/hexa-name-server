@@ -173,6 +173,24 @@ class CustomerTest(TestCase):
                 self.assertEqual(self.save(**changes).status_code,400)
         self.assertEqual(ServiceRecord.objects.count(),0)
 
+    def test_saved_literary_report_recomputes_and_preserves_quotes_constraints_and_numerology(self):
+        self.sign_in()
+        response=self.save(algorithm='literary_v3',requiredChars='安',tabooChars='宁',numerologyMode='strict',surnameReading='lín')
+        self.assertEqual(response.status_code,201)
+        report=self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
+        self.assertEqual(report['analysis']['algorithm'],'literary_v3')
+        self.assertEqual(report['analysis']['corpus']['character_records'],3636)
+        self.assertEqual(report['data']['requiredChars'],'安')
+        self.assertTrue(all('安' in x['given'] and '宁' not in x['given'] and x['numerology']['strict_pass'] for x in report['candidates']))
+        self.assertTrue(all(x['citations'] for x in report['candidates']))
+        self.assertNotIn('安'.encode(),bytes(ServiceRecord.objects.get().encrypted_report))
+
+    def test_literary_filter_conflicts_cannot_create_a_saved_record(self):
+        self.sign_in()
+        response=self.save(algorithm='literary_v3',requiredChars='安',tabooChars='安')
+        self.assertEqual(response.status_code,400)
+        self.assertEqual(ServiceRecord.objects.count(),0)
+
     def test_saved_report_preserves_reference_rule_and_new_evidence(self):
         self.sign_in()
         response=self.save(elementPreference='水',honorParents='true',parents='安',timeBasis='apparent_solar',longitude='120.16',locationId='hangzhou')

@@ -1,0 +1,111 @@
+{
+  "version": "uploaded-corpus-2026-10-31",
+  "sources": [
+    {
+      "id": "bagua",
+      "file": "八卦.txt",
+      "title": "八卦",
+      "sha256": "bb56c4654cdd257694a41d72251fb215c48e3fb6f1e3ba2332c01876daf461da",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": false,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "yizhuan",
+      "file": "易传.txt",
+      "title": "易传",
+      "sha256": "5bd84a61456f9e4e86a0acb7339b230a30b9c8bf63d9f48e222309806e73bf38",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": true,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "zhouyi",
+      "file": "周易.txt",
+      "title": "周易",
+      "sha256": "c4c4ff53e492c4302c30c0de507bb98d3733e065db27dd94cfdebd4c7618354e",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": true,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "surnames",
+      "file": "百家姓.txt",
+      "title": "百家姓",
+      "sha256": "1bf3066c11f040c7658a46cfa507d5619bf0f7d1c72d7d8c40b0c022b91d591f",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": false,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "chuci",
+      "file": "楚辞.txt",
+      "title": "楚辞",
+      "sha256": "866395d6e07daaa52ed7d38f52abc889425ec3632a26f24d4455001c19ccc022",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": true,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "lunyu",
+      "file": "论语.txt",
+      "title": "论语",
+      "sha256": "e5bbb6f953268d58b305317d0ab62d684ba3f356016a8af22da2925055c0bc0c",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": true,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "bazi_notes",
+      "file": "生辰八字.txt",
+      "title": "生辰八字",
+      "sha256": "0f3aa4c1795e57008e9019c09934201da8ee9b1407c78deb17c4ddf07f129aa0",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": false,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "wuxing_notes",
+      "file": "五行.txt",
+      "title": "五行",
+      "sha256": "b8363c05ffc8f2b41d27fb397bf07669ff95a0796e1a2cbb476e253ff9c96752",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": false,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "shijing",
+      "file": "诗经.txt",
+      "title": "诗经",
+      "sha256": "d24d666d50fa5bcf137c013aed28f583d4c13834e26433ff631091602f2e8a48",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": true,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    },
+    {
+      "id": "kangxi",
+      "file": "康熙字典选字表.txt",
+      "title": "康熙字典选字表",
+      "sha256": "ee3fe798c5836dcafedf17d302f7c9273b05daead81b50b88e5747352c7581b8",
+      "origin": "user_uploaded",
+      "verification": "uploaded_text",
+      "naming_enabled": false,
+      "note": "按上传文本记录，保留原文；篇目数与录文对照不等于版本逐字校勘。"
+    }
+  ],
+  "quarantined_sources": [
+    "wuxing_notes",
+    "bazi_notes",
+    "bagua"
+  ],
+  "quarantine_reason": "含概括、重复录文或转录疑点；保留检索，取名引文使用明确的文学篇章。"
+}

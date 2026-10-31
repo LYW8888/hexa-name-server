@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { downloadReportFile } from "./utils.js";
 const FIELDS = [
+  "algorithm", "requiredChars", "tabooChars", "tabooHomophones", "surnameReading", "numerologyMode",
   "surname",
   "mode",
   "purpose",

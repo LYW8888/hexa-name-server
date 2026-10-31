@@ -123,3 +123,27 @@ class HttpHandlerTest(unittest.TestCase):
             with self.subTest(data=data):
                 status, _, _ = self.request('POST','/api/name-review',json.dumps(data),{'Content-Type':'application/json'})
                 self.assertEqual(status,400)
+
+    def test_literary_profile_reference_metadata_and_private_raw_files(self):
+        status,_,body=self.request('GET','/api/naming-corpus')
+        self.assertEqual(status,200)
+        self.assertEqual(json.loads(body)['character_records'],3636)
+        status,_,body=self.request('GET','/api/name-counts?algorithm=literary_v3')
+        self.assertEqual(status,200)
+        self.assertGreater(json.loads(body)['counts']['2'],65)
+        for path in ('/data/naming/raw/诗经.txt','/data/naming-corpus.sqlite3','/data/naming/rules.json'):
+            self.assertEqual(self.request('GET',__import__('urllib.parse',fromlist=['quote']).quote(path,safe='/'))[0],404)
+        self.assertEqual(self.request('GET','/api/name-counts?algorithm=unknown')[0],400)
+
+    def test_selected_surname_readings_and_literary_constraints(self):
+        from urllib.parse import quote
+        status,_,body=self.request('GET','/api/surname-readings?surname='+quote('单'))
+        self.assertEqual(status,200)
+        self.assertEqual(json.loads(body)['default'],'shàn')
+        data={'algorithm':'literary_v3','surname':'李','mode':'due_date','dueDate':'2099-01-01','place':'杭州','requiredChars':'安','candidateCount':7}
+        status,headers,body=self.request('POST','/api/analyze',json.dumps(data),{'Content-Type':'application/json'})
+        self.assertEqual(status,200)
+        self.assertIn('no-store',headers['Cache-Control'])
+        response=json.loads(body)
+        self.assertEqual(len(response['candidates']),7)
+        self.assertTrue(all('安' in x['given'] for x in response['candidates']))

@@ -52,6 +52,8 @@ async function requestReport(
       ) {
         throw new Error("服务未返回完整方案，请检查服务版本后重新生成。");
       }
+      if (data.algorithm && payload.analysis.algorithm !== data.algorithm)
+        throw new Error("命名服务版本与页面不一致，请刷新后重试。维护人员需同步更新前后端。");
       if (data.purpose && (payload.analysis.purpose_code !== data.purpose || payload.analysis.mode !== data.mode))
         throw new Error("服务返回的起名场景与提交内容不一致，请更新服务后重试。");
       if (data.purpose === "rename") {

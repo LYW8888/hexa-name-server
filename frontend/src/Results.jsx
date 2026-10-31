@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import TraditionalAnalysis, {
   SolarCorrection,
 } from "./TraditionalAnalysis.jsx";
+import CandidateEvidence, { sourceLabel } from "./CandidateEvidence.jsx";
 import NameReview from "./NameReview.jsx";
 import { workflowLabel } from "./form-state.js";
 import { readingNotes } from "./utils.js";
@@ -275,6 +276,7 @@ export function Chart({ analysis, id = "traditionalBasis" }) {
           </details>
         </>
       )}
+      {analysis.auxiliary_tradition && <details className="auxiliary-tradition"><summary>查看纳音、十二长生与生肖辅助资料</summary><p>生肖：{analysis.auxiliary_tradition.zodiac}</p>{analysis.auxiliary_tradition.pillars.map(p => <p key={p.label}>{p.label} {p.ganzhi}：纳音{p.nayin} · 十二长生{p.changsheng}</p>)}<p>{analysis.auxiliary_tradition.convention}</p><p>{analysis.auxiliary_tradition.notice}</p></details>}
       <TraditionalAnalysis
         value={analysis.mingli}
         audit={analysis.source_audit}
@@ -318,7 +320,7 @@ function NameCard({
         </span>
         {seen && <span className="seen-name">此前看过</span>}
         <span className="card-status">
-          {item.source_status === "verified" ? "出处已核对" : "字义寓意"}
+          {sourceLabel(item.source_status)}
         </span>
       </div>
       <h3>{item.fullName}</h3>
@@ -350,6 +352,7 @@ function NameCard({
         ))}
       </details>
       {item.rename_comparison && <details className="rename-comparison"><summary>与现用姓名比较</summary><p>{item.rename_comparison.detail}</p><p>保留用字：{item.rename_comparison.retained_characters.join("、") || "无"}；新用字：{item.rename_comparison.new_characters.join("、") || "无"}。</p></details>}
+      <CandidateEvidence item={item} />
       <details className="name-evidence">
         <summary>
           {computed ? "查看选字依据与匹配明细" : "查看演示意象与资料状态"}
@@ -371,7 +374,7 @@ function NameCard({
         ) : null}
         <p>{item.scoreEvidence}</p>
         <p>
-          {item.source_status === "verified" ? "出处记录：" : "寓意说明："}
+          {["verified","text_matched"].includes(item.source_status) ? "出处记录：" : "寓意说明："}
           {item.source}
         </p>
         <small className="evidence-disclaimer">
@@ -443,7 +446,7 @@ function CandidateComparison({ items, onClear, onRemove }) {
     ["匹配理由", (x) => x.ranking?.reasons.join("；") || "旧版演示记录"],
     [
       "寓意资料",
-      (x) => (x.source_status === "verified" ? "出处记录" : "字义寓意说明"),
+      (x) => sourceLabel(x.source_status),
     ],
   ];
   return (
@@ -656,7 +659,8 @@ export default function Results({
       <div id="cards" className="cards">
         {analysis && !candidates.length ? (
           <div className="empty-result">
-            <p>当前名的字数与避用字条件下，没有符合要求的候选。</p>
+            <p>{analysis.empty_reason || "当前名的字数与避用字条件下，没有符合要求的候选。"}</p>
+            {analysis.algorithm === "literary_v3" && <><button type="button" className="secondary" onClick={() => onEdit(2,"requiredChars")}>调整必用字或避讳</button><button type="button" className="secondary" onClick={() => onEdit(2,"numerologyMode")}>调整数理筛选</button></>}
             <button
               className="secondary"
               type="button"

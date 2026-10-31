@@ -5,12 +5,15 @@ from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 import bazi
 import phonetics
 import tradition
 import naming_rules
 import name_review
+import literary_engine
+import naming_corpus
+import naming_auxiliary
 import mingli
 import solar_time
 import classical_sources
@@ -84,6 +87,7 @@ def init_db() -> None:
     # Keep the existing SQLite catalog for compatibility; the checked-in JSON
     # is the authoritative source for both selection and presentation.
     classical_sources.registry()
+    naming_corpus.snapshot()
     DATA.mkdir(exist_ok=True)
     facts = naming_rules.catalog()
     # Legacy base_score remains zero; current ranking has no preset score.
@@ -129,6 +133,9 @@ def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
     return liked, avoided
 
 def analyze(payload: dict, *, recommend: bool = True) -> dict:
+    algorithm = payload.get("algorithm", "legacy_v2")
+    if algorithm not in ("legacy_v2", "literary_v3"):
+        raise ValueError("algorithm must be legacy_v2 or literary_v3")
     surname = str(payload.get("surname", "")).strip()
     if not 1 <= len(surname) <= 2 or not all(phonetics.is_han(char) for char in surname):
         raise ValueError("surname must contain one or two Chinese characters")
@@ -221,7 +228,7 @@ def analyze(payload: dict, *, recommend: bool = True) -> dict:
                 "label": "改名方案" if purpose == "rename" else f"新生儿起名 · {scenario}",
                 "reference": mode == "due_date"}
     names = load_names()
-    pool = [item for item in names if len(item["given"]) == length and not any(char in avoided for char in item["given"]) and surname + item["given"] != current_name] if recommend else []
+    pool = [item for item in names if len(item["given"]) == length and not any(char in avoided for char in item["given"]) and surname + item["given"] != current_name] if recommend and algorithm == "legacy_v2" else []
     effective_count = min(candidate_count, len(pool))
     try:
         variant = int(payload.get("variant", 0))
@@ -284,6 +291,23 @@ def analyze(payload: dict, *, recommend: bool = True) -> dict:
     if variant and result:
         offset = (variant * effective_count) % len(result)
         result = result[offset:] + result[:offset]
+    algorithm_details = {"algorithm":algorithm}
+    if algorithm == "literary_v3":
+        algorithm_details["auxiliary_tradition"] = naming_auxiliary.calculate(chart)
+        if existing_review:
+            # Original-name analysis never depends on the future-name filters.
+            review_input = {key:payload[key] for key in ("surname", "surnameReading") if key in payload}
+            existing_review = literary_engine.enrich_review(existing_review, surname, chart, review_input)
+        if recommend:
+            result, algorithm_details = literary_engine.analyze_candidates(payload,surname,chart,gua,naming_reference,liked,avoided,family_chars,meaning,styles,gender,length,candidate_count,variant,current_name,names)
+            if existing_review:
+                for item in result:
+                    item["rename_comparison"] = name_review.compare(existing_review,item)
+            effective_count = len(result)
+        else:
+            algorithm_details = {"algorithm":algorithm,"ranking_version":literary_engine.VERSION,"corpus":naming_corpus.public_stats()}
+    if algorithm == "literary_v3":
+        algorithm_details["auxiliary_tradition"] = naming_auxiliary.calculate(chart)
     gender_label = {"male": "男", "female": "女", "unknown": "未知"}[gender]
     method = (
         f"{'预产期参考，出生后请重新确认实际时间' if chart['reference'] else '采用实际出生信息'}；"
@@ -326,6 +350,7 @@ def analyze(payload: dict, *, recommend: bool = True) -> dict:
             "requested_candidate_count": candidate_count,
             "available_candidate_count": len(pool),
             "method": method,
+            **algorithm_details,
         },
         "candidates": result[:effective_count],
     }
@@ -338,7 +363,7 @@ def review_name(payload: dict) -> dict:
     # Keep inactive clock fields so mixed-flow requests are still rejected.
     fields = {"surname", "purpose", "mode", "currentName", "gender", "zone", "place",
               "birthDate", "birthTime", "dueDate", "dueTime", "date", "time",
-              "timeBasis", "longitude", "locationId"}
+              "timeBasis", "longitude", "locationId", "algorithm", "surnameReading"}
     identity = {key: value for key, value in payload.items() if key in fields}
     identity["elementPreference"] = "yongshen"
     return analyze(identity, recommend=False)
@@ -387,8 +412,21 @@ class Handler(SimpleHTTPRequestHandler):
             return self.json({'customer': None, 'sms_available': False,
                               'purchases_available': False, 'retention_days': 30, 'record_limit': 20})
         if route == "/api/health": return self.json({"status": "ok", "database": DB.name})
+        if route == "/api/naming-corpus":
+            return self.json(naming_corpus.public_stats())
+        if route == "/api/surname-readings":
+            surname = parse_qs(urlparse(self.path).query).get("surname",[""])[0]
+            if not 1 <= len(surname) <= 2 or not all(phonetics.is_han(c) for c in surname):
+                return self.json({"error":"surname must contain one or two Chinese characters"},400)
+            return self.json({"surname":surname,"default":literary_engine.name_phonology.surname_reading(surname),"characters":[{"char":c,"readings":phonetics._readings(c)} for c in surname]})
         if route == "/api/name-counts":
             names = load_names()
+            algorithm = parse_qs(urlparse(self.path).query).get("algorithm",["legacy_v2"])[0]
+            if algorithm not in ("legacy_v2", "literary_v3"):
+                return self.json({"error":"algorithm must be legacy_v2 or literary_v3"},400)
+            if algorithm == "literary_v3":
+                counts = {str(length):len(literary_engine.generate_pool(length,{"element":None,"mode":"none"},set(),set(),set(),set(),"",[],names)[0]) for length in (1,2,3)}
+                return self.json({"counts":counts,"algorithm":algorithm,"corpus":naming_corpus.public_stats()})
             return self.json({"counts": {str(length): sum(len(item["given"]) == length for item in names) for length in (1, 2, 3)}})
         if route == "/api/catalog":
             return self.json(json.loads((DATA / "character-catalog.json").read_text(encoding="utf-8")))

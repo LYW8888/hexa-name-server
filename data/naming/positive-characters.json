@@ -1,0 +1,1620 @@
+{
+  "version": "positive-senses-v1",
+  "policy": "现代正向义项为项目编辑选择，与古籍原句分别记录。",
+  "characters": [
+    {
+      "char": "义",
+      "meaning": "正义与道义",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "里仁篇",
+      "quote": "君子喻于义，小人喻于利",
+      "line": 92,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "之",
+      "meaning": "文言连接之美",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·荡之什·崧高",
+      "quote": "维周之翰",
+      "line": 1664,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "乐",
+      "meaning": "快乐豁达",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "yizhuan",
+      "chapter": "系辞上传",
+      "quote": "乐天知命，故不忧",
+      "line": 13,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "仁",
+      "meaning": "仁爱",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "志于道，据于德，依于仁，游于艺",
+      "line": 172,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "依",
+      "meaning": "依循与亲近",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "志于道，据于德，依于仁，游于艺",
+      "line": 172,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "修",
+      "meaning": "修养",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "又重之以修能",
+      "line": 9,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "倩",
+      "meaning": "美好",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·卫风·硕人",
+      "quote": "巧笑倩兮",
+      "line": 302,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "健",
+      "meaning": "刚健",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第1卦·乾为天",
+      "quote": "天行健，君子以自强不息",
+      "line": 13,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "光",
+      "meaning": "光明",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "chuci",
+      "chapter": "云中君·屈原",
+      "quote": "与日月兮齐光",
+      "line": 208,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "兰",
+      "meaning": "兰草",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "扈江离与辟芷兮，纫秋兰以为佩",
+      "line": 10,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "则",
+      "meaning": "准则",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "名余曰正则兮，字余曰灵均",
+      "line": 8,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "升",
+      "meaning": "向上",
+      "styles": [
+        "classical",
+        "nature",
+        "bright"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鹿鸣之什·天保",
+      "quote": "如月之恒，如日之升",
+      "line": 876,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "华",
+      "meaning": "花华",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·周南·桃夭",
+      "quote": "灼灼其华",
+      "line": 33,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "南",
+      "meaning": "向阳温暖",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鸿雁之什·斯干",
+      "quote": "幽幽南山",
+      "line": 1017,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "博",
+      "meaning": "博学",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "雍也篇",
+      "quote": "君子博学于文，约之以礼",
+      "line": 161,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "厚",
+      "meaning": "宽厚",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第2卦·坤为地",
+      "quote": "地势坤，君子以厚德载物",
+      "line": 53,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "同",
+      "meaning": "和同",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "子路篇",
+      "quote": "君子和而不同",
+      "line": 368,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "和",
+      "meaning": "和顺",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "子路篇",
+      "quote": "君子和而不同",
+      "line": 368,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "哲",
+      "meaning": "明智",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·荡之什·烝民",
+      "quote": "既明且哲，以保其身",
+      "line": 1677,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "善",
+      "meaning": "善美",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第42卦·风雷益",
+      "quote": "君子以见善则迁，有过则改",
+      "line": 701,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "喻",
+      "meaning": "明白",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "里仁篇",
+      "quote": "君子喻于义，小人喻于利",
+      "line": 92,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "均",
+      "meaning": "平和",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "名余曰正则兮，字余曰灵均",
+      "line": 8,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "坤",
+      "meaning": "宽厚",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第2卦·坤为地",
+      "quote": "地势坤",
+      "line": 53,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "坦",
+      "meaning": "坦诚",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "君子坦荡荡",
+      "line": 203,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "天",
+      "meaning": "广阔",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鸿雁之什·鹤鸣",
+      "quote": "鹤鸣于九皋，声闻于天",
+      "line": 993,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "如",
+      "meaning": "如意与自然",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·野有蔓草",
+      "quote": "婉如清扬",
+      "line": 481,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "婉",
+      "meaning": "温婉",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·野有蔓草",
+      "quote": "清扬婉兮",
+      "line": 480,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "子",
+      "meaning": "文雅称谓",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·子衿",
+      "quote": "青青子衿，悠悠我心",
+      "line": 467,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "学",
+      "meaning": "向学",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "公冶长篇",
+      "quote": "敏而好学，不耻下问",
+      "line": 119,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "宁",
+      "meaning": "安宁",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第1卦·乾为天",
+      "quote": "万国咸宁",
+      "line": 12,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "宇",
+      "meaning": "天地屋宇",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "涉江·屈原",
+      "quote": "云霏霏而承宇",
+      "line": 615,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "安",
+      "meaning": "安定",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "yizhuan",
+      "chapter": "系辞上传",
+      "quote": "安土敦乎仁，故能爱",
+      "line": 13,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "宜",
+      "meaning": "和适",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·周南·桃夭",
+      "quote": "宜其室家",
+      "line": 33,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "山",
+      "meaning": "稳重",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鸿雁之什·斯干",
+      "quote": "幽幽南山",
+      "line": 1017,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "川",
+      "meaning": "开阔",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鹿鸣之什·天保",
+      "quote": "如川之方至",
+      "line": 873,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "弘",
+      "meaning": "宽广",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "lunyu",
+      "chapter": "泰伯篇",
+      "quote": "士不可以不弘毅，任重而道远",
+      "line": 213,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "强",
+      "meaning": "自强",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第1卦·乾为天",
+      "quote": "天行健，君子以自强不息",
+      "line": 13,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "彬",
+      "meaning": "文雅",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "雍也篇",
+      "quote": "文质彬彬，然后君子",
+      "line": 152,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "待",
+      "meaning": "涵养以待",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "yizhuan",
+      "chapter": "系辞下传",
+      "quote": "君子藏器于身，待时而动",
+      "line": 64,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "德",
+      "meaning": "品德",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "橘颂·屈原",
+      "quote": "秉德无私",
+      "line": 847,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "志",
+      "meaning": "志向",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "志于道，据于德，依于仁，游于艺",
+      "line": 172,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "怀",
+      "meaning": "心怀",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "怀沙·屈原",
+      "quote": "怀瑾握瑜兮",
+      "line": 733,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "恒",
+      "meaning": "恒久",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鹿鸣之什·天保",
+      "quote": "如月之恒，如日之升",
+      "line": 876,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "悠",
+      "meaning": "从容",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·子衿",
+      "quote": "青青子衿，悠悠我心",
+      "line": 467,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "惠",
+      "meaning": "仁厚",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·邶风·燕燕",
+      "quote": "终温且惠，淑慎其身",
+      "line": 147,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "慎",
+      "meaning": "审慎",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·邶风·燕燕",
+      "quote": "终温且惠，淑慎其身",
+      "line": 147,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "承",
+      "meaning": "承接",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "涉江·屈原",
+      "quote": "云霏霏而承宇",
+      "line": 615,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "振",
+      "meaning": "振作",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第18卦·山风蛊",
+      "quote": "君子以振民育德",
+      "line": 317,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "敏",
+      "meaning": "勤敏",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "公冶长篇",
+      "quote": "敏而好学，不耻下问",
+      "line": 119,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "敦",
+      "meaning": "敦厚",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "yizhuan",
+      "chapter": "系辞上传",
+      "quote": "安土敦乎仁，故能爱",
+      "line": 13,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "文",
+      "meaning": "文采",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "雍也篇",
+      "quote": "君子博学于文，约之以礼",
+      "line": 161,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "新",
+      "meaning": "自新",
+      "styles": [
+        "classical",
+        "bright",
+        "nature"
+      ],
+      "source_id": "lunyu",
+      "chapter": "为政篇",
+      "quote": "温故而知新",
+      "line": 33,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "日",
+      "meaning": "日光",
+      "styles": [
+        "classical",
+        "nature",
+        "bright"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鹿鸣之什·天保",
+      "quote": "如月之恒，如日之升",
+      "line": 876,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "时",
+      "meaning": "时机",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "yizhuan",
+      "chapter": "系辞下传",
+      "quote": "君子藏器于身，待时而动",
+      "line": 64,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "明",
+      "meaning": "明辨",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·荡之什·烝民",
+      "quote": "既明且哲，以保其身",
+      "line": 1677,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "景",
+      "meaning": "高德仰慕",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·甫田之什·车舝",
+      "quote": "高山仰止，景行行止",
+      "line": 1270,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "月",
+      "meaning": "月华",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鹿鸣之什·天保",
+      "quote": "如月之恒，如日之升",
+      "line": 876,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "木",
+      "meaning": "生长",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "朝饮木兰之坠露兮，夕餐秋菊之落英",
+      "line": 38,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "杜",
+      "meaning": "杜若香草",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "湘君·屈原",
+      "quote": "采芳洲兮杜若",
+      "line": 232,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "果",
+      "meaning": "果决",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第4卦·山水蒙",
+      "quote": "君子以果行育德",
+      "line": 93,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "柏",
+      "meaning": "坚韧",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·甫田之什·頍弁",
+      "quote": "茑与女萝，施于松柏",
+      "line": 1259,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "桐",
+      "meaning": "清雅",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·生民之什·卷阿",
+      "quote": "梧桐生矣",
+      "line": 1556,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "正",
+      "meaning": "守正",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "名余曰正则兮，字余曰灵均",
+      "line": 8,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "毅",
+      "meaning": "坚毅",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "lunyu",
+      "chapter": "泰伯篇",
+      "quote": "士不可以不弘毅，任重而道远",
+      "line": 213,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "民",
+      "meaning": "心怀众人",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第18卦·山风蛊",
+      "quote": "君子以振民育德",
+      "line": 317,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "求",
+      "meaning": "求知",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "路漫漫其修远兮，吾将上下而求索",
+      "line": 102,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "江",
+      "meaning": "江水",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "扈江离与辟芷兮，纫秋兰以为佩",
+      "line": 10,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "沐",
+      "meaning": "沐浴芳华",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "云中君·屈原",
+      "quote": "浴兰汤兮沐芳，华采衣兮若英",
+      "line": 206,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "泽",
+      "meaning": "水泽与包容",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第58卦·兑为泽",
+      "quote": "丽泽，兑",
+      "line": 957,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "洲",
+      "meaning": "水中陆地",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·周南·关雎",
+      "quote": "在河之洲",
+      "line": 5,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "淑",
+      "meaning": "善美",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·周南·关雎",
+      "quote": "窈窕淑女，君子好逑",
+      "line": 5,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "清",
+      "meaning": "清朗",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·野有蔓草",
+      "quote": "清扬婉兮",
+      "line": 480,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "温",
+      "meaning": "温和",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·邶风·燕燕",
+      "quote": "终温且惠，淑慎其身",
+      "line": 147,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "游",
+      "meaning": "涵养与舒展",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "志于道，据于德，依于仁，游于艺",
+      "line": 172,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "灵",
+      "meaning": "灵秀",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "名余曰正则兮，字余曰灵均",
+      "line": 8,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "灼",
+      "meaning": "明亮",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·周南·桃夭",
+      "quote": "灼灼其华",
+      "line": 33,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "物",
+      "meaning": "包容万物",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第2卦·坤为地",
+      "quote": "地势坤，君子以厚德载物",
+      "line": 53,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "琢",
+      "meaning": "琢磨修养",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·卫风·淇奥",
+      "quote": "如切如磋，如琢如磨",
+      "line": 291,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "瑾",
+      "meaning": "美玉",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "怀沙·屈原",
+      "quote": "怀瑾握瑜兮",
+      "line": 733,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "盛",
+      "meaning": "丰盛",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "yizhuan",
+      "chapter": "系辞上传",
+      "quote": "富有之谓大业，日新之谓盛德",
+      "line": 15,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "知",
+      "meaning": "求知",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "lunyu",
+      "chapter": "为政篇",
+      "quote": "温故而知新",
+      "line": 33,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "礼",
+      "meaning": "知礼",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "雍也篇",
+      "quote": "君子博学于文，约之以礼",
+      "line": 161,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "离",
+      "meaning": "江离香草",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "扈江离与辟芷兮，纫秋兰以为佩",
+      "line": 10,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "秉",
+      "meaning": "秉持",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "橘颂·屈原",
+      "quote": "秉德无私",
+      "line": 847,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "秋",
+      "meaning": "秋日风度",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "扈江离与辟芷兮，纫秋兰以为佩",
+      "line": 10,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "穆",
+      "meaning": "温和端正",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·荡之什·烝民",
+      "quote": "穆如清风",
+      "line": 1681,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "竹",
+      "meaning": "清正生长",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·卫风·淇奥",
+      "quote": "绿竹猗猗",
+      "line": 291,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "索",
+      "meaning": "求索",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "路漫漫其修远兮，吾将上下而求索",
+      "line": 102,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "纶",
+      "meaning": "经纶条理",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第3卦·水雷屯",
+      "quote": "君子以经纶",
+      "line": 77,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "经",
+      "meaning": "治理与条理",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第3卦·水雷屯",
+      "quote": "君子以经纶",
+      "line": 77,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "绿",
+      "meaning": "生机",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·卫风·淇奥",
+      "quote": "绿竹猗猗",
+      "line": 291,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "翰",
+      "meaning": "支柱",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·荡之什·崧高",
+      "quote": "维周之翰",
+      "line": 1664,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "育",
+      "meaning": "培育",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第4卦·山水蒙",
+      "quote": "君子以果行育德",
+      "line": 93,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "能",
+      "meaning": "才能",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "又重之以修能",
+      "line": 9,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "自",
+      "meaning": "自立",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第1卦·乾为天",
+      "quote": "天行健，君子以自强不息",
+      "line": 13,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "舒",
+      "meaning": "舒展",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·陈风·月出",
+      "quote": "舒窈纠兮",
+      "line": 725,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "良",
+      "meaning": "美好",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "东皇太一·屈原",
+      "quote": "吉日兮辰良",
+      "line": 196,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "艺",
+      "meaning": "才艺",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "志于道，据于德，依于仁，游于艺",
+      "line": 172,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "芳",
+      "meaning": "芳华",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "云中君·屈原",
+      "quote": "浴兰汤兮沐芳，华采衣兮若英",
+      "line": 206,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "芷",
+      "meaning": "白芷香草",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "扈江离与辟芷兮，纫秋兰以为佩",
+      "line": 10,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "若",
+      "meaning": "杜若与如意",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "云中君·屈原",
+      "quote": "浴兰汤兮沐芳，华采衣兮若英",
+      "line": 206,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "英",
+      "meaning": "花英",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "朝饮木兰之坠露兮，夕餐秋菊之落英",
+      "line": 38,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "荡",
+      "meaning": "坦荡",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "君子坦荡荡",
+      "line": 203,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "菲",
+      "meaning": "芳菲之美",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "东皇太一·屈原",
+      "quote": "芳菲菲兮满堂",
+      "line": 202,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "落",
+      "meaning": "落英花华",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "朝饮木兰之坠露兮，夕餐秋菊之落英",
+      "line": 38,
+      "review_status": "editorial_sense_selected",
+      "context_only": true
+    },
+    {
+      "char": "行",
+      "meaning": "笃行",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·甫田之什·车舝",
+      "quote": "高山仰止，景行行止",
+      "line": 1270,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "衿",
+      "meaning": "衣衿与文雅",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·子衿",
+      "quote": "青青子衿，悠悠我心",
+      "line": 467,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "见",
+      "meaning": "见善",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第42卦·风雷益",
+      "quote": "君子以见善则迁，有过则改",
+      "line": 701,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "言",
+      "meaning": "言行有信",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "学而篇",
+      "quote": "敏于事而慎于言",
+      "line": 18,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "贤",
+      "meaning": "贤良",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第53卦·风山渐",
+      "quote": "君子以居贤德善俗",
+      "line": 877,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "载",
+      "meaning": "承载",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第2卦·坤为地",
+      "quote": "地势坤，君子以厚德载物",
+      "line": 53,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "辰",
+      "meaning": "时光",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "东皇太一·屈原",
+      "quote": "吉日兮辰良",
+      "line": 196,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "迁",
+      "meaning": "向善自新",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "zhouyi",
+      "chapter": "第42卦·风雷益",
+      "quote": "君子以见善则迁，有过则改",
+      "line": 701,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "远",
+      "meaning": "志向长远",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "chuci",
+      "chapter": "离骚·屈原",
+      "quote": "路漫漫其修远兮，吾将上下而求索",
+      "line": 102,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "道",
+      "meaning": "行事之道",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "lunyu",
+      "chapter": "述而篇",
+      "quote": "志于道，据于德，依于仁，游于艺",
+      "line": 172,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "闻",
+      "meaning": "善声可闻",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鸿雁之什·鹤鸣",
+      "quote": "鹤鸣于九皋，声闻于天",
+      "line": 993,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "青",
+      "meaning": "生机",
+      "styles": [
+        "classical"
+      ],
+      "source_id": "shijing",
+      "chapter": "国风·郑风·子衿",
+      "quote": "青青子衿，悠悠我心",
+      "line": 467,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "风",
+      "meaning": "清风",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "大雅·荡之什·烝民",
+      "quote": "穆如清风",
+      "line": 1681,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "鸣",
+      "meaning": "清越之声",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鸿雁之什·鹤鸣",
+      "quote": "鹤鸣于九皋，声闻于天",
+      "line": 993,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "鹤",
+      "meaning": "清雅",
+      "styles": [
+        "classical",
+        "nature"
+      ],
+      "source_id": "shijing",
+      "chapter": "小雅·鸿雁之什·鹤鸣",
+      "quote": "鹤鸣于九皋，声闻于天",
+      "line": 993,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    },
+    {
+      "char": "齐",
+      "meaning": "齐光",
+      "styles": [
+        "classical",
+        "bright"
+      ],
+      "source_id": "chuci",
+      "chapter": "云中君·屈原",
+      "quote": "与日月兮齐光",
+      "line": 208,
+      "review_status": "editorial_sense_selected",
+      "context_only": false
+    }
+  ]
+}

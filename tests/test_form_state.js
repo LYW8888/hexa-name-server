@@ -28,3 +28,10 @@ test('inactive scenario dates are ignored and original-name review ignores recom
   assert.equal(workflowId(base),'rename');
   assert.notEqual(workflowId({mode:'born'}),workflowId({mode:'due_date'}));
 });
+
+test('literary constraints and surname readings have distinct draft identities without invalidating original review on future-name edits',async()=>{
+ const {requestKey,nameReviewKey}=await import('../frontend/src/form-state.js');const base={algorithm:'literary_v3',purpose:'rename',mode:'born',surname:'李',currentName:'李明哲'};
+ for(const change of [{requiredChars:'安'},{tabooChars:'宁'},{tabooHomophones:true},{numerologyMode:'strict'},{surnameReading:'lǐ'},{algorithm:'legacy_v2'}]) assert.notEqual(requestKey(base),requestKey({...base,...change}));
+ assert.equal(nameReviewKey(base),nameReviewKey({...base,requiredChars:'安',tabooChars:'宁',numerologyMode:'strict'}));
+ assert.notEqual(nameReviewKey(base),nameReviewKey({...base,surnameReading:'lǐ'}));
+});

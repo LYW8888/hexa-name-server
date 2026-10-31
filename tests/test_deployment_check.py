@@ -16,6 +16,7 @@ class DeploymentCheckTest(unittest.TestCase):
                 if self.path=='/':return self.send('<form id="namingForm"></form>' if test.legacy else '<div id="root"></div><script type="module" src="/assets/main-test.js"></script><link rel="stylesheet" href="/assets/main-test.css">','text/html')
                 if self.path.endswith('.js'):return self.send('// bundle','text/javascript',404 if test.missing else 200)
                 if self.path.endswith('.css'):return self.send('body{}','text/css')
+                if self.path=='/api/naming-corpus':return self.send(json.dumps({'character_records':3636,'selected_phrases':82}))
                 return self.send('{"status":"ok"}')
             def do_POST(self):
                 payload=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
@@ -23,10 +24,10 @@ class DeploymentCheckTest(unittest.TestCase):
                 if self.path=='/api/name-review':
                     test.assertEqual(payload['currentName'],'李景和')
                     if test.old_review:return self.send('{}')
-                    return self.send(json.dumps({'analysis':{'workflow':{'id':'rename'},'phase':'name_review','name_review':{'full_name':'李景和'}},'candidates':[]}))
+                    return self.send(json.dumps({'analysis':{'algorithm':'literary_v3','ranking_version':'literary-match-v3','workflow':{'id':'rename'},'phase':'name_review','name_review':{'full_name':'李景和'}},'candidates':[]}))
                 due=payload['mode']=='due_date'
                 if due:test.assertEqual(payload['dueDate'],'2099-01-01')
-                return self.send(json.dumps({'analysis':{'workflow':{'id':'newborn_due_date' if due else 'newborn_born'},'bazi':{'reference':due,'pillars':[{}, {}, {}, {}]}},'candidates':[{'given':'知衡'},{'given':'景和'},{'given':'知行'}]}))
+                return self.send(json.dumps({'analysis':{'algorithm':'literary_v3','ranking_version':'literary-match-v3','workflow':{'id':'newborn_due_date' if due else 'newborn_born'},'bazi':{'reference':due,'pillars':[{}, {}, {}, {}]}},'candidates':[{'given':'知衡'},{'given':'景和'},{'given':'知行'}]}))
             def log_message(self,*args):pass
         self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()

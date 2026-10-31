@@ -1,4 +1,5 @@
 import React from "react";
+import CandidateEvidence from "./CandidateEvidence.jsx";
 
 export default function NameReview({ review, id = "existingNameReport" }) {
   if (!review) return null;
@@ -28,6 +29,7 @@ export default function NameReview({ review, id = "existingNameReport" }) {
           <small>{review.meaning_source?.description}</small>
         </p>
       )}
+      <CandidateEvidence item={review} />
       <div className="review-directions">
         <h4>改名时可以关注</h4>
         <ul>{review.directions.map((direction) => <li key={direction}>{direction}</li>)}</ul>
