@@ -23,6 +23,11 @@ def _readings(char: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(normalize('NFC', value.lower()) for value in values[0] if value != char))
 
 
+def default_reading(given: str) -> str:
+    """Dictionary first readings for explanation, never a personal-reading claim."""
+    return " ".join((_readings(char) or (char,))[0] for char in given)
+
+
 def check(surname: str, given: str, recorded_pinyin: str) -> dict:
     tokens = [normalize('NFC', value.lower()) for value in recorded_pinyin.split()]
     surname_results = [{'character': char, 'readings': list(_readings(char))} for char in surname]

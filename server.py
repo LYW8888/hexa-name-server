@@ -10,6 +10,7 @@ import bazi
 import phonetics
 import tradition
 import naming_rules
+import name_review
 import mingli
 import solar_time
 import classical_sources
@@ -127,7 +128,7 @@ def character_preferences(payload: dict) -> tuple[set[str], set[str]]:
         raise ValueError("likedChars and avoidedChars cannot overlap")
     return liked, avoided
 
-def analyze(payload: dict) -> dict:
+def analyze(payload: dict, *, recommend: bool = True) -> dict:
     surname = str(payload.get("surname", "")).strip()
     if not 1 <= len(surname) <= 2 or not all(phonetics.is_han(char) for char in surname):
         raise ValueError("surname must contain one or two Chinese characters")
@@ -147,12 +148,18 @@ def analyze(payload: dict) -> dict:
         raise ValueError("zone must be Asia/Shanghai, Asia/Taipei, or Asia/Hong_Kong")
     zone_label = ZONE_LABELS[zone]
 
-    # Keep both dates when supplied. `date`/`time` remain accepted for old clients.
+    # The selected flow alone chooses its clock. Never silently switch a due-date
+    # request to actual birth, or mix estimates into a rename report. Legacy
+    # date/time aliases remain accepted within the selected flow.
     due_date = str(payload.get("dueDate") or (payload.get("date") if mode == "due_date" else "") or "").strip()
     due_time = str(payload.get("dueTime") or (payload.get("time") if mode == "due_date" else "") or "12:00").strip()
     birth_date = str(payload.get("birthDate") or (payload.get("date") if mode == "born" else "") or "").strip()
     birth_time = str(payload.get("birthTime") or (payload.get("time") if mode == "born" else "") or "").strip()
 
+    if mode == "due_date" and (birth_date or birth_time):
+        raise ValueError("due date flow cannot include actual birth information; choose born mode")
+    if mode == "born" and due_date:
+        raise ValueError("born flow cannot include due date information")
     if mode == "due_date" and not due_date:
         raise ValueError("dueDate is required when using due date mode")
     if mode == "born" and (not birth_date or not birth_time):
@@ -176,7 +183,7 @@ def analyze(payload: dict) -> dict:
         if parsed_birth == now_in_zone.date() and parsed_birth_time > now_in_zone.time().replace(second=0, microsecond=0):
             raise ValueError("birthTime cannot be in the future")
 
-    actual_complete = bool(birth_date and birth_time)
+    actual_complete = mode == "born"
     basis_date = birth_date if actual_complete else due_date
     basis_time = birth_time if actual_complete else due_time
     try:
@@ -196,8 +203,10 @@ def analyze(payload: dict) -> dict:
         raise ValueError("place is required")
     parents = str(payload.get("parents", "")).strip()
     current_name = str(payload.get("currentName", "")).strip()
-    if len(current_name) > 20:
-        raise ValueError("currentName must be 20 characters or fewer")
+    if purpose == "rename":
+        name_review.validate(surname, current_name)
+    else:
+        current_name = ""
     meaning = str(payload.get("meaning", "")).strip()
     liked, avoided = character_preferences(payload)
     styles = payload.get("styles", []) or []
@@ -206,24 +215,13 @@ def analyze(payload: dict) -> dict:
     clock_options = solar_time.options(payload)
     chart = bazi.calculate(basis_date, basis_time, zone, reference=not actual_complete, **clock_options)
     comparison = None
-    if actual_complete and due_date:
-        try:
-            reference_chart = bazi.calculate(due_date, due_time, zone, reference=True, **clock_options)
-            differences = [{"label": actual["label"], "reference": expected["ganzhi"],
-                            "actual": actual["ganzhi"], "changed": expected["ganzhi"] != actual["ganzhi"]}
-                           for expected, actual in zip(reference_chart["pillars"], chart["pillars"])]
-            comparison = {"reference": reference_chart, "differences": differences,
-                          "has_changes": any(item["changed"] for item in differences),
-                          "near_boundary": bool(reference_chart["boundary"] or chart["boundary"]), "error": None}
-        except ValueError as exc:
-            # An optional estimate must never invalidate an otherwise valid
-            # actual-birth chart (for example a nonexistent DST clock time).
-            comparison = {"reference": None, "differences": [], "has_changes": None,
-                          "near_boundary": None, "error": str(exc)}
-    scenario = "已出生准确时间" if actual_complete and mode == "born" else "预产期参考 + 已出生信息" if actual_complete else "预产期参考"
-    purpose_label = "成人改名" if purpose == "rename" else "新生儿起名"
+    scenario = "预产期起名" if mode == "due_date" else "已出生起名" if purpose == "newborn" else "改名 · 实际出生"
+    purpose_label = "改名方案" if purpose == "rename" else "新生儿起名"
+    workflow = {"id": "rename" if purpose == "rename" else f"newborn_{mode}",
+                "label": "改名方案" if purpose == "rename" else f"新生儿起名 · {scenario}",
+                "reference": mode == "due_date"}
     names = load_names()
-    pool = [item for item in names if len(item["given"]) == length and not any(char in avoided for char in item["given"])]
+    pool = [item for item in names if len(item["given"]) == length and not any(char in avoided for char in item["given"]) and surname + item["given"] != current_name] if recommend else []
     effective_count = min(candidate_count, len(pool))
     try:
         variant = int(payload.get("variant", 0))
@@ -241,6 +239,7 @@ def analyze(payload: dict) -> dict:
     family_chars = set()
     if payload.get("honorParents") in (True, "1", "on", "true"):
         family_chars = {char for char in parents if phonetics.is_han(char)} - avoided
+    existing_review = name_review.build(surname, current_name, chart, naming_rules.target_for("yongshen", gua, assessment), names) if purpose == "rename" else None
     result = []
     for item in pool:
         given = item["given"]
@@ -267,6 +266,7 @@ def analyze(payload: dict) -> dict:
         )
         result.append(
             {
+                **({"rename_comparison": name_review.compare(existing_review, item)} if existing_review else {}),
                 "name": surname + given,
                 "given": given,
                 "pinyin": item["pinyin"],
@@ -307,6 +307,11 @@ def analyze(payload: dict) -> dict:
             "has_more_candidates": len(pool) > effective_count,
             "family": bool(parents),
             "purpose": purpose_label,
+            "purpose_code": purpose,
+            "mode": mode,
+            "workflow": workflow,
+            "phase": "recommendations" if recommend else "name_review",
+            "name_review": existing_review,
             "current_name": current_name,
             "scenario": scenario,
             "gender": gender_label,
@@ -324,6 +329,19 @@ def analyze(payload: dict) -> dict:
         },
         "candidates": result[:effective_count],
     }
+
+
+def review_name(payload: dict) -> dict:
+    if payload.get("purpose") != "rename":
+        raise ValueError("name review requires rename purpose")
+    # Future-name filters cannot prevent understanding the existing name.
+    # Keep inactive clock fields so mixed-flow requests are still rejected.
+    fields = {"surname", "purpose", "mode", "currentName", "gender", "zone", "place",
+              "birthDate", "birthTime", "dueDate", "dueTime", "date", "time",
+              "timeBasis", "longitude", "locationId"}
+    identity = {key: value for key, value in payload.items() if key in fields}
+    identity["elementPreference"] = "yongshen"
+    return analyze(identity, recommend=False)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -380,7 +398,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.json(json.loads((DATA / "product.json").read_text(encoding="utf-8")))
         return super().do_GET()
     def do_POST(self):
-        if urlparse(self.path).path != "/api/analyze":
+        route = urlparse(self.path).path
+        if route not in ("/api/analyze", "/api/name-review"):
             return self.send_error(404)
         try:
             size = int(self.headers.get("Content-Length", "0"))
@@ -388,7 +407,7 @@ class Handler(SimpleHTTPRequestHandler):
             if size > 64 * 1024: raise ValueError("request too large")
             payload = json.loads(self.rfile.read(size) or b"{}")
             if not isinstance(payload, dict): raise ValueError("request body must be a JSON object")
-            return self.json(analyze(payload))
+            return self.json(review_name(payload) if route == "/api/name-review" else analyze(payload))
         except (ValueError, json.JSONDecodeError) as exc:
             return self.json({"error": str(exc)}, 400)
     def json(self, body, status=200):

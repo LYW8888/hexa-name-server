@@ -69,7 +69,18 @@ def check_site(base_url, timeout=10, expected_modules=None):
     candidates=result.get('candidates')
     if not isinstance(chart,dict) or not isinstance(chart.get('pillars'),list) or len(chart['pillars'])!=4 or not isinstance(candidates,list) or len(candidates)!=3 or any(not isinstance(item,dict) or not isinstance(item.get('given'),str) or len(item['given'])!=2 for item in candidates):
         raise CheckFailure('起名接口未返回完整四柱和所选字数的 3 个候选，请确认前后端来自同一提交。')
-    return {'module':page.modules[0],'asset_count':len(set(page.assets)),'candidate_count':len(candidates)}
+    if analysis.get('workflow',{}).get('id')!='newborn_due_date' or chart.get('reference') is not True:
+        raise CheckFailure('预产期场景标识或时间依据错误，请更新后端服务。')
+    # Also exercise the born and rename paths; no reports are persisted.
+    born={'purpose':'newborn','mode':'born','surname':'李','birthDate':'1998-08-13','birthTime':'13:48','place':'河南南阳'}
+    actual=json_request('/api/analyze',born)
+    if actual.get('analysis',{}).get('workflow',{}).get('id')!='newborn_born' or actual.get('analysis',{}).get('bazi',{}).get('reference') is not False:
+        raise CheckFailure('已出生场景标识或时间依据错误。')
+    original=json_request('/api/name-review',{**born,'purpose':'rename','currentName':'李景和'})
+    review=original.get('analysis',{})
+    if review.get('workflow',{}).get('id')!='rename' or review.get('phase')!='name_review' or review.get('name_review',{}).get('full_name')!='李景和' or original.get('candidates')!=[]:
+        raise CheckFailure('改名现名分析接口未完整部署，请更新服务与代理路由。')
+    return {'module':page.modules[0],'asset_count':len(set(page.assets)),'candidate_count':len(candidates),'workflows_checked':3}
 
 
 def main():
@@ -84,7 +95,7 @@ def main():
         result=check_site(args.url,expected_modules=expected.modules)
     except CheckFailure as exc:
         print('自检失败：'+str(exc));return 1
-    print('自检通过：React 首页、构建资源、排盘接口和未来预产期均正常。')
+    print('自检通过：React 首页、构建资源、预产期、已出生与改名现名分析三条流程均正常。')
     print('当前入口：'+result['module'])
     print(f"已核对 {result['asset_count']} 个资源，实际生成 {result['candidate_count']} 个候选。")
     return 0

@@ -155,6 +155,24 @@ class CustomerTest(TestCase):
         self.assertIn('no-store',fetched['Cache-Control'])
         self.assertEqual(ServiceRecord.objects.count(),1)
 
+    def test_saved_rename_preserves_original_report_and_correct_scenario(self):
+        self.sign_in()
+        response = self.save(purpose='rename',mode='born',dueDate='',birthDate='1998-08-13',birthTime='13:48',currentName='林景和')
+        self.assertEqual(response.status_code,201)
+        report = self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
+        self.assertEqual(report['analysis']['workflow']['id'],'rename')
+        self.assertEqual(report['analysis']['purpose'],'改名方案')
+        self.assertEqual(report['analysis']['name_review']['full_name'],'林景和')
+        self.assertTrue(all(row['name']!='林景和' for row in report['candidates']))
+        self.assertNotIn('林景和'.encode(),bytes(ServiceRecord.objects.get().encrypted_report))
+
+    def test_save_rejects_mixed_flows_and_missing_current_name(self):
+        self.sign_in()
+        for changes in ({'birthDate':'2000-01-01','birthTime':'12:00'},{'purpose':'rename','mode':'born','dueDate':'','birthDate':'2000-01-01','birthTime':'12:00'}):
+            with self.subTest(changes=changes):
+                self.assertEqual(self.save(**changes).status_code,400)
+        self.assertEqual(ServiceRecord.objects.count(),0)
+
     def test_saved_report_preserves_reference_rule_and_new_evidence(self):
         self.sign_in()
         response=self.save(elementPreference='水',honorParents='true',parents='安',timeBasis='apparent_solar',longitude='120.16',locationId='hangzhou')

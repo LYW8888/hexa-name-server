@@ -5,7 +5,7 @@ import Results from "./Results.jsx";
 import Keepsake from "./Keepsake.jsx";
 import CustomerArea from "./CustomerArea.jsx";
 import SavedNames from "./SavedNames.jsx";
-import { requestKey } from "./form-state.js";
+import { requestKey, workflowId } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
 import { copyText, friendlyError, downloadReportFile } from "./utils.js";
 
@@ -62,7 +62,9 @@ export default function App() {
     [status, setStatus] = useState(DEFAULT_STATUS),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(null);
-  const result = session.pages[session.index] || null;
+  const storedResult = session.pages[session.index] || null;
+  const sameContext = !draft || !storedResult || (workflowId(draft) === workflowId(storedResult.data) && draft.surname === storedResult.data.surname && (draft.purpose !== "rename" || draft.currentName?.trim() === storedResult.data.currentName?.trim()));
+  const result = sameContext ? storedResult : null;
   const dirty = !!(
     result &&
     draft &&
@@ -219,7 +221,7 @@ export default function App() {
         count
           ? isRegenerate
             ? "已重新整理候选方向。"
-            : "名字方案已生成，先收藏喜欢的方向。"
+            : data.purpose === "rename" ? "改名方案已生成，可查看与现名的变化。" : "名字方案已生成，先收藏喜欢的方向。"
           : "请调整避用字或名字字数后重试。",
         count && !isRegenerate ? "success" : "info",
       );
@@ -323,28 +325,28 @@ export default function App() {
           data={result?.data}
           analysis={result?.analysis}
           candidates={result?.candidates || []}
-          status={status}
+          status={sameContext ? status : "已切换起名场景或姓名，请完成当前流程后生成对应方案。"}
           busy={busy}
           saved={favorite.names}
           onSaved={showSaved}
-          comparisonKey={session.id}
+          comparisonKey={`${session.id}:${workflowId(draft || {})}:${sameContext}`}
           dirty={dirty}
           onApply={() => formController.current?.submit()}
           onEdit={edit}
           groupIndex={session.index}
-          hasHistory={session.pages.length > 1}
+          hasHistory={!!result && session.pages.length > 1}
           seenNames={
             new Set(
-              session.pages
+              (result ? session.pages : [])
                 .slice(0, session.index)
                 .flatMap((page) =>
                   page.candidates.map((item) => item.fullName),
                 ),
             )
           }
-          hasPrevious={session.index > 0}
+          hasPrevious={!!result && session.index > 0}
           hasNext={
-            session.index + 1 < session.pages.length ||
+            (result && session.index + 1 < session.pages.length) ||
             (result &&
               session.index + 1 <
                 Math.ceil(
@@ -402,7 +404,7 @@ export default function App() {
         onLocate={locateSaved}
         locatable={
           new Set(
-            session.pages.flatMap((page) =>
+            (result ? session.pages : []).flatMap((page) =>
               page.candidates.map((item) => item.fullName),
             ),
           )

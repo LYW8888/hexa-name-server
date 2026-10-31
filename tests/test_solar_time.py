@@ -107,14 +107,11 @@ class SolarTimeTest(unittest.TestCase):
             "longitude": 75.99,
         }
         actual = server.analyze(base)
-        both = server.analyze({**base, "mode": "due_date", "dueDate": "2099-12-23"})
-        self.assertEqual(actual["analysis"]["gua"], both["analysis"]["gua"])
-        self.assertEqual(actual["candidates"], both["candidates"])
+        with self.assertRaisesRegex(ValueError, "due date flow"):
+            server.analyze({**base, "mode":"due_date", "dueDate":"2099-12-23"})
         self.assertEqual(actual["analysis"]["gua"]["clock_basis"], "apparent_solar")
         self.assertEqual(actual["analysis"]["gua"]["inputs"]["hour_branch"], "戌")
-        self.assertTrue(
-            both["analysis"]["bazi_comparison"]["reference"]["time_correction"]["applied"]
-        )
+        self.assertTrue(actual["analysis"]["bazi"]["time_correction"]["applied"])
 
     def test_default_civil_mode_and_supported_year_edges(self):
         for date, time in [("1900-01-01", "00:01"), ("2100-12-31", "23:59")]:

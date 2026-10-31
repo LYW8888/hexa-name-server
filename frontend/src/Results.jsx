@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import TraditionalAnalysis, {
   SolarCorrection,
 } from "./TraditionalAnalysis.jsx";
+import NameReview from "./NameReview.jsx";
+import { workflowLabel } from "./form-state.js";
 import { readingNotes } from "./utils.js";
 
 function Boundary({ boundary }) {
@@ -159,7 +161,7 @@ function Gua({ value }) {
     </section>
   );
 }
-function Chart({ analysis }) {
+export function Chart({ analysis, id = "traditionalBasis" }) {
   const chart = analysis.bazi,
     traditional = analysis.traditional;
   const prior = chart.previous_jie
@@ -170,7 +172,7 @@ function Chart({ analysis }) {
     : "暂无";
   return (
     <section
-      id="traditionalBasis"
+      id={id}
       className="summary bazi-summary"
       aria-label="传统计算依据"
     >
@@ -347,6 +349,7 @@ function NameCard({
           <p key={i}>{note}</p>
         ))}
       </details>
+      {item.rename_comparison && <details className="rename-comparison"><summary>与现用姓名比较</summary><p>{item.rename_comparison.detail}</p><p>保留用字：{item.rename_comparison.retained_characters.join("、") || "无"}；新用字：{item.rename_comparison.new_characters.join("、") || "无"}。</p></details>}
       <details className="name-evidence">
         <summary>
           {computed ? "查看选字依据与匹配明细" : "查看演示意象与资料状态"}
@@ -540,7 +543,7 @@ export default function Results({
       <div className="result-head">
         <div>
           <p className="eyebrow">A THOUGHTFUL SHORTLIST</p>
-          <h2>名字方案</h2>
+          <h2>{data?.purpose === "rename" ? "改名方案" : "名字方案"}</h2>
           <p className="result-status" id="resultStatus" role="status">
             {status}
           </p>
@@ -612,7 +615,7 @@ export default function Results({
         <div id="summary" className="summary result-context">
           <div>
             <strong>
-              {data.surname} · {analysis.purpose}{" "}
+              {data.surname} · {workflowLabel(data)}{" "}
               <span className="group-number">第 {groupIndex + 1} 组</span>
             </strong>
             <button
@@ -628,7 +631,7 @@ export default function Results({
               {analysis.bazi.local_time}
               {analysis.bazi.reference
                 ? "（预产期参考，出生后请重算）"
-                : "（实际出生优先）"}
+                : "（实际出生时间）"}
             </small>
             {analysis.naming_reference && (
               <p>
@@ -649,6 +652,7 @@ export default function Results({
           </p>
         </div>
       )}
+      {analysis?.name_review && <details className="result-name-review"><summary>现名分析报告 · {analysis.name_review.full_name}</summary><NameReview review={analysis.name_review} /></details>}
       <div id="cards" className="cards">
         {analysis && !candidates.length ? (
           <div className="empty-result">
@@ -685,12 +689,12 @@ export default function Results({
           ))
         )}
       </div>
-      <CandidateComparison
+      {analysis && <CandidateComparison
         items={compared}
         onRemove={compare}
         onClear={() => setCompared([])}
-      />
-      {compared.length > 0 && inView && (
+      />}
+      {analysis && compared.length > 0 && inView && (
         <a className="comparison-jump" href="#candidateComparison">
           比较已选 {compared.length}/3 ↓
         </a>

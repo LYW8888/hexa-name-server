@@ -110,3 +110,16 @@ class HttpHandlerTest(unittest.TestCase):
                 status, _, body = self.request('POST', '/api/analyze', b'', {'Content-Length': length})
                 self.assertEqual(status, 400)
                 self.assertIn('error', json.loads(body))
+
+    def test_name_review_is_uncached_validated_and_distinct_from_recommendations(self):
+        payload = {"purpose":"rename", "mode":"born", "surname":"李", "currentName":"李景和", "birthDate":"1998-08-13", "birthTime":"13:48", "place":"河南南阳"}
+        status, headers, body = self.request('POST', '/api/name-review', json.dumps(payload), {'Content-Type':'application/json'})
+        self.assertEqual(status,200)
+        self.assertIn('no-store',headers['Cache-Control'])
+        value = json.loads(body)
+        self.assertEqual(value['candidates'],[])
+        self.assertEqual(value['analysis']['name_review']['full_name'],'李景和')
+        for data in ({**payload,'currentName':''},{**payload,'purpose':'newborn'},{**payload,'dueDate':'2099-01-01'}):
+            with self.subTest(data=data):
+                status, _, _ = self.request('POST','/api/name-review',json.dumps(data),{'Content-Type':'application/json'})
+                self.assertEqual(status,400)

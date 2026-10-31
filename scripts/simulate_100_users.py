@@ -40,9 +40,9 @@ for i in range(100):
         'styles': styles[i % len(styles)],
     }
     if 25 <= i < 50:
-        base.update({'mode': 'born', 'dueDate': f'2026-{(i % 9) + 1:02d}-15', 'birthDate': f'2024-{(i % 9) + 1:02d}-15', 'birthTime': f'{(i * 3) % 24:02d}:{(i * 11) % 60:02d}'})
+        base.update({'mode': 'born', 'dueDate': '', 'birthDate': f'2024-{(i % 9) + 1:02d}-15', 'birthTime': f'{(i * 3) % 24:02d}:{(i * 11) % 60:02d}'})
     elif 50 <= i < 70:
-        base.update({'purpose': 'newborn', 'mode': 'due_date', 'birthDate': f'2026-{(i % 9) + 1:02d}-15', 'birthTime': f'{(i * 3) % 24:02d}:{(i * 11) % 60:02d}'})
+        base.update({'purpose': 'newborn', 'mode': 'born', 'dueDate': '', 'birthDate': f'2026-{(i % 9) + 1:02d}-15', 'birthTime': f'{(i * 3) % 24:02d}:{(i * 11) % 60:02d}'})
     elif 70 <= i < 90:
         base.update({'purpose': 'rename', 'mode': 'born', 'currentName': f'{surname}知远', 'birthDate': f'2020-{(i % 9) + 1:02d}-15', 'birthTime': f'{(i * 3) % 24:02d}:{(i * 11) % 60:02d}', 'dueDate': ''})
     elif i >= 90:

@@ -5,6 +5,14 @@ export function formRequest(form) {
   delete data.style;
   data.styles = fd.getAll("style");
   data.surname = String(data.surname || "").trim();
+  if (data.mode === "born") {
+    delete data.dueDate;
+    delete data.dueTime;
+  } else {
+    delete data.birthDate;
+    delete data.birthTime;
+  }
+  if (data.purpose !== "rename") delete data.currentName;
   data.variant = 0;
   return data;
 }
@@ -49,6 +57,13 @@ export function requestKey(data = {}) {
   for (const key of ["length", "candidateCount"])
     if (normalized[key] && Number.isFinite(Number(normalized[key])))
       normalized[key] = String(Number(normalized[key]));
+  if (normalized.mode === "born") {
+    normalized.dueDate = "";
+    normalized.dueTime = "";
+  } else {
+    normalized.birthDate = "";
+    normalized.birthTime = "";
+  }
   if (normalized.purpose !== "rename") normalized.currentName = "";
   if (normalized.timeBasis !== "apparent_solar") {
     normalized.longitude = "";
@@ -65,4 +80,19 @@ export function requestKey(data = {}) {
     data.honorParents,
   );
   return JSON.stringify(normalized);
+}
+
+// Existing-name analysis depends on identity and birth facts, not future-name preferences.
+export function nameReviewKey(data = {}) {
+  return requestKey({
+    ...Object.fromEntries(["surname", "purpose", "mode", "currentName", "birthDate", "birthTime", "gender", "place", "zone", "timeBasis", "longitude", "locationId"].map(key => [key, data[key]])),
+    styles: [],
+  });
+}
+export function workflowId(data = {}) {
+  return data.purpose === "rename" ? "rename" : `newborn_${data.mode || "due_date"}`;
+}
+
+export function workflowLabel(data = {}) {
+  return data.purpose === "rename" ? "改名方案" : data.mode === "born" ? "新生儿起名 · 已出生" : "新生儿起名 · 预产期";
 }

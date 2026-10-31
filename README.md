@@ -13,9 +13,9 @@ npm run build --prefix frontend
 python3 server.py
 ```
 
-访问 `http://localhost:4173`。Python 服务从 `frontend/dist` 提供构建后的页面和静态资源；没有构建时首页返回 503，API 仍可用。服务提供 `/api/health`、`/api/catalog`、`/api/classics`、`/api/product`、`/api/name-counts` 和 `/api/analyze`。四柱由服务端计算；服务不可用时页面会提示重试，不会回退到虚构的排盘。
+访问 `http://localhost:4173`。Python 服务从 `frontend/dist` 提供构建后的页面和静态资源；没有构建时首页返回 503，API 仍可用。服务提供 `/api/health`、`/api/catalog`、`/api/classics`、`/api/product`、`/api/name-counts`、`/api/analyze` 和 `/api/name-review`。四柱由服务端计算；服务不可用时页面会提示重试，不会回退到虚构的排盘。
 
-开发时先启动 Python 服务（默认端口 4173），再在另一个终端执行 `npm run dev --prefix frontend`，访问 Vite 给出的本地地址；开发服务器将 `/api` 和 `/data` 代理到 Python 服务。每次部署前重新运行前端构建，构建目录和 `node_modules` 不提交到 Git。根目录的旧 `index.html`、`app.js`、`service-worker.js` 保留用于旧版本回滚兼容，生产首页使用 React 版本。
+开发时先启动 Python 服务（默认端口 4173），再在另一个终端执行 `npm run dev --prefix frontend`，访问 Vite 给出的本地地址；开发服务器将 `/api` 和 `/data` 代理到 Python 服务。每次部署前重新运行前端构建，构建目录和 `node_modules` 不提交到 Git。根目录的旧 `index.html`、`app.js`、`service-worker.js` 仅保留历史回滚资料，生产首页使用 React 版本；旧界面混填日期不再符合当前API校验。
 
 ## 四柱排盘口径
 
@@ -24,8 +24,8 @@ python3 server.py
 - 日柱按当地民用时间 23:00 换日，23:00–00:59 为子时。其他流派可能采用不同换日口径。
 - 日/时柱默认使用民用时钟，可在出生信息中选择真太阳时并填写经度或城市中心；系统同时处理历史时区/夏令时与均时差。年、月柱始终按原始物理时刻的节气确定。城市中心仅为近似位置，具体经度可修改；不会猜测自由文本地址。
 - 表面五行计数统计四个天干和四个地支各一项；藏干次数单独展示，不混加、不赋季节权重，不能直接推出旺衰、喜用神或运势。
-- 预产期可以为未来时间，默认 12:00 作为参考。预产期和实际出生信息可并存；实际出生日期及准确时间一旦填写，优先用于排盘。预产期排盘明确标为参考，出生后应重新计算。
-- 同时填写预产期与实际出生信息时，页面和报告展示两组四柱的逐柱对照，主排盘使用实际时间；差异不表示运势好坏。如果可选的预产期参考时刻不在支持范围或遇到夏令时无效/重复时段，对照会提示原因，不影响实际出生排盘。
+- 新生儿起名分为预产期与已出生两条独立流程。预产期允许未来时间，默认12:00作参考；已出生只使用实际出生日期和准确时间，拒绝未来出生时刻。一份请求不能混填两种日期，不再自动切换计算依据。
+- 改名固定使用实际出生信息；必须填写完整现用姓名，先查看现名分析，再设置偏好并生成改名方案。候选排除现用全名。
 - 若输入时刻距节交接不超过 2 分钟，返回边界提醒和交接前后可能的年、月柱；请核对出生记录和节气时刻。
 
 ## 核验与局限
@@ -59,7 +59,7 @@ npm run test:e2e --prefix frontend
 curl -s -X POST http://localhost:4173/api/analyze -H 'Content-Type: application/json' -d '{"mode":"due_date","surname":"林","dueDate":"2099-04-16","dueTime":"12:00","place":"杭州","zone":"Asia/Shanghai","length":2,"candidateCount":5,"gender":"unknown"}'
 ```
 
-`analysis.bazi` 包含四柱、日主、表面五行计数、前后节气、规则口径、来源和节气边界提示。当两组时间均有填写时，`analysis.bazi_comparison` 包含预产期参考排盘、逐柱对照及节气边界状态；参考排盘失败时 `error` 解释原因，实际出生排盘仍在 `analysis.bazi`。`analysis.traditional` 返回干支阴阳、藏干、十神、月支本气和独立计数；`analysis.gua` 返回年月日时起卦的农历参数、算式、六爻、本卦、变卦与体用。`analysis.naming_reference` 说明排序的五行偏好，`ranking_version` 记录规则版本。详见 [算法与资料边界](data/ALGORITHM.md)。
+`analysis.bazi` 包含四柱、日主、表面五行计数、前后节气、规则口径、来源和节气边界提示。`analysis.workflow`、`purpose_code` 和 `mode` 标识当前业务场景；新请求的 `bazi_comparison` 固定为空，旧报告对照资料仍可阅读。改名必须提供 `purpose=rename`、`mode=born` 与以姓氏开头的完整 `currentName`。先请求 `/api/name-review` 获取 `analysis.name_review`（不返回候选），确认后使用 `/api/analyze` 推荐。推荐接口也重新生成相同出生事实下的现名分析，不能提交伪造报告代替计算。`analysis.traditional` 返回干支阴阳、藏干、十神、月支本气和独立计数；`analysis.gua` 返回年月日时起卦的农历参数、算式、六爻、本卦、变卦与体用。`analysis.naming_reference` 说明排序的五行偏好，`ranking_version` 记录规则版本。详见 [算法与资料边界](data/ALGORITHM.md)。
 
 候选及展示资料统一来自 `data/names.json`，当前有 65 条人工整理的候选（单字名 25、两字名 30、三字名 10），并非已核验字典。筛选和排序由 `/api/analyze` 统一完成，前端展示服务端提供的资料与核验状态。`likedChars` 是逐字排序偏好，并不保证每个名字都包含；`avoidedChars` 是逐字排除条件，仅作用于名，不排除姓氏。两者支持汉字、空格和常用分隔符，不能包含相同的字。筛选后数量不足时返回实际可用数量；没有匹配时返回空列表，不以不同字数或含避用字的名字补足。重新生成会在符合条件的候选池中轮换，后续轮次用于浏览而非每次都重新抽取最高分，候选池不足时可能重复。旧版 `chars` 字段仍支持“喜欢清，避开刚”等简单写法，建议新客户端使用独立字段。
 
@@ -67,7 +67,7 @@ curl -s -X POST http://localhost:4173/api/analyze -H 'Content-Type: application/
 
 API省略 `elementPreference` 时兼容原有 `auto` 体卦意象；新表单默认 `yongshen`，按月令格局与扶抑喜用规则试算选字，遇中和、临界或特殊组合时不强指定喜用。`none` 关闭五行排序，也可手选 `木/火/土/金/水`。经典原文与分析参数分别可查，体卦五行和扶抑喜用是两个不同选项。`honorParents=true` 时才将父母姓氏的汉字加入用字偏好；避用字始终优先。
 
-体验流程支持步骤导航、主时间与可选对照时间分组、跳过偏好快速生成；修改条件需要明确应用，换组可返回本次浏览历史并保留比较清单。请求失败保留上一份方案。收藏面板支持搜索、复制清单、回到方案及清空撤销。结果先展示候选，再展示排盘。可选 1–3 个候选并排查看读音、寓意、部首五行及分项理由；比较与收藏不自动保存出生信息。下载报告与客户主动保存的记录都保留计算依据，新旧报告分别标注，旧演示记录不会被改写为新规则结果。
+体验流程支持步骤导航；新生儿按预产期/已出生分别填写，可跳过偏好快速生成；改名按“对象与现名→出生信息→现名分析→改名偏好”依次完成。切换场景时收起旧场景方案，修改现名或出生依据后须重新分析。修改条件需要明确应用，换组可返回本次浏览历史并保留比较清单。请求失败保留上一份方案。收藏面板支持搜索、复制清单、回到方案及清空撤销。结果先展示候选，再展示排盘。可选 1–3 个候选并排查看读音、寓意、部首五行及分项理由；比较与收藏不自动保存出生信息。下载报告与客户主动保存的记录都保留计算依据，新旧报告分别标注，旧演示记录不会被改写为新规则结果。
 
 真太阳时字段 `timeBasis/longitude/locationId`、月令格局、旺衰权重、扶抑喜用的取值与复核条件详见 [完整规则说明](data/MINGLI_RULES.md)。`analysis.mingli` 返回逐项权重、根气、敏感性、取格和喜用参考，`analysis.bazi.time_correction` 返回修正项与民用/太阳钟对照。均时差已与本地JPL DE421独立方法做204个样本对照，最大差约2.861秒；只验证均时差，不是命理规则认证。复现：`python3 scripts/verify_equation_of_time.py`（需开发依赖）。
 
@@ -101,3 +101,5 @@ python3 scripts/verify_classical_sources.py --fetch  # 从固定Git提交重新�
 生成按钮的故障检查：服务器更新后先构建前端并重启应用，再运行 `python3 scripts/check_site.py --url http://127.0.0.1:4173`。页面与接口路由、资源缺失或旧版静态首页的问题会给出具体原因，详见 [部署排查](deploy/README.md)。
 
 本轮实际页面走查、已修复的问题及验证范围见 [体验走查记录](reports/ux-review.md)。
+
+起名与改名的当前业务边界、现名分析顺序、接口兼容变化及部署验收见[场景流程修正](reports/workflow-correction.md)。

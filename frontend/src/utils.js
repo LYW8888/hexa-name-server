@@ -1,3 +1,5 @@
+import { nameReviewLines } from "./name-review-report.js";
+import { workflowLabel } from "./form-state.js";
 import { calculationLines } from "./traditional-report.js";
 export function getClockInZone(zone) {
   try {
@@ -106,8 +108,8 @@ export function friendlyError(message) {
       "姓氏需要填写 1–2 个汉字。",
     ],
     [/mode must be due_date or born/i, "请选择预产期或已出生流程。"],
-    [/purpose must be newborn or rename/i, "请选择新生儿起名或成人改名。"],
-    [/rename purpose requires born mode/i, "成人改名需要使用已出生信息流程。"],
+    [/purpose must be newborn or rename/i, "请选择新生儿起名或改名。"],
+    [/rename purpose requires born mode/i, "改名必须使用实际出生信息。"],
     [/gender must be male, female, or unknown/i, "性别请选择男、女或未知。"],
     [/zone must be/i, "请选择列表中的时区。"],
     [/dueDate is required/i, "预产期流程需要填写预产期日期。"],
@@ -129,7 +131,9 @@ export function friendlyError(message) {
     [/length must be/i, "名字字数请选择 1–3 个字。"],
     [/candidateCount must be/i, "生成数量需要填写 1–11 个整数。"],
     [/place is required/i, "请填写出生地点，便于生成地域和时区参考。"],
-    [/currentName must be/i, "现用姓名最多填写 20 个字符。"],
+    [/currentName must be/i, "请填写以当前姓氏开头的完整现用姓名，仅支持汉字，最多20字。"],
+    [/due date flow cannot include actual/i, "预产期起名只填写预产期；已经出生请选择已出生起名。"],
+    [/born flow cannot include due date/i, "已出生起名与改名只使用实际出生时间，请移除预产期信息。"],
     [
       /likedChars and avoidedChars cannot overlap/i,
       "喜欢的字和必须避开的字不能重复，请调整后重试。",
@@ -189,17 +193,18 @@ export function downloadReportFile(
           "对照只比较四柱，不判断运势好坏；生辰起卦与选字采用实际出生时间。",
         ];
   const lines = [
-    "# 序名 · 命名参考方案",
+    lastRequest.purpose === "rename" ? "# 序名 · 改名分析与推荐方案" : "# 序名 · 命名参考方案",
     "",
     `姓氏：${lastRequest.surname || "未填写"}`,
-    `用途：${analysis.purpose || (lastRequest.purpose === "rename" ? "成人改名" : "新生儿起名")}`,
-    `现用姓名：${analysis.current_name || lastRequest.currentName || "未填写"}`,
+    `用途：${workflowLabel(lastRequest)}`,
+    ...(lastRequest.purpose === "rename" ? [`现用姓名：${analysis.current_name || lastRequest.currentName}`] : []),
     `场景：${analysis.scenario || "命名参考"}`,
     `性别：${analysis.gender || "未知"}`,
     `出生地点：${lastRequest.place || "未填写"}`,
     `时区：${analysis.zone_label || analysis.zone || lastRequest.zone || "中国标准时间 UTC+8"}`,
-    `预产期：${analysis.due_date ? `${analysis.due_date} ${analysis.due_time || "12:00"}` : "未填写"}`,
-    `出生信息：${analysis.birth_date ? `${analysis.birth_date} ${analysis.birth_time || "时间待补充"}` : "尚未填写"}`,
+    ...(lastRequest.mode === "born"
+      ? [`实际出生信息：${analysis.birth_date} ${analysis.birth_time}`]
+      : [`预产期参考：${analysis.due_date} ${analysis.due_time || "12:00"}`]),
     `喜欢的字：${lastRequest.likedChars || "未填写"}（排序偏好）`,
     `避用字：${lastRequest.avoidedChars || "未填写"}（仅作用于名）`,
     `候选数量：${lastCandidates.length}`,
@@ -250,7 +255,8 @@ export function downloadReportFile(
     "",
     `说明：${analysis.method || "传统文化参考，不承诺确定性运势结果。"}`,
     "",
-    "## 候选名字",
+    ...nameReviewLines(analysis.name_review),
+    lastRequest.purpose === "rename" ? "## 改名候选" : "## 候选名字",
     "",
   ];
   lastCandidates.forEach((item, index) => {
@@ -258,6 +264,7 @@ export function downloadReportFile(
     lines.push(`- 拼音：${item.pinyin}`);
     readingNotes(item.pronunciation).forEach((note) => lines.push(`- ${note}`));
     lines.push(`- 寓意：${item.meaning}`);
+    if (item.rename_comparison) lines.push(`- 与现名比较：${item.rename_comparison.detail}`);
     lines.push(`- 标签：${item.tags.join("、")}`);
     lines.push(
       `- ${item.ranking ? "偏好匹配" : "演示评分"}：${item.score}/100`,

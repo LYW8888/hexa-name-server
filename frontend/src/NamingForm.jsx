@@ -5,16 +5,21 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { formRequest } from "./form-state.js";
+import { formRequest, nameReviewKey } from "./form-state.js";
+import { requestNameReview } from "./analysis.js";
+import NameReview from "./NameReview.jsx";
+import { Chart } from "./Results.jsx";
 import LOCATIONS from "../../data/locations.json";
-import { getClockInZone } from "./utils.js";
+import { friendlyError, getClockInZone } from "./utils.js";
 
-const LABELS = ["对象与姓氏", "出生信息", "偏好与寓意"];
 export default forwardRef(function NamingForm(
   { onGenerate, busy, counts, message, setMessage, toast, onDraftChange },
   controller,
 ) {
   const [step, setStep] = useState(0),
+    [review, setReview] = useState(null),
+    [reviewBusy, setReviewBusy] = useState(false),
+    [acceptedReview, setAcceptedReview] = useState(null),
     [purpose, setPurpose] = useState("newborn"),
     [mode, setMode] = useState("due_date"),
     [length, setLength] = useState("2"),
@@ -30,7 +35,12 @@ export default forwardRef(function NamingForm(
     });
   const formRef = useRef(null),
     invalidField = useRef(null),
-    secondaryDates = useRef(null);
+    reviewInFlight = useRef(false);
+  const rename = purpose === "rename";
+  const preferenceStep = rename ? 3 : 2;
+  const labels = rename ? ["对象与现名", "出生信息", "现名分析", "改名偏好"] : ["对象与姓氏", "出生信息", "偏好与寓意"];
+  const locked = busy || reviewBusy;
+  const reviewCurrent = !!review && nameReviewKey(draft) === review.key;
   const max = Math.max(1, Math.min(11, Number(counts[length]) || 11));
   function capture() {
     if (!formRef.current) return;
@@ -66,30 +76,52 @@ export default forwardRef(function NamingForm(
     });
   }
   function navigate(index) {
-    if (busy) return;
+    if (locked) return;
     if (index > step) for (let i = 0; i < index; i++) if (!validate(i)) return;
+    if (rename && index >= 2 && !reviewCurrent) {
+      analyzeCurrentName();
+      return;
+    }
+    if (rename && index > 2 && acceptedReview !== review.key) {
+      openStep(2);
+      return;
+    }
     openStep(index);
   }
+  async function analyzeCurrentName() {
+    if (locked || reviewInFlight.current || !validate(0) || !validate(1)) return;
+    const data = formRequest(formRef.current);
+    reviewInFlight.current = true;
+    setReviewBusy(true);
+    setMessage("");
+    try {
+      const payload = await requestNameReview(data);
+      setReview({ payload, key: nameReviewKey(data) });
+      setDraft(data);
+      onDraftChange?.(data);
+      setAcceptedReview(null);
+      openStep(2);
+    } catch (error) {
+      setMessage(friendlyError(error.message));
+    } finally {
+      reviewInFlight.current = false;
+      setReviewBusy(false);
+    }
+  }
   useImperativeHandle(controller, () => ({
-    openStep,
+    openStep: (index, field) => {
+      if (rename && index === 2 && (!reviewCurrent || acceptedReview !== review?.key)) navigate(preferenceStep);
+      else openStep(index === 2 ? preferenceStep : index, field);
+    },
     resume: () => openStep(step),
     submit: submitFinal,
   }));
-  // Reopen retained secondary information only when switching scenario. Clearing
-  // its last field must not collapse the disclosure while the user is editing.
   useEffect(() => {
-    if (secondaryDates.current)
-      secondaryDates.current.open =
-        mode === "born"
-          ? !!dates.dueDate
-          : !!(dates.birthDate || dates.birthTime);
-  }, [mode]);
-  useEffect(() => {
-    if (!busy) capture();
+    if (!locked) capture();
   }, [purpose, mode, length, timeBasis, elementPreference]);
   useEffect(() => {
     const field = formRef.current?.elements.candidateCount;
-    if (!busy && field && Number(field.value) > max) {
+    if (!locked && field && Number(field.value) > max) {
       field.value = String(max);
       capture();
     }
@@ -132,6 +164,11 @@ export default forwardRef(function NamingForm(
       );
     }
     if (index === 0) {
+      if (rename) {
+        const current = form.elements.currentName;
+        if (!current.value.trim().startsWith(form.elements.surname.value.trim()) || [...current.value.trim()].length <= [...form.elements.surname.value.trim()].length || [...current.value.trim()].some(char => char !== "〇" && !/\p{Script=Han}/u.test(char)))
+          return fail("请填写包含当前姓氏与名字的完整现用姓名，例如：林知远。", current);
+      }
       const field = form.elements.surname,
         characters = [...field.value.trim()];
       if (
@@ -144,11 +181,11 @@ export default forwardRef(function NamingForm(
         return fail("姓氏请填写 1–2 个汉字，支持复姓。", field);
       }
       if (purpose === "rename" && mode !== "born")
-        return fail("成人改名需要选择已出生信息流程。");
+        return fail("改名必须使用实际出生信息。");
     }
     if (index === 1) {
-      const birthDate = form.elements.birthDate.value,
-        birthTime = form.elements.birthTime.value;
+      const birthDate = form.elements.birthDate?.value || "",
+        birthTime = form.elements.birthTime?.value || "";
       if ((birthDate && !birthTime) || (!birthDate && birthTime))
         return fail(
           "出生日期和准确出生时间需要同时填写；如果尚未出生，可以都留空。",
@@ -177,8 +214,11 @@ export default forwardRef(function NamingForm(
     return true;
   }
   function changePurpose(value) {
+    clearError();
     setPurpose(value);
-    setMessage("");
+    setStep(0);
+    setFurthest(0);
+    setAcceptedReview(null);
     if (value === "rename") setMode("born");
   }
   function changeLength(value) {
@@ -188,8 +228,18 @@ export default forwardRef(function NamingForm(
     if (Number(field.value) > maximum) field.value = String(maximum);
   }
   function submitFinal() {
-    if (busy) return;
-    for (let index = 0; index < 3; index++) if (!validate(index)) return;
+    if (locked) return;
+    if (!validate(0) || !validate(1)) return;
+    const current = formRequest(formRef.current);
+    if (rename && (!review || nameReviewKey(current) !== review.key)) {
+      analyzeCurrentName();
+      return;
+    }
+    if (rename && acceptedReview !== review.key) {
+      openStep(2);
+      return;
+    }
+    if (!validate(preferenceStep)) return;
     clearError();
     const data = formRequest(formRef.current);
     setDraft(data);
@@ -198,8 +248,8 @@ export default forwardRef(function NamingForm(
   }
   function submit(event) {
     event.preventDefault();
-    if (busy) return;
-    if (step < 2) {
+    if (locked) return;
+    if (step < preferenceStep) {
       navigate(step + 1);
       return;
     }
@@ -209,7 +259,7 @@ export default forwardRef(function NamingForm(
     const due = kind === "due",
       dateName = due ? "dueDate" : "birthDate",
       timeName = due ? "dueTime" : "birthTime";
-    const required = due ? !born : born;
+    const required = true;
     return (
       <div className="grid date-fields">
         <label>
@@ -244,7 +294,7 @@ export default forwardRef(function NamingForm(
           />
           {due && (
             <small className="field-hint">
-              默认12:00作参考；预产期允许未来日期，出生后可补充准确时间。
+              默认12:00作参考；允许未来日期。出生后请切换“已出生起名”重新计算。
             </small>
           )}
         </label>
@@ -252,12 +302,11 @@ export default forwardRef(function NamingForm(
     );
   }
   const born = mode === "born";
-  const hint =
-    purpose === "rename"
-      ? "成人改名按已出生信息整理，填写实际出生日期和准确时间；预产期可留空。"
-      : born
-        ? "已出生模式要求填写实际出生日期和准确时间；预产期可以同时保留，用于结果对照。实际出生日期不能晚于今天。"
-        : "预产期可以是未来日期和时间；尚未出生时填写预产期即可，出生日期和准确时间可以之后补充。";
+  const hint = rename
+    ? "改名只使用实际出生日期与准确出生时间。完成后先分析现用姓名，再设置改名偏好。"
+    : born
+      ? "只使用实际出生日期与准确出生时间，不使用预产期；出生时间不能晚于当前时间。"
+      : "只使用预产期及参考时间，允许未来日期；实际出生后请切换到已出生起名。";
   return (
     <section className="form-section wrap" id="form">
       <div className="intro">
@@ -298,22 +347,22 @@ export default forwardRef(function NamingForm(
           if (invalidField.current?.name === event.target.name) clearError();
           capture();
         }}
-        aria-busy={busy}
+        aria-busy={locked}
         noValidate
       >
         <p className="demo-notice">
           <b>每个名字都有理由</b>{" "}
           四柱、阴阳五行与生辰起卦可以展开复算；匹配指数帮助比较本次用字偏好。
         </p>
-        <div className="progress" aria-label="起名步骤">
-          {LABELS.map((label, index) => (
+        <div className={`progress ${rename ? "rename-progress" : ""}`} aria-label="起名步骤">
+          {labels.map((label, index) => (
             <React.Fragment key={label}>
               {index > 0 && <i />}
               <button
                 type="button"
                 className={index <= step ? "active" : ""}
                 aria-current={index === step ? "step" : undefined}
-                disabled={busy || index > furthest}
+                disabled={locked || index > furthest}
                 onClick={() => navigate(index)}
               >
                 {String(index + 1).padStart(2, "0")} <b>{label}</b>
@@ -333,9 +382,9 @@ export default forwardRef(function NamingForm(
         </div>
         <fieldset
           className={`panel ${step === 0 ? "active" : ""}`}
-          disabled={busy}
+          disabled={locked}
         >
-          <legend tabIndex={-1}>对象与姓氏</legend>
+          <legend tabIndex={-1}>{rename ? "对象与现用姓名" : "对象与姓氏"}</legend>
           <div
             className="choices purpose-choices"
             role="group"
@@ -364,7 +413,7 @@ export default forwardRef(function NamingForm(
               />
               <strong>改</strong>
               <span>
-                成人改名<small>按已出生信息整理新名字方向</small>
+                改名<small>先分析现用姓名，再推荐改名方案</small>
               </span>
             </label>
           </div>
@@ -384,14 +433,15 @@ export default forwardRef(function NamingForm(
               hidden={purpose !== "rename"}
               aria-hidden={purpose !== "rename"}
             >
-              现用姓名（改名时可填）
+              现用姓名（改名必填）
               <input
                 name="currentName"
+                required={rename}
                 maxLength={20}
                 disabled={purpose !== "rename"}
                 placeholder="例如：林知远"
               />
-              <small className="field-hint">仅用于对照，不参与公开展示</small>
+              <small className="field-hint">填写含姓氏的完整姓名，用于生成现名分析报告</small>
             </label>
             <label>
               名的字数（不含姓氏）
@@ -473,7 +523,7 @@ export default forwardRef(function NamingForm(
         </fieldset>
         <fieldset
           className={`panel ${step === 1 ? "active" : ""}`}
-          disabled={busy}
+          disabled={locked}
         >
           <legend tabIndex={-1}>出生信息</legend>
           <div className="choices" hidden={purpose === "rename"}>
@@ -515,22 +565,9 @@ export default forwardRef(function NamingForm(
             {born ? "按实际出生信息生成" : "先用预产期探索名字"}
           </p>
           {dateFields(born ? "birth" : "due")}
-          <details
-            className="secondary-dates"
-            key={born ? "due-extra" : "birth-extra"}
-            ref={secondaryDates}
-          >
-            <summary>
-              {born ? "保留预产期作对照（可选）" : "补充实际出生信息（可选）"}
-            </summary>
-            <p className="field-hint">
-              预产期和实际出生信息可以同时保留；实际信息齐全时优先使用实际时间。
-            </p>
-            {dateFields(born ? "due" : "birth")}
-          </details>
           <div className="grid">
             <label>
-              出生地点
+              {born ? "出生地点" : "预计出生地点"}
               <input name="place" required placeholder="例如：杭州，中国" />
             </label>
             <label>
@@ -612,11 +649,9 @@ export default forwardRef(function NamingForm(
           </details>
           <p className="birth-basis-preview">
             本次时间依据：
-            {dates.birthDate && dates.birthTime
-              ? `实际出生 ${dates.birthDate} ${dates.birthTime}（优先采用）`
-              : dates.dueDate
-                ? `预产期 ${dates.dueDate} ${dates.dueTime || "12:00"}（参考）`
-                : "填写日期后会在这里确认"}
+            {born
+              ? `实际出生 ${dates.birthDate || "待填写日期"} ${dates.birthTime || "待填写时间"}`
+              : `预产期 ${dates.dueDate || "待填写日期"} ${dates.dueTime || "12:00"}（参考）`}
           </p>
           <p className="hint" id="birthHint">
             {hint}
@@ -636,8 +671,9 @@ export default forwardRef(function NamingForm(
             </button>
             <button
               type="button"
+              hidden={rename}
               className="secondary quick-generate"
-              disabled={busy}
+              disabled={locked}
               onClick={submitFinal}
             >
               跳过偏好，先生成
@@ -649,15 +685,26 @@ export default forwardRef(function NamingForm(
                 navigate(2);
               }}
             >
-              继续 →
+              {reviewBusy ? "正在分析现名…" : rename ? "分析现用姓名 →" : "继续 →"}
             </button>
           </div>
         </fieldset>
+        {rename && <fieldset className={`panel ${step === 2 ? "active" : ""}`} disabled={locked}>
+          <legend tabIndex={-1}>现用姓名分析</legend>
+          {reviewCurrent ? <>
+            <NameReview review={review.payload.analysis.name_review} id="formNameReview" />
+            <details className="review-chart"><summary>查看现名分析采用的四柱与起卦依据</summary><Chart analysis={review.payload.analysis} id="reviewTraditionalBasis" /></details>
+            <div className="actions">
+              <button type="button" className="secondary back" onClick={() => openStep(1)}>返回修改出生信息</button>
+              <button type="button" className="primary next" onClick={() => { setAcceptedReview(review.key); openStep(3); }}>继续，设置改名偏好 →</button>
+            </div>
+          </> : <div className="review-stale"><p>现用姓名或出生信息已变更，请重新分析后继续。</p><button type="button" className="primary" onClick={analyzeCurrentName}>重新分析现用姓名</button></div>}
+        </fieldset>}
         <fieldset
-          className={`panel ${step === 2 ? "active" : ""}`}
-          disabled={busy}
+          className={`panel ${step === preferenceStep ? "active" : ""}`}
+          disabled={locked}
         >
-          <legend tabIndex={-1}>偏好与寓意</legend>
+          <legend tabIndex={-1}>{rename ? "改名偏好与寓意" : "偏好与寓意"}</legend>
           <label>
             希望名字传达的气质
             <textarea
@@ -760,8 +807,8 @@ export default forwardRef(function NamingForm(
               {draft.candidateCount || 3} 个候选
             </p>
             <p>
-              {draft.birthDate && draft.birthTime
-                ? `采用实际出生 ${draft.birthDate} ${draft.birthTime}`
+              {born
+                ? `采用实际出生 ${draft.birthDate || "待填写"} ${draft.birthTime || "待填写"}`
                 : `预产期参考 ${draft.dueDate || "待填写"} ${draft.dueTime || "12:00"}`}{" "}
               · {draft.place || "待填写地点"}
             </p>
@@ -772,7 +819,7 @@ export default forwardRef(function NamingForm(
                 : `真太阳时 · 经度 ${draft.longitude || "待填写"}°`}
             </p>
             <small>
-              预产期与出生信息可以并存；两者齐全时，采用实际出生时间。出生信息不会自动保存。
+              {rename ? `改名：${draft.currentName || "待填写现名"}。先完成现名分析，再推荐新方案。` : born ? "已出生起名：采用实际出生时间。" : "预产期起名：仅作出生前参考，出生后需按实际时间重新生成。"}出生信息不会自动保存。
             </small>
           </section>
           <div className="actions">
@@ -780,7 +827,7 @@ export default forwardRef(function NamingForm(
               className="secondary back"
               type="button"
               onClick={() => {
-                openStep(1);
+                openStep(rename ? 2 : 1);
               }}
             >
               返回
@@ -788,15 +835,15 @@ export default forwardRef(function NamingForm(
             <button
               className="primary"
               type="submit"
-              disabled={busy}
-              aria-busy={busy}
+              disabled={locked}
+              aria-busy={locked}
             >
-              {busy ? "正在整理…" : "生成名字方案 ✦"}
+              {busy ? "正在整理…" : rename ? "生成改名方案 ✦" : "生成名字方案 ✦"}
             </button>
           </div>
         </fieldset>
-        <p className="generation-progress" role="status" hidden={!busy}>
-          正在整理名字与四柱参考，请稍候…
+        <p className="generation-progress" role="status" hidden={!locked}>
+          {reviewBusy ? "正在整理现名分析与出生四柱，请稍候…" : "正在整理名字与四柱参考，请稍候…"}
         </p>
       </form>
     </section>

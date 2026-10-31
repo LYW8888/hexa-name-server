@@ -13,13 +13,14 @@ async function generate(
 ) {
   await page.locator("[name=surname]").fill("林");
   await page.locator(".panel.active .next").click();
-  await page.locator("[name=dueDate]").fill(due);
-  if (dueTime) await page.locator("[name=dueTime]").fill(dueTime);
   if (birth) {
-    await page.locator(".secondary-dates>summary").click();
+    await page.locator("[name=mode][value=born]").locator("..").click();
     await page.locator("[name=birthDate]").fill(birth);
+    if (birthTime) await page.locator("[name=birthTime]").fill(birthTime);
+  } else {
+    await page.locator("[name=dueDate]").fill(due);
+    if (dueTime) await page.locator("[name=dueTime]").fill(dueTime);
   }
-  if (birthTime) await page.locator("[name=birthTime]").fill(birthTime);
   await page.locator("[name=place]").fill("杭州");
   await page.locator(".panel.active .next").click();
   if (avoided) await page.locator("[name=avoidedChars]").fill(avoided);
@@ -28,24 +29,22 @@ async function generate(
 }
 
 for (const width of [1280, 390])
-  test(`四柱、预产期对照与报告在 ${width}px 可用`, async ({ page }) => {
+  test(`已出生四柱、边界与独立场景报告在 ${width}px 可用`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
-    await generate(page, { avoided: "安、宁" });
+    await generate(page, { avoided: "安、宁", birth: "2024-02-04", birthTime: "16:27" });
     await expect(page.locator(".bazi-title")).toContainText("实际出生");
-    await expect(page.locator(".bazi-comparison")).toContainText(
-      "靠近节气，需复核",
-    );
-    await expect(page.locator(".bazi-comparison")).toContainText(
-      "预产期参考时刻",
-    );
+    await expect(page.locator(".bazi-comparison")).toHaveCount(0);
+    await expect(page.locator(".boundary-notice")).toContainText("出生时刻");
+    await expect(page.locator("#summary")).toContainText("新生儿起名 · 已出生");
     for (const name of await page.locator("#cards h3").allTextContents())
       expect(name.slice(1)).not.toMatch(/[安宁]/);
     const pending = page.waitForEvent("download");
     await page.locator("#downloadReport").click();
     const report = await readFile(await (await pending).path(), "utf8");
-    expect(report).toContain("预产期参考四柱");
-    expect(report).toContain("预产期参考边界");
+    expect(report).toContain("实际出生信息：2024-02-04 16:27");
+    expect(report).not.toContain("预产期参考四柱");
+    expect(report).toContain("节气边界提醒");
     await page.locator("#regenerate").click();
     await expect(page.locator("#resultStatus")).toContainText("第 2 组");
     expect(
@@ -455,8 +454,7 @@ for (const width of [1280, 390])
     await page.goto("/");
     await page.locator("[name=surname]").fill("林");
     await page.locator(".panel.active .next").click();
-    await page.locator("[name=dueDate]").fill("2099-12-23");
-    await page.locator(".secondary-dates>summary").click();
+    await page.locator("[name=mode][value=born]").locator("..").click();
     await page.locator("[name=birthDate]").fill("2024-02-10");
     await page.locator("[name=birthTime]").fill("23:05");
     await page.locator(".time-settings summary").click();
@@ -611,7 +609,7 @@ for (const width of [1280, 390])
   });
 
 for (const width of [1280, 390])
-  test(`步骤定位、两组日期保留及快捷生成 ${width}px`, async ({ page }) => {
+  test(`步骤定位、场景日期隔离及快捷生成 ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 850 });
     await page.goto("/");
     await page.locator("[name=surname]").fill("林");
@@ -622,30 +620,25 @@ for (const width of [1280, 390])
         .locator(".panel.active legend")
         .evaluate((el) => el.getBoundingClientRect().top),
     ).toBeGreaterThanOrEqual(0);
-    await expect(page.locator(".secondary-dates")).not.toHaveAttribute(
-      "open",
-      "",
-    );
+    await expect(page.locator("[name=birthDate]")).toHaveCount(0);
     await page.locator("[name=dueDate]").fill("2099-12-23");
-    await page.locator(".secondary-dates>summary").click();
-    await page.locator("[name=birthDate]").fill("2024-01-05");
-    await page.locator("[name=birthTime]").fill("12:00");
     await page.locator("[name=place]").fill("杭州");
-    await page.locator("[name=mode][value=born]").evaluate((el) => el.click());
-    await expect(page.locator("[name=birthDate]")).toHaveValue("2024-01-05");
-    await expect(page.locator("[name=dueDate]")).toHaveValue("2099-12-23");
-    await page
-      .locator("[name=mode][value=due_date]")
-      .evaluate((el) => el.click());
-    await expect(page.locator(".birth-basis-preview")).toContainText(
-      "实际出生 2024-01-05 12:00",
-    );
-    await page.locator("[name=birthTime]").fill("");
-    await page.locator("[name=birthDate]").fill("");
-    await expect(page.locator(".secondary-dates")).toHaveAttribute("open", "");
+    await page.locator("[name=mode][value=born]").locator("..").click();
+    await expect(page.locator("[name=dueDate]")).toHaveCount(0);
     await page.locator("[name=birthDate]").fill("2024-01-05");
     await page.locator("[name=birthTime]").fill("12:00");
+    await page.locator("[name=mode][value=due_date]").locator("..").click();
+    await expect(page.locator("[name=dueDate]")).toHaveValue("2099-12-23");
+    await expect(page.locator(".birth-basis-preview")).toContainText("预产期 2099-12-23");
+    await expect(page.locator("[name=birthDate]")).toHaveCount(0);
+    await page.locator("[name=mode][value=born]").locator("..").click();
+    await expect(page.locator("[name=birthDate]")).toHaveValue("2024-01-05");
+    const submitted = page.waitForRequest("**/api/analyze");
     await page.locator(".quick-generate").click();
+    const data = (await submitted).postDataJSON();
+    expect(data.mode).toBe("born");
+    expect(data).not.toHaveProperty("dueDate");
+    expect(data).not.toHaveProperty("dueTime");
     await expect(page.locator("#cards .card")).toHaveCount(3);
     await expect(page.locator(".bazi-title")).toContainText("实际出生");
     await page
@@ -780,12 +773,13 @@ test("收藏搜索、复制、清空撤销及键盘关闭形成完整回路", as
   ).toBeTruthy();
 });
 
-test("成人改名自动采用出生信息，最后一组不再循环换名", async ({ page }) => {
+test("改名先分析现名且最后一组不再循环换名", async ({ page }) => {
   await page.goto("/");
   await page
     .locator("[name=purpose][value=rename]")
     .evaluate((el) => el.click());
   await page.locator("[name=surname]").fill("王");
+  await page.locator("[name=currentName]").fill("王知远");
   await page.locator("[name=length]").selectOption("3");
   await page.locator("[name=candidateCount]").fill("10");
   await page.locator(".panel.active .next").click();
@@ -793,8 +787,101 @@ test("成人改名自动采用出生信息，最后一组不再循环换名", as
   await page.locator("[name=birthDate]").fill("2024-01-05");
   await page.locator("[name=birthTime]").fill("12:00");
   await page.locator("[name=place]").fill("杭州");
-  await page.locator(".quick-generate").click();
+  await expect(page.locator(".quick-generate")).toBeHidden();
+  await page.locator(".panel.active .next").click();
+  await expect(page.locator("#formNameReview")).toContainText("王知远");
+  await expect(page.locator("#cards .card")).toHaveCount(0);
+  await page.locator(".panel.active .next").click();
+  await page.locator("#namingForm button[type=submit]").click();
   await expect(page.locator("#cards .card")).toHaveCount(10);
+  await expect(page.locator("#summary")).toContainText("改名方案");
+  await expect(page.locator("#summary")).not.toContainText("新生儿");
   await expect(page.locator("#regenerate")).toBeDisabled();
   await expect(page.locator("#regenerate")).toContainText("本条件已看完");
+});
+
+for (const width of [1280, 390]) test(`改名现名报告、确认、推荐与下载在 ${width}px 严格顺序执行`, async ({page})=>{
+  await page.setViewportSize({width,height:900});
+  const errors=[]; page.on('pageerror',error=>errors.push(error.message));
+  const paths=[]; page.on('request',request=>{if(request.url().match(/\/api\/(analyze|name-review)$/)) paths.push(new URL(request.url()).pathname);});
+  await page.goto('/');
+  await page.locator('[name=purpose][value=rename]').locator("..").click();
+  await page.locator('[name=surname]').fill('李');
+  await page.locator('.panel.active .next').click();
+  await expect(page.locator('[name=currentName]')).toHaveAttribute('aria-invalid','true');
+  await page.locator('[name=currentName]').fill('李景和');
+  await page.locator('.panel.active .next').click();
+  await expect(page.locator('[name=dueDate]')).toHaveCount(0);
+  await page.locator('[name=birthDate]').fill('1998-08-13');
+  await page.locator('[name=birthTime]').fill('13:48');
+  await page.locator('[name=place]').fill('河南南阳');
+  await page.locator('.panel.active .next').click();
+  const report=page.locator('#formNameReview');
+  await expect(report).toBeVisible();
+  for(const value of ['李景和','姓名结构','普通话读音','字形五行依据','出生四柱与选字方向']) await expect(report).toContainText(value);
+  expect(paths).toEqual(['/api/name-review']);
+  await expect(page.locator('#cards .card')).toHaveCount(0);
+  await page.locator('.panel.active .next').click();
+  await page.locator('[name=elementPreference]').selectOption('水');
+  await page.getByRole('button',{name:'生成改名方案 ✦',exact:true}).click();
+  await expect(page.locator('#cards .card')).toHaveCount(3);
+  await expect(page.locator('#summary')).toContainText('改名方案');
+  await expect(page.locator('#summary')).not.toContainText('新生儿');
+  expect(await page.locator('#cards h3').allTextContents()).not.toContain('李景和');
+  expect(paths).toEqual(['/api/name-review','/api/analyze']);
+  await page.locator('#cards .card').first().getByText('与现用姓名比较',{exact:true}).click();
+  await expect(page.locator('#cards .card').first()).toContainText('出生四柱不随改名改变');
+  const pending=page.waitForEvent('download');await page.locator('#downloadReport').click();
+  const text=await readFile(await (await pending).path(),'utf8');
+  expect(text).toContain('改名分析与推荐方案');
+  expect(text.indexOf('## 现用姓名分析')).toBeLessThan(text.indexOf('## 改名候选'));
+  expect(text).toContain('现用姓名：李景和');expect(text).not.toContain('新生儿');expect(text).not.toContain('预产期');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  expect(errors).toEqual([]);
+});
+
+test('现名分析失败可重试，修改出生资料必须重新分析后才能推荐',async({page})=>{
+  await page.goto('/');
+  await page.locator('[name=purpose][value=rename]').locator("..").click();
+  await page.locator('[name=surname]').fill('林');await page.locator('[name=currentName]').fill('林安');
+  await page.locator('.panel.active .next').click();
+  await page.locator('[name=birthDate]').fill('2000-01-01');await page.locator('[name=birthTime]').fill('12:00');await page.locator('[name=place]').fill('杭州');
+  const abort=route=>route.abort();await page.route('**/api/name-review',abort);
+  await page.locator('.panel.active .next').click();await expect(page.locator('#formMessage')).toContainText('无法连接');
+  await expect(page.locator('.panel.active legend')).toHaveText('出生信息');
+  await expect(page.locator('#cards .card')).toHaveCount(0);
+  await page.unroute('**/api/name-review',abort);await page.locator('.panel.active .next').click();await expect(page.locator('#formNameReview')).toBeVisible();
+  await page.locator('.panel.active .next').click();
+  await page.getByRole('region',{name:'生成前确认'}).getByRole('button',{name:'修改出生信息'}).click();
+  await page.locator('[name=birthTime]').fill('13:48');
+  const response=page.waitForResponse('**/api/name-review');
+  await page.locator('.panel.active .next').click();
+  expect((await (await response).json()).analysis.name_review.findings.at(-1).detail).toContain('13:48');
+  await expect(page.locator('#formNameReview')).toBeVisible();await expect(page.locator('#cards .card')).toHaveCount(0);
+  await page.locator('.panel.active .next').click();await page.locator('#namingForm button[type=submit]').click();await expect(page.locator('#cards .card')).toHaveCount(3);
+});
+
+test('切换起名场景立即收起旧方案，不把旧新生儿结果冒充改名',async({page})=>{
+  await page.goto('/');await generate(page,{due:'2099-12-23',birth:'',birthTime:''});
+  await page.getByRole('button',{name:'调整偏好',exact:true}).first().click();await page.locator('.progress button').first().click();
+  await page.locator('[name=purpose][value=rename]').locator("..").click();
+  await expect(page.locator('#cards .card')).toHaveCount(0);await expect(page.locator('#summary')).not.toContainText('新生儿');await expect(page.locator('#downloadReport')).toBeDisabled();
+  await page.locator('[name=currentName]').fill('林安');await page.locator('.panel.active .next').click();
+  await expect(page.locator('[name=dueDate]')).toHaveCount(0);
+  await page.locator('[name=birthDate]').fill('2000-01-01');await page.locator('[name=birthTime]').fill('12:00');await page.locator('[name=place]').fill('杭州');
+  await page.locator('.panel.active .next').click();await expect(page.locator('#formNameReview')).toBeVisible();await page.locator('.panel.active .next').click();await page.locator('#namingForm button[type=submit]').click();
+  await expect(page.locator('#summary')).toContainText('改名方案');
+});
+
+test('修改现名后不能沿用旧报告，切回新生儿不会带上现名',async({page})=>{
+  await page.goto('/');await page.locator('[name=purpose][value=rename]').locator('..').click();
+  await page.locator('[name=surname]').fill('李');await page.locator('[name=currentName]').fill('李景和');await page.locator('.panel.active .next').click();
+  await page.locator('[name=birthDate]').fill('1998-08-13');await page.locator('[name=birthTime]').fill('13:48');await page.locator('[name=place]').fill('南阳');
+  await page.locator('.panel.active .next').click();await expect(page.locator('#formNameReview')).toContainText('李景和');await page.locator('.panel.active .next').click();
+  await page.getByRole('region',{name:'生成前确认'}).getByRole('button',{name:'修改基本信息'}).click();await page.locator('[name=currentName]').fill('李清晏');
+  const review=page.waitForRequest('**/api/name-review');await page.locator('.progress button').nth(3).click();expect((await review).postDataJSON().currentName).toBe('李清晏');
+  await expect(page.locator('#formNameReview')).toContainText('李清晏');await expect(page.locator('#formNameReview')).not.toContainText('李景和');await expect(page.locator('#cards .card')).toHaveCount(0);
+  await page.locator('.progress button').first().click();await page.locator('[name=purpose][value=newborn]').locator('..').click();await expect(page.locator('[name=currentName]')).toBeDisabled();
+  await page.locator('.panel.active .next').click();const request=page.waitForRequest('**/api/analyze');await page.locator('.quick-generate').click();
+  const data=(await request).postDataJSON();expect(data.purpose).toBe('newborn');expect(data).not.toHaveProperty('currentName');expect(data).not.toHaveProperty('dueDate');await expect(page.locator('#summary')).toContainText('新生儿起名 · 已出生');await expect(page.locator('.result-name-review')).toHaveCount(0);
 });

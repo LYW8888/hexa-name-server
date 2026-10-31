@@ -17,7 +17,7 @@ class ServerRulesTest(unittest.TestCase):
         cls.tmp.cleanup()
     def test_due_date_can_be_future_and_uses_default_time(self):
         result = server.analyze({"mode":"due_date", "surname":"林", "parents":"沈", "place":"杭州", "date":"2099-04-16", "length":2, "gender":"unknown"})
-        self.assertEqual(result["analysis"]["scenario"], "预产期参考")
+        self.assertEqual(result["analysis"]["scenario"], "预产期起名")
         self.assertEqual(result["analysis"]["due_date"], "2099-04-16")
         self.assertEqual(result["analysis"]["due_time"], "12:00")
         self.assertTrue(result["analysis"]["bazi"]["reference"])
@@ -32,50 +32,35 @@ class ServerRulesTest(unittest.TestCase):
                 result = server.analyze({**base, 'surname': surname})
                 self.assertTrue(result['candidates'][0]['name'].startswith(surname))
                 self.assertEqual(len(result['candidates'][0]['pronunciation']['surname']), len(surname))
-    def test_due_date_and_actual_birth_can_coexist(self):
-        result = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2024-04-20", "dueTime":"10:00", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"female"})
-        self.assertEqual(result["analysis"]["scenario"], "预产期参考 + 已出生信息")
-        self.assertEqual(result["analysis"]["time"], "08:30")
-        self.assertEqual(result["analysis"]["due_date"], "2024-04-20")
-        self.assertEqual(result["analysis"]["birth_date"], "2024-04-16")
-        self.assertEqual(result["analysis"]["gender"], "女")
-        self.assertFalse(result["analysis"]["bazi"]["reference"])
-        self.assertEqual(result["analysis"]["bazi"]["local_time"], "2024-04-16 08:30 +0800")
-        comparison = result["analysis"]["bazi_comparison"]
-        expected = server.bazi.calculate("2024-04-20", "10:00", "Asia/Shanghai", reference=True)
-        self.assertEqual(comparison["reference"], expected)
-        self.assertEqual([item["reference"] for item in comparison["differences"]], [p["ganzhi"] for p in expected["pillars"]])
-        self.assertEqual([item["actual"] for item in comparison["differences"]], [p["ganzhi"] for p in result["analysis"]["bazi"]["pillars"]])
-        self.assertTrue(comparison["has_changes"])
-    def test_comparison_handles_equal_times_and_default_due_time(self):
+    def test_due_flow_rejects_actual_birth_instead_of_silently_switching(self):
+        base = {"mode":"due_date", "surname":"林", "dueDate":"2099-04-20", "place":"杭州"}
+        for extra in ({"birthDate":"2024-04-16"}, {"birthTime":"08:30"}, {"birthDate":"2024-04-16", "birthTime":"08:30"}):
+            with self.subTest(extra=extra), self.assertRaisesRegex(ValueError, "due date flow"):
+                server.analyze({**base, **extra})
+
+    def test_born_flow_rejects_estimated_date(self):
         base = {"mode":"born", "surname":"林", "place":"杭州", "birthDate":"2024-02-10", "birthTime":"12:00"}
-        self.assertIsNone(server.analyze(base)["analysis"]["bazi_comparison"])
-        result = server.analyze({**base, "dueDate":"2024-02-10"})
-        comparison = result["analysis"]["bazi_comparison"]
-        self.assertEqual(comparison["reference"]["local_time"], "2024-02-10 12:00 +0800")
-        self.assertFalse(comparison["has_changes"])
-        self.assertTrue(all(not item["changed"] for item in comparison["differences"]))
-    def test_comparison_keeps_reference_and_actual_boundary_warnings(self):
-        base = {"mode":"born", "surname":"林", "place":"杭州", "birthDate":"2024-02-05", "birthTime":"12:00", "dueDate":"2024-02-04", "dueTime":"16:27"}
-        result = server.analyze(base)["analysis"]
-        self.assertIsNone(result["bazi"]["boundary"])
-        self.assertTrue(result["bazi_comparison"]["near_boundary"])
-        self.assertIn("预产期参考时刻", result["bazi_comparison"]["reference"]["boundary"]["warning"])
-        actual_boundary = server.analyze({**base, "birthDate":"2024-02-04", "birthTime":"16:27", "dueDate":"2024-02-05", "dueTime":"12:00"})["analysis"]
-        self.assertTrue(actual_boundary["bazi_comparison"]["near_boundary"])
-        self.assertIn("出生时刻", actual_boundary["bazi"]["boundary"]["warning"])
-    def test_invalid_optional_reference_does_not_block_actual_chart(self):
-        base = {"mode":"born", "surname":"林", "place":"杭州", "birthDate":"2024-02-10", "birthTime":"12:00"}
-        for due_date, due_time, error in (("1991-04-14", "02:30", "夏令时"), ("1899-01-01", "12:00", "1900")):
-            with self.subTest(due_date=due_date):
-                result = server.analyze({**base, "dueDate":due_date, "dueTime":due_time})
-                self.assertFalse(result["analysis"]["bazi"]["reference"])
-                self.assertIn(error, result["analysis"]["bazi_comparison"]["error"])
-                self.assertIsNone(result["analysis"]["bazi_comparison"]["reference"])
-                self.assertTrue(result["candidates"])
+        with self.assertRaisesRegex(ValueError, "born flow"):
+            server.analyze({**base, "dueDate":"2099-02-10"})
+        value = server.analyze(base)["analysis"]
+        self.assertIsNone(value["bazi_comparison"])
+        self.assertEqual(value["due_date"], "")
+        self.assertFalse(value["bazi"]["reference"])
+
+    def test_each_flow_uses_only_its_explicit_clock(self):
+        due = server.analyze({"mode":"due_date", "surname":"林", "dueDate":"2024-02-04", "dueTime":"16:27", "place":"杭州"})["analysis"]
+        born = server.analyze({"mode":"born", "surname":"林", "birthDate":"2024-02-04", "birthTime":"16:27", "place":"杭州"})["analysis"]
+        self.assertTrue(due["bazi"]["reference"])
+        self.assertTrue(due["gua"]["reference"])
+        self.assertTrue(due["bazi"]["boundary"])
+        self.assertFalse(born["bazi"]["reference"])
+        self.assertFalse(born["gua"]["reference"])
+        self.assertEqual(due["bazi"]["pillars"], born["bazi"]["pillars"])
+        self.assertNotEqual(due["workflow"]["id"], born["workflow"]["id"])
+
     def test_born_requires_actual_date_and_time(self):
-        result = server.analyze({"mode":"born", "surname":"林", "dueDate":"2024-04-20", "dueTime":"10:00", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"male"})
-        self.assertEqual(result["analysis"]["scenario"], "已出生准确时间")
+        result = server.analyze({"mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "gender":"male"})
+        self.assertEqual(result["analysis"]["scenario"], "已出生起名")
         self.assertEqual(result["analysis"]["time"], "08:30")
     def test_missing_actual_time_is_rejected(self):
         with self.assertRaises(ValueError):
@@ -176,9 +161,9 @@ class ServerRulesTest(unittest.TestCase):
         source["reference"]["url"] = "file:///test"
         self.assertFalse(server.valid_source(source))
     def test_rename_purpose_uses_born_flow_and_is_labeled(self):
-        result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "candidateCount":2, "gender":"unknown"})
-        self.assertEqual(result["analysis"]["purpose"], "成人改名")
-        self.assertEqual(result["analysis"]["scenario"], "已出生准确时间")
+        result = server.analyze({"purpose":"rename", "mode":"born", "surname":"林", "currentName":"林知远", "birthDate":"2024-04-16", "birthTime":"08:30", "place":"杭州", "length":2, "candidateCount":2, "gender":"unknown"})
+        self.assertEqual(result["analysis"]["purpose"], "改名方案")
+        self.assertEqual(result["analysis"]["scenario"], "改名 · 实际出生")
     def test_rename_purpose_rejects_due_date_flow(self):
         with self.assertRaisesRegex(ValueError, "rename purpose"):
             server.analyze({"purpose":"rename", "mode":"due_date", "surname":"林", "dueDate":"2099-01-01", "place":"杭州", "length":2, "gender":"unknown"})

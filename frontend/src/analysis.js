@@ -1,8 +1,8 @@
 const TIMEOUT_MESSAGE = "排盘服务响应超时，请检查网络后重新生成。";
 
-export async function requestAnalysis(
+async function requestReport(
   data,
-  { timeoutMs = 15000, fetcher = globalThis.fetch } = {},
+  { timeoutMs = 15000, fetcher = globalThis.fetch, endpoint = "/api/analyze" } = {},
 ) {
   const controller = new AbortController();
   let timer;
@@ -14,7 +14,7 @@ export async function requestAnalysis(
   });
   const request = (async () => {
     try {
-      const response = await fetcher("/api/analyze", {
+      const response = await fetcher(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -52,6 +52,17 @@ export async function requestAnalysis(
       ) {
         throw new Error("服务未返回完整方案，请检查服务版本后重新生成。");
       }
+      if (data.purpose && (payload.analysis.purpose_code !== data.purpose || payload.analysis.mode !== data.mode))
+        throw new Error("服务返回的起名场景与提交内容不一致，请更新服务后重试。");
+      if (data.purpose === "rename") {
+        const review = payload.analysis.name_review;
+        if (!review || payload.analysis.current_name !== data.currentName?.trim() || review.full_name !== data.currentName?.trim()
+          || !Array.isArray(review.findings) || !review.findings.length || review.findings.some(x => !x || typeof x.title !== "string" || typeof x.detail !== "string")
+          || !Array.isArray(review.directions))
+          throw new Error("服务未返回完整现名分析，请更新服务后重试。");
+      }
+      if (endpoint === "/api/name-review" && (payload.analysis.phase !== "name_review" || payload.candidates.length))
+        throw new Error("现名分析接口返回了错误阶段的数据，请更新服务后重试。");
       return payload;
     } catch (error) {
       if (controller.signal.aborted) throw new Error(TIMEOUT_MESSAGE);
@@ -65,4 +76,11 @@ export async function requestAnalysis(
   } finally {
     clearTimeout(timer);
   }
+}
+
+export function requestAnalysis(data, options = {}) {
+  return requestReport(data, { ...options, endpoint: "/api/analyze" });
+}
+export function requestNameReview(data, options = {}) {
+  return requestReport(data, { ...options, endpoint: "/api/name-review" });
 }

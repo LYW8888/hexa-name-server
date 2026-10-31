@@ -159,14 +159,12 @@ class NamingRankingTest(unittest.TestCase):
         )
         self.assertNotEqual(first["candidates"][0]["given"], second["candidates"][0]["given"])
 
-    def test_actual_overrides_due_date_for_entire_chain(self):
-        result = self.analyze(mode="due_date", dueDate="2099-12-23")
-        ordinary = self.analyze()
-        self.assertEqual(result["analysis"]["gua"], ordinary["analysis"]["gua"])
-        self.assertEqual(result["candidates"], ordinary["candidates"])
-        due = server.analyze(
-            {"surname": "林", "mode": "due_date", "dueDate": "2099-12-23", "place": "杭州"}
-        )
+    def test_flows_never_override_each_others_time(self):
+        with self.assertRaisesRegex(ValueError, "due date flow"):
+            self.analyze(mode="due_date", dueDate="2099-12-23")
+        actual = self.analyze()
+        due = server.analyze({"surname":"林", "mode":"due_date", "dueDate":"2099-12-23", "place":"杭州"})
+        self.assertFalse(actual["analysis"]["gua"]["reference"])
         self.assertTrue(due["analysis"]["gua"]["reference"])
 
     def test_reference_can_be_disabled_without_hiding_chart(self):

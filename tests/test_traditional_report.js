@@ -17,3 +17,10 @@ test('review-required Mingli report keeps proposed directions separate from appl
   const text=calculationLines({mingli:m}).join('\n');
   for(const value of ['喜用参考需复核','待复核方向：用火、喜土；未参与喜用排序','存在合化待复核','古籍版本仍待核验','不代表运势']) assert.ok(text.includes(value));
 });
+
+test('original-name report retains observations, directions and catalog source without inventing meaning',async()=>{
+ const {nameReviewLines}=await import('../frontend/src/name-review-report.js');
+ assert.deepEqual(nameReviewLines(null),[]);
+ const value={full_name:'李龘',findings:[{title:'字形五行依据',detail:'本规则未归类'}],directions:['保留姓氏'],notice:'出生四柱不随改名改变'};
+ const text=nameReviewLines(value).join('\n');assert.ok(text.includes('现用姓名：李龘'));assert.ok(text.includes('本规则未归类'));assert.ok(!text.includes('已收录寓意'));
+});
