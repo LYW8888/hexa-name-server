@@ -1,0 +1,111 @@
+{
+  "checked_passages": 15,
+  "failed": 0,
+  "upstream_compared": true,
+  "rule_checks": [
+    "五行相生5项",
+    "五行相克5项",
+    "干支阴阳4组"
+  ],
+  "scope": "已核对固定提交中的录文、引文位置及规则映射；未宣称影印精校、外部专家认证或运势验证。",
+  "parameter_status": "project_defined",
+  "text_issues": [
+    {
+      "source_id": "sm-roles",
+      "location": "KR3g0042_005.txt:18",
+      "issue": "录文为戊巳土，疑己/巳形近讹误；引文照录，算法仍使用戊己土的通行天干表。本轮不据此核对藏干分日司令。"
+    }
+  ],
+  "entries": [
+    {
+      "id": "sm-polarity",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-scope",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-generation",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-control",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-roles",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-season",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-fuyi",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-month",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-official",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-sha",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-food",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "sm-hurting",
+      "status": "passed",
+      "commit": "efe780a4f6fd835f4e2d769ffc8f79b7099db3b1",
+      "upstream_compared": true
+    },
+    {
+      "id": "zy-polarity",
+      "status": "passed",
+      "commit": "8284adbf9e3435d713180e24f05bf75f8b7d1d96",
+      "upstream_compared": true
+    },
+    {
+      "id": "zy-images",
+      "status": "passed",
+      "commit": "8284adbf9e3435d713180e24f05bf75f8b7d1d96",
+      "upstream_compared": true
+    },
+    {
+      "id": "zy-nature",
+      "status": "passed",
+      "commit": "8284adbf9e3435d713180e24f05bf75f8b7d1d96",
+      "upstream_compared": true
+    }
+  ]
+}

@@ -273,7 +273,11 @@ function Chart({ analysis }) {
           </details>
         </>
       )}
-      <TraditionalAnalysis value={analysis.mingli} />
+      <TraditionalAnalysis
+        value={analysis.mingli}
+        audit={analysis.source_audit}
+        relationships={analysis.traditional?.relationships}
+      />
       <Boundary boundary={chart.boundary} />
       <Gua value={analysis.gua} />
       <Comparison value={analysis.bazi_comparison} />
@@ -285,7 +289,7 @@ function Chart({ analysis }) {
         </p>
         <p>
           历法引擎 {chart.source.library} {chart.source.version}
-          ；经跨库样本对照，权威机构认证尚未完成。真太阳时修正口径见上方。
+          ；历法与节气对照记录、真太阳时修正及本次计算口径均可查看。
         </p>
       </details>
       <p className="method-note">{analysis.method}</p>
@@ -310,7 +314,7 @@ function NameCard({
           {String(item.rank).padStart(2, "0")} / 名字提案
         </span>
         <span className="card-status">
-          {item.source_status === "verified" ? "寓意已复核" : "寓意待核验"}
+          {item.source_status === "verified" ? "出处已核对" : "字义寓意"}
         </span>
       </div>
       <h3>{item.fullName}</h3>
@@ -362,8 +366,7 @@ function NameCard({
         ) : null}
         <p>{item.scoreEvidence}</p>
         <p>
-          寓意资料状态：
-          {item.source_status === "verified" ? "已记录复核" : "待核验"}；
+          {item.source_status === "verified" ? "出处记录：" : "寓意说明："}
           {item.source}
         </p>
         <small className="evidence-disclaimer">
@@ -435,7 +438,7 @@ function CandidateComparison({ items, onClear }) {
     ["匹配理由", (x) => x.ranking?.reasons.join("；") || "旧版演示记录"],
     [
       "寓意资料",
-      (x) => (x.source_status === "verified" ? "已记录复核" : "待核验"),
+      (x) => (x.source_status === "verified" ? "出处记录" : "字义寓意说明"),
     ],
   ];
   return (
@@ -567,7 +570,7 @@ export default function Results({
                       <small>
                         {details[name].source_status === "verified"
                           ? "寓意资料已记录复核"
-                          : "寓意资料待核验"}
+                          : "字义寓意说明"}
                       </small>
                     </>
                   ) : (

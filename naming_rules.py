@@ -64,7 +64,7 @@ def target_for(preference, gua, assessment=None):
             + (
                 " 喜用参考字形权重：用神1、喜神0.75。"
                 if enabled
-                else " 当前仅按日常偏好排序，请先复核格局与出生时间。"
+                else " 本次保留多种五行方向，优先按读音、风格与心意用字排序。"
             ),
             "review_status": value.get("status", "review_required"),
             "rule_version": (assessment or {}).get("version"),
@@ -247,5 +247,5 @@ def rank(
         "element_evidence": element_text
         + "。仅按木、水/氵/氺、火/灬、土、金/钅/釒部首分组，不强行补足未归类字。",
         "gua_evidence": f"本次按{gua['method']}计算：上{gua['upper']['name']}下{gua['lower']['name']}，本卦{gua['hexagram']}，动第{gua['moving_line']}爻，变卦{gua['changed_hexagram']}。本次候选共用此时间起卦，按{reference['label']}匹配。",
-        "yinyang_evidence": f"出生四柱表面八字：阴{sum(tradition.polarity(p[k])=='阴' for p in chart['pillars'] for k in ('stem','branch'))}、阳{sum(tradition.polarity(p[k])=='阳' for p in chart['pillars'] for k in ('stem','branch'))}；阴阳按干支属性计算。没有将待核验的姓名笔画单双当作八字平衡。",
+        "yinyang_evidence": f"出生四柱表面八字：阴{sum(tradition.polarity(p[k])=='阴' for p in chart['pillars'] for k in ('stem','branch'))}、阳{sum(tradition.polarity(p[k])=='阳' for p in chart['pillars'] for k in ('stem','branch'))}；阴阳按干支属性计算。阴阳同异同时参与正偏十神的区分；旺衰分项按四柱天干与藏干逐项计算。",
     }

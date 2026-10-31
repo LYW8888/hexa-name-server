@@ -11,7 +11,9 @@
 - 四柱由 `bazi.py`、阴阳/藏干/十神及时间起卦由 `tradition.py` 实时计算；`naming_rules.py` 计算偏好分项，无预设基础分。详细口径、手算例子与来源见 [ALGORITHM.md](ALGORITHM.md)。后续仍需权威历表、字表、古籍版本及谐音词表复核。
 
 - `locations.json`：20个城市中心的近似经度，供用户选择和手动修正，不是地址解析。
-- `mingli-rules.json`：限定流派的月令格局与扶抑权重，参数由本项目声明，尚待专家校准；完整边界见 [MINGLI_RULES.md](MINGLI_RULES.md)。
+- `mingli-rules.json`：限定流派的月令格局与扶抑权重，参数由本项目声明并公开；完整边界见 [MINGLI_RULES.md](MINGLI_RULES.md)。
+
+- `classical-evidence.json`：古籍原则原文、定位、固定Git版本、片段哈希与核对范围。
 
 ## `verification_status`
 
@@ -19,6 +21,6 @@
 - `pending`：已录入但需要人工或权威资料复核。
 - `verified`：完成实际人工复核，并在 `meaning_source.reference` 中记录来源标题、版本、具体位置、链接、使用许可、复核人和日期；这些字段缺失时服务会拒绝加载字库。字段完整只能保证可追溯，不能代替人工核验。
 
-候选寓意与古籍文本出处仍待核验；已实现的规则计算不等于完成专家或机构认证，不宣称提供完整命理数据库。
+候选寓意按现代字义整理；经典规则的15处原文与固定版本已记录在 `classical-evidence.json`，出处核对与工程参数、机构认证分别标识。
 
 算法输入还需要记录场景（due_date/born）、时间精度和性别偏好，避免把预产期参考时间误当作实际出生时间。

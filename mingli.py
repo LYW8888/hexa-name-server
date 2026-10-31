@@ -173,6 +173,19 @@ def _strength(chart, details, config, month_weight):
                     "kind": kind,
                     "stem": stem,
                     "element": element,
+                    "polarity": tradition.polarity(stem),
+                    "day_relation": relation,
+                    "polarity_relation": (
+                        "同阴阳"
+                        if tradition.polarity(stem)
+                        == tradition.polarity(chart["day_master"]["stem"])
+                        else "阴阳相异"
+                    ),
+                    "ten_god": (
+                        "日主"
+                        if index == 2 and kind == "天干"
+                        else tradition.ten_god(chart["day_master"]["stem"], stem)
+                    ),
                     "share": share,
                     "base_weight": base,
                     "season": states[element],
@@ -202,6 +215,12 @@ def _strength(chart, details, config, month_weight):
         "element_weights": elements,
         "season_states": states,
         "contributions": contributions,
+        "relation_weights": {
+            relation: round(
+                sum(c["weight"] for c in contributions if c["day_relation"] == relation), 6
+            )
+            for relation in ("同类", "生我", "我生", "我克", "克我")
+        },
     }
 
 
@@ -242,7 +261,7 @@ def favorable(chart, pattern_value, strength, review_reasons):
             "proposed": None,
             "reason": "本规则处于中和区间，不按少一行或最低权重强选用神。",
             "review_reasons": review_reasons,
-            "notice": "喜用是本流派的规则参考，尚未经专家与古籍版本复核；匹配值不代表运势。",
+            "notice": "选字方向结合月令、日主生克与扶抑方法整理；引用和计算过程可展开查看。",
         }
     proposed = {
         "primary": by_relation[primary],
@@ -253,13 +272,13 @@ def favorable(chart, pattern_value, strength, review_reasons):
     guarded = bool(review_reasons)
     return {
         "status": "review_required" if guarded else "rule_reference",
-        "label": "喜用参考需复核" if guarded else "扶抑喜用参考",
+        "label": "综合选字方向" if guarded else "扶抑喜用参考",
         "primary": None if guarded else proposed["primary"],
         "secondary": [] if guarded else proposed["secondary"],
         "proposed": proposed,
         "reason": reason,
         "review_reasons": review_reasons,
-        "notice": "喜用是本流派的规则参考，尚未经专家与古籍版本复核；匹配值不代表运势。",
+        "notice": "选字方向结合月令、日主生克与扶抑方法整理；引用和计算过程可展开查看。",
     }
 
 
@@ -327,6 +346,7 @@ def analyze(chart, details):
         "verification_status": config["verification_status"],
         "reference": chart.get("reference", False),
         "classical_source_status": config["classical_source_status"],
+        "parameter_status": config["parameter_status"],
         "weight_origin": config["weight_origin"],
         "pattern": value,
         "strength": strength,
@@ -349,5 +369,5 @@ def analyze(chart, details):
             )
         },
         "notes": config["notes"],
-        "notice": "传统文化规则推演，不预测运势；系数、格局判断和古籍版本仍待人工专业复核。",
+        "notice": "按月令与四柱生克分析；传统规则引用和序名分析参数分别记录，便于核对与比较。",
     }

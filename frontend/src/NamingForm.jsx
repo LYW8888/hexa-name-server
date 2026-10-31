@@ -191,7 +191,7 @@ export default function NamingForm({
       >
         <p className="demo-notice">
           <b>每个名字都有理由</b>{" "}
-          四柱、阴阳五行与生辰起卦可以展开复算；匹配值用于比较偏好，不能代表运势。
+          四柱、阴阳五行与生辰起卦可以展开复算；匹配指数帮助比较本次用字偏好。
         </p>
         <div className="progress" aria-label="起名步骤">
           {LABELS.map((label, index) => (
@@ -578,7 +578,7 @@ export default function NamingForm({
               value={elementPreference}
               onChange={(e) => setElementPreference(e.target.value)}
             >
-              <option value="yongshen">按格局与扶抑喜用参考（规则试算）</option>
+              <option value="yongshen">按四柱喜用参考（月令扶抑法）</option>
               <option value="auto">按生辰起卦的体卦五行意象</option>
               <option value="none">仅按读音、风格和心意用字</option>
               {["木", "火", "土", "金", "水"].map((x) => (
@@ -589,7 +589,7 @@ export default function NamingForm({
             </select>
             <small className="field-hint">
               {elementPreference === "yongshen"
-                ? "依据月令、藏干权重与扶抑规则试算；临界、特殊格局或中和时不强指定喜用，只按日常偏好排序。"
+                ? "结合月令、藏干与日主生克整理方向；多种组合并存时，优先按读音、风格与心意用字排序。"
                 : elementPreference === "auto"
                   ? "生辰按年月日时起卦，再与汉字部首规则匹配。体卦五行不等于八字喜用神。"
                   : elementPreference === "none"

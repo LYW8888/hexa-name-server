@@ -1,6 +1,6 @@
 # 序名 · 现代东方命名
 
-响应式中文起名与改名原型。前端使用 React 19 与 Vite 8，后端使用 Python。已接入四柱、干支阴阳、地支藏干、十神与年月日时起卦，并将明确的部首五行规则和用户偏好用于候选排序。规则可复算，候选寓意与古籍版本仍待人工核验；新增可选真太阳时、月令取格与扶抑喜用规则试算；判断与参数仍待专业复核，匹配值不代表运势。
+响应式中文起名与改名原型。前端使用 React 19 与 Vite 8，后端使用 Python。已接入四柱、干支阴阳、地支藏干、十神与年月日时起卦，并将明确的部首五行规则和用户偏好用于候选排序。经典规则已完成15处固定版本录文对照，数值采用公开的序名分析参数；提供可选真太阳时、月令取格与扶抑分析，名字寓意按现代字义整理。
 
 ## 安装与运行
 
@@ -65,11 +65,18 @@ curl -s -X POST http://localhost:4173/api/analyze -H 'Content-Type: application/
 
 `candidates[].pronunciation` 用 [`pypinyin` 0.55.0](https://github.com/mozillazg/python-pinyin)（MIT）逐字对照普通话读音。现有 65 条候选的预设读音均可在该库单字读音中找到；多音姓氏列出字典选项，不自动断定姓氏的正确读法。姓与名含相同字时会提示用户自行判断。此对照不代表姓名读音已获权威核验，不能检查方言、完整谐音或判断名字好坏；未收录和不匹配都明确标示。Unicode 官方数据在当前执行环境被网络代理拒绝访问，尚未完成官方字表对照。
 
-API省略 `elementPreference` 时兼容原有 `auto` 体卦意象；新表单默认 `yongshen`，按月令格局与扶抑喜用规则试算选字，遇中和、临界或特殊组合时不强指定喜用。`none` 关闭五行排序，也可手选 `木/火/土/金/水`。规则与参数待专业复核，体卦五行和扶抑喜用是两个不同选项。`honorParents=true` 时才将父母姓氏的汉字加入用字偏好；避用字始终优先。
+API省略 `elementPreference` 时兼容原有 `auto` 体卦意象；新表单默认 `yongshen`，按月令格局与扶抑喜用规则试算选字，遇中和、临界或特殊组合时不强指定喜用。`none` 关闭五行排序，也可手选 `木/火/土/金/水`。经典原文与分析参数分别可查，体卦五行和扶抑喜用是两个不同选项。`honorParents=true` 时才将父母姓氏的汉字加入用字偏好；避用字始终优先。
 
 体验流程增加全名字数示例和生成前确认；结果先展示候选，再展示排盘。可选 1–3 个候选并排查看读音、寓意、部首五行及分项理由；比较与收藏不自动保存出生信息。下载报告与客户主动保存的记录都保留计算依据，新旧报告分别标注，旧演示记录不会被改写为新规则结果。
 
 真太阳时字段 `timeBasis/longitude/locationId`、月令格局、旺衰权重、扶抑喜用的取值与复核条件详见 [完整规则说明](data/MINGLI_RULES.md)。`analysis.mingli` 返回逐项权重、根气、敏感性、取格和喜用参考，`analysis.bazi.time_correction` 返回修正项与民用/太阳钟对照。均时差已与本地JPL DE421独立方法做204个样本对照，最大差约2.861秒；只验证均时差，不是命理规则认证。复现：`python3 scripts/verify_equation_of_time.py`（需开发依赖）。
+
+出处核对记录见 [经典依据说明](data/CLASSICAL_SOURCES.md)。`analysis.source_audit` 保留15处引文、篇章、底本标识和固定版本链接；`analysis.traditional.relationships` 返回八个干支的28组两两关系及四柱相对日主的关系，`analysis.mingli.strength` 的逐项权重含生克、阴阳同异及十神。数字化录文核对与项目数值参数分开标识，不把数学测试当作运势认证。
+
+```bash
+python3 scripts/verify_classical_sources.py  # 离线检查本地引文和规则表
+python3 scripts/verify_classical_sources.py --fetch  # 从固定Git提交重新核对原文
+```
 
 ## 隐私与产品状态
 

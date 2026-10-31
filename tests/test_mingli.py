@@ -119,7 +119,7 @@ class MingliRulesTest(unittest.TestCase):
                 self.assertLessEqual(s["support_ratio"], 1)
                 if result["favorable"]["status"] != "rule_reference":
                     self.assertIsNone(result["favorable"]["primary"])
-                self.assertEqual(result["classical_source_status"], "pending")
+                self.assertEqual(result["classical_source_status"], "text_checked")
         self.assertEqual(statuses, {"rule_reference", "review_required", "no_single_choice"})
 
     def test_favorable_ranking_does_not_treat_gua_as_yongshen(self):

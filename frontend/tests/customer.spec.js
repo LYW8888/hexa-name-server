@@ -57,6 +57,8 @@ test("免费体验免登录，主动确认保存，刷新找回、下载及删�
   expect(report).toContain("选字参考：自选水意象");
   expect(report).toContain("真太阳钟");
   expect(report).toContain("格局线索");
+  expect(report).toContain("经典原文与计算方法");
+  expect(report).toContain("四柱阴阳五行与生克关系");
   await account.getByRole("button", { name: "删除", exact: true }).click();
   await account.getByRole("button", { name: "确认删除", exact: true }).click();
   await expect(account.locator(".customer-records li")).toHaveCount(0);

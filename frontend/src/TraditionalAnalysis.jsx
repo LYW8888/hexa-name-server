@@ -1,4 +1,5 @@
 import React from "react";
+import ClassicalEvidence, { PillarRelations } from "./ClassicalEvidence.jsx";
 
 function minutes(value) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)} 分钟`;
@@ -71,7 +72,7 @@ export function SolarCorrection({ chart }) {
     </section>
   );
 }
-export default function TraditionalAnalysis({ value }) {
+export default function TraditionalAnalysis({ value, audit, relationships }) {
   if (!value) return null;
   const { pattern: p, strength: s, favorable: f } = value;
   const proposed = f.proposed;
@@ -79,11 +80,9 @@ export default function TraditionalAnalysis({ value }) {
     <section className="mingli-analysis" aria-label="格局旺衰与喜用参考">
       <div className="comparison-heading">
         <h3>格局 · 旺衰 · 喜用参考</h3>
-        <span>规则试算 · 古籍与参数待复核</span>
+        <span>四柱生克 · 月令扶抑</span>
       </div>
-      <p>
-        {value.method}。{value.weight_origin}
-      </p>
+      <p>从出生四柱出发，结合月令、藏干与日主关系，整理本次选字方向。</p>
       <div className="mingli-highlights">
         <div>
           <small>月令格局线索</small>
@@ -93,7 +92,7 @@ export default function TraditionalAnalysis({ value }) {
           </span>
         </div>
         <div>
-          <small>旺衰试算</small>
+          <small>旺衰分析</small>
           <b>{s.label}</b>
           <span>
             助身占比 {s.support_percent}% · 月令状态{s.month_state}
@@ -108,19 +107,17 @@ export default function TraditionalAnalysis({ value }) {
           </b>
           <span>
             {f.primary
-              ? "可作为本次选字偏好，不能代表运势"
+              ? "用于本次五行选字与候选比较"
               : "本次不据此自动指定选字五行"}
           </span>
         </div>
       </div>
-      <p>
-        {p.basis} {p.notice}
-      </p>
+      <p>{p.basis}</p>
       <p>{f.reason}</p>
       {f.status === "review_required" && proposed && (
         <p className="calculation-warning">
-          待复核方向：用{proposed.primary}、喜{proposed.secondary.join("、")}
-          。此方向未参与喜用选字排序。
+          可进一步比较：用{proposed.primary}、喜{proposed.secondary.join("、")}
+          。当前保留多种取用方向，先按读音、风格与心意用字排序。
         </p>
       )}
       {f.review_reasons.length > 0 && (
@@ -130,6 +127,7 @@ export default function TraditionalAnalysis({ value }) {
           ))}
         </ul>
       )}
+      <PillarRelations value={relationships} weights={s.relation_weights} />
       <details className="strength-evidence">
         <summary>查看旺衰权重、根气与敏感性</summary>
         <p>
@@ -137,7 +135,7 @@ export default function TraditionalAnalysis({ value }) {
           {(s.support_ratio * 100).toFixed(2)}%。小于
           {s.thresholds.weak_below * 100}%列偏弱、大于
           {s.thresholds.strong_above * 100}
-          %列偏强，其间列中和；这是本项目阈值，不是古籍定量结论。
+          %列偏强，其间列中和。阈值属于序名分析参数，用于本方法内的相对比较。
         </p>
         <div className="weighted-elements">
           {Object.entries(s.element_weights).map(([e, w]) => (
@@ -221,6 +219,7 @@ export default function TraditionalAnalysis({ value }) {
       </details>
       <details>
         <summary>查看透干、合冲与规则范围</summary>
+        <p>{p.notice}</p>
         <p>
           月令藏干透出：
           {p.exposed.length
@@ -249,7 +248,10 @@ export default function TraditionalAnalysis({ value }) {
           规则版本 {value.version}。{value.notice}
         </p>
       </details>
-      <p className="mingli-notice">{f.notice}</p>
+      <ClassicalEvidence value={audit} />
+      <p className="mingli-notice">
+        分析采用月令取格与扶抑口径，供家庭结合寓意、读写习惯一起选名。
+      </p>
     </section>
   );
 }

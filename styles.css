@@ -457,3 +457,25 @@ input,select,textarea{border-color:#dfd5cb;background:#fffdfa}input:focus,select
 .mingli-analysis .mingli-notice{border-top:1px solid #dce4d4;padding-top:15px;color:#7e7159;font-size:11px}
 @media(max-width:800px){.solar-correction,.mingli-analysis{padding:18px 14px}.mingli-highlights{grid-template-columns:1fr}.time-comparison{grid-template-columns:1fr;gap:8px}.time-comparison>span{transform:rotate(90deg);width:14px}.solar-correction .comparison-heading,.mingli-analysis .comparison-heading{align-items:flex-start;flex-direction:column;gap:7px}.time-settings{padding:10px 12px}.mingli-highlights b{font-size:20px}}
 .bazi-summary>.mingli-analysis,.bazi-summary>.solar-correction,.mingli-analysis details,.mingli-analysis .comparison-table-wrap{min-width:0;max-width:100%}
+/* Source traceability sits alongside the actual four-pillar calculation. */
+.pillar-relations,.classical-evidence{min-width:0;max-width:100%;margin:12px 0;border-top:1px solid #dce4d4}
+.pillar-relations summary,.classical-evidence summary{display:flex;align-items:center;flex-wrap:wrap;gap:10px;list-style:revert}
+.pillar-relations summary>span,.classical-evidence summary>span{font-size:10px;color:#718365;background:#eef3e8;border:1px solid #d7e1cd;border-radius:99px;padding:3px 9px}
+.pillar-relations .comparison-table-wrap,.pairwise-relations{min-width:0;max-width:100%}
+.pillar-relations table{min-width:570px}
+.relation-weights{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:18px 0}
+.relation-weights>div{background:#f1f5eb;border-radius:7px;padding:10px}
+.relation-weights span{display:block;font-size:10px;color:#728166}
+.relation-weights b{display:block;font:500 20px var(--serif);color:#385738;margin-top:5px}
+.pairwise-relations select{width:min(220px,100%)}
+.classical-citations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.classical-citations article{border:1px solid #dbe3d3;background:#f8faf3;padding:16px;border-radius:9px;min-width:0}
+.classical-citations a{color:#3e6346;font-size:13px;text-decoration:underline;text-underline-offset:4px;line-height:1.8}
+.classical-citations blockquote{margin:13px 0;padding-left:12px;border-left:2px solid #beae8d;font:14px/1.9 var(--serif);color:#425940;overflow-wrap:anywhere}
+.classical-citations small{font-size:10px;color:#7c846e!important}
+.mingli-analysis .parameter-origin{font-size:11px;color:#7f735a;border-top:1px solid #dce4d4;padding-top:15px}
+@media(max-width:800px){.classical-citations{grid-template-columns:1fr}.relation-weights{grid-template-columns:repeat(2,minmax(0,1fr))}.relation-weights>div:last-child{grid-column:1/-1}.classical-citations article{padding:14px}}
+.pillar-relations>summary::before,.classical-evidence>summary::before{content:'＋';font-size:15px;line-height:1;color:#64805d}
+.pillar-relations[open]>summary::before,.classical-evidence[open]>summary::before{content:'−'}
+.relation-scroll-hint{display:none}
+@media(max-width:800px){.mingli-analysis .relation-scroll-hint{display:block;font-size:11px;color:#76866b}}

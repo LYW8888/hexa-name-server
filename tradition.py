@@ -2,6 +2,7 @@
 
 from collections import Counter
 from datetime import datetime
+from itertools import combinations
 from lunar_python import Solar
 from lunar_python.util import LunarUtil
 import bazi
@@ -63,6 +64,66 @@ def ten_god(day_stem, target):
     }[relation(bazi.STEM_ELEMENT[day_stem], bazi.STEM_ELEMENT[target])][0 if same else 1]
 
 
+def pillar_relationships(chart):
+    """All eight surface characters, plus the day-master view used by the model."""
+    nodes = []
+    rows = []
+    day = chart["day_master"]["stem"]
+    for pillar in chart["pillars"]:
+        row = {"label": pillar["label"]}
+        for kind, field in (("stem", "干"), ("branch", "支")):
+            char = pillar[kind]
+            element = pillar[kind + "_element"]
+            node = {
+                "id": pillar["label"][0] + field,
+                "pillar": pillar["label"],
+                "character": char,
+                "kind": kind,
+                "element": element,
+                "polarity": polarity(char),
+            }
+            nodes.append(node)
+            row[kind] = {
+                **node,
+                "day_relation": relation(chart["day_master"]["element"], element),
+                "polarity_relation": "同阴阳" if polarity(day) == polarity(char) else "阴阳相异",
+                "ten_god": (
+                    "日主"
+                    if kind == "stem" and pillar["label"] == "日柱"
+                    else ten_god(day, char) if kind == "stem" else None
+                ),
+            }
+        rows.append(row)
+    pairs = []
+    for left, right in combinations(nodes, 2):
+        forward = relation(left["element"], right["element"])
+        if forward == "同类":
+            text = f"{left['element']}同类"
+        else:
+            first, second = (left, right) if forward in ("我生", "我克") else (right, left)
+            verb = "生" if forward in ("我生", "生我") else "克"
+            text = f"{first['id']}{first['character']}（{first['element']}）{verb}{second['id']}{second['character']}（{second['element']}）"
+        pairs.append(
+            {
+                "from": left["id"],
+                "to": right["id"],
+                "forward": forward,
+                "reverse": relation(right["element"], left["element"]),
+                "description": text,
+                "polarity_relation": (
+                    "同阴阳" if left["polarity"] == right["polarity"] else "阴阳相异"
+                ),
+            }
+        )
+    return {
+        "nodes": nodes,
+        "pillars": rows,
+        "pairs": pairs,
+        "source_ids": ["sm-polarity", "sm-scope", "sm-generation", "sm-control", "sm-roles"],
+        "usage": "四柱八个表面干支列两两关系；旺衰按日主与每个天干、藏干的关系计权，避免同一作用重复计分。",
+    }
+
+
 def chart_details(chart):
     day_stem = chart["day_master"]["stem"]
     polarity_counts = Counter()
@@ -96,6 +157,7 @@ def chart_details(chart):
         )
     return {
         "version": VERSION,
+        "relationships": pillar_relationships(chart),
         "polarity_counts": {key: polarity_counts[key] for key in ("阴", "阳")},
         "pillars": details,
         "hidden_element_counts": {element: hidden_counts[element] for element in bazi.ELEMENTS},
@@ -193,5 +255,5 @@ def cast(date_text, time_text, zone_name, reference=False, *, solar_clock=None):
             "动爻所在卦为用卦，另一卦为体卦；变卦仅翻转该动爻。",
             f"起卦按所选{'真太阳钟' if solar_clock else '民用时钟'}日期00:00换农历日，四柱日柱仍按23:00换日，两种规则不混用。",
         ],
-        "limitations": "这是公开口径的传统文化计算，不是《周易》文本直接规定的唯一方法；古籍版本与解释仍待复核，不预测运势。",
+        "limitations": "这是公开口径的传统文化计算，不是《周易》文本直接规定的唯一方法；本方法的钟面、卦序与算式均在此列明，供传统文化选名参考。",
     }

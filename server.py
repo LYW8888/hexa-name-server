@@ -12,6 +12,7 @@ import tradition
 import naming_rules
 import mingli
 import solar_time
+import classical_sources
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -81,6 +82,7 @@ def load_names() -> list[dict]:
 def init_db() -> None:
     # Keep the existing SQLite catalog for compatibility; the checked-in JSON
     # is the authoritative source for both selection and presentation.
+    classical_sources.registry()
     DATA.mkdir(exist_ok=True)
     facts = naming_rules.catalog()
     # Legacy base_score remains zero; current ranking has no preset score.
@@ -288,7 +290,7 @@ def analyze(payload: dict) -> dict:
         f"时区：{zone_label}；四柱按立春、十二节与所选钟面23:00换日计算。"
         f"阴阳、藏干及十神按公开干支规则计算；年月日时起卦得到{gua['hexagram']}，动{gua['moving_line']}爻、变{gua['changed_hexagram']}。"
         f"候选按{naming_reference['label']}、字形部首、读音和文字偏好计算匹配值。"
-        f"采用{'真太阳钟' if chart['time_correction']['applied'] else '民用时钟'}确定日/时柱；月令格局与扶抑喜用按{assessment['version']}试算。古籍版本、权重和格局判断仍待专业复核，匹配值不代表运势。"
+        f"采用{'真太阳钟' if chart['time_correction']['applied'] else '民用时钟'}确定日/时柱；月令格局与扶抑喜用按{assessment['version']}试算。年、月、日、时均纳入计算；经典引用与序名分析参数可在依据中查看。"
     )
     return {
         "analysis": {
@@ -298,6 +300,7 @@ def analyze(payload: dict) -> dict:
             "bazi_comparison": comparison,
             "traditional": traditional,
             "mingli": assessment,
+            "source_audit": classical_sources.public_index(),
             "gua": gua,
             "naming_reference": naming_reference,
             "ranking_version": naming_rules.VERSION,
@@ -372,7 +375,7 @@ class Handler(SimpleHTTPRequestHandler):
         if route == "/api/catalog":
             return self.json(json.loads((DATA / "character-catalog.json").read_text(encoding="utf-8")))
         if route == "/api/classics":
-            return self.json(json.loads((DATA / "classics.json").read_text(encoding="utf-8")))
+            return self.json({**json.loads((DATA / "classics.json").read_text(encoding="utf-8")), "source_audit": classical_sources.public_index()})
         if route == "/api/product":
             return self.json(json.loads((DATA / "product.json").read_text(encoding="utf-8")))
         return super().do_GET()

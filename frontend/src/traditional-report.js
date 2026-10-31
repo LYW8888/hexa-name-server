@@ -24,7 +24,9 @@ export function calculationLines(analysis) {
     s = m.strength,
     f = m.favorable;
   lines.push(
-    `规则试算：${m.method}；版本 ${m.version}；古籍出处与参数核验状态：待复核`,
+    analysis.source_audit
+      ? `四柱分析：${m.method}；版本 ${m.version}；经典原文已对照 ${analysis.source_audit.checked_passages} 处，数值参数采用序名分析模型`
+      : `规则试算：${m.method}；版本 ${m.version}；本历史记录未保存原文核对信息`,
     m.weight_origin,
     `格局线索：${p.label}；月支${p.month_branch}、取${p.selected_stem}（${p.selected_ten_god}）；${p.basis}`,
     `旺衰试算：${s.label}；助身权重 ${s.support_weight} / 总权重 ${s.total_weight} = ${s.support_percent}%`,
@@ -53,5 +55,36 @@ export function calculationLines(analysis) {
     f.notice,
     m.notice,
   );
+  const relations = analysis.traditional?.relationships;
+  if (relations)
+    lines.push(
+      "四柱阴阳五行与生克关系",
+      ...relations.pillars.map(
+        (p) =>
+          `${p.label}：干${p.stem.character}（${p.stem.polarity}${p.stem.element}，${p.stem.ten_god}，${p.stem.day_relation}）；支${p.branch.character}（${p.branch.polarity}${p.branch.element}，本气${p.branch.day_relation}）`,
+      ),
+      ...relations.pairs.map(
+        (p) =>
+          `结构关系 ${p.from}/${p.to}：${p.description}，${p.polarity_relation}`,
+      ),
+      relations.usage,
+    );
+  if (s.relation_weights)
+    lines.push(
+      `按日主生克分项权重：${Object.entries(s.relation_weights)
+        .map(([r, w]) => `${r} ${w}`)
+        .join("、")}`,
+    );
+  if (analysis.source_audit)
+    lines.push(
+      "经典原文与计算方法",
+      ...analysis.source_audit.sources.flatMap((s) => [
+        `《${s.title}》·${s.chapter}（${s.edition}）`,
+        `原文：${s.quote}`,
+        `对应规则：${s.scope}`,
+        `原文位置：${s.url}`,
+      ]),
+      "藏干占比、月支权重、季节系数与强弱阈值为序名分析参数。古籍引文与数值参数分别记录。",
+    );
   return lines;
 }

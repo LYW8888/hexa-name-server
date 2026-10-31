@@ -267,7 +267,7 @@ export function downloadReportFile(
     lines.push(`- 阴阳：${item.yinyangEvidence}`);
     lines.push(`- 评分构成：${item.scoreEvidence}`);
     lines.push(
-      `- 寓意资料：${item.source_status === "verified" ? "已记录复核" : "待核验"}；${item.source}`,
+      `- ${item.source_status === "verified" ? "出处记录" : "字义寓意说明"}：${item.source}`,
     );
     if (item.source_reference?.url)
       lines.push(`- 参考来源：${item.source_reference.url}`);

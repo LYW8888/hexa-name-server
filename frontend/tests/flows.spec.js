@@ -470,7 +470,7 @@ for (const width of [1280, 390])
     await expect(solar).toContainText("日柱、时柱有变化");
     await expect(solar).toContainText("23:05:00");
     const mingli = page.getByRole("region", { name: "格局旺衰与喜用参考" });
-    await expect(mingli).toContainText("规则试算");
+    await expect(mingli).toContainText("四柱生克");
     await mingli.locator(".strength-evidence summary").click();
     await expect(mingli).toContainText("每项天干与藏干");
     await expect(mingli).toContainText("敏感性检查");
@@ -481,10 +481,10 @@ for (const width of [1280, 390])
       "真太阳钟",
       "经度 75.99",
       "原始时间",
-      "规则试算",
+      "四柱分析：",
       "格局线索",
       "扶抑喜用参考",
-      "匹配值不代表运势",
+      "不是运势分",
     ])
       expect(report).toContain(value);
     expect(
@@ -544,3 +544,60 @@ test("启用真太阳时后缺失或越界经度会定位填写处", async ({ pa
   await page.locator("#namingForm button[type=submit]").click();
   await expect(page.locator("#cards .card")).toHaveCount(3);
 });
+
+for (const width of [1280, 390])
+  test(`四柱生克和古籍出处可逐项核对 ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 950 });
+    await page.goto("/");
+    await generate(page, {
+      due: "2024-02-10",
+      dueTime: "12:00",
+      birth: "",
+      birthTime: "",
+    });
+    await expect(page.locator("#cards .card-status").first()).toHaveText(
+      "字义寓意",
+    );
+    const area = page.getByRole("region", { name: "格局旺衰与喜用参考" });
+    await expect(area).not.toContainText("古籍与参数待复核");
+    await area.locator(".pillar-relations>summary").click();
+    await expect(area.locator(".pillar-relations")).toContainText("年柱");
+    await expect(area.locator(".pillar-relations")).toContainText("月柱");
+    await expect(area.locator(".relation-weights")).toContainText("生我");
+    await area.locator(".pairwise-relations>summary").click();
+    await expect(area.locator(".pairwise-relations tbody tr")).toHaveCount(13);
+    await area.getByLabel("生克关系筛选").selectOption("");
+    await expect(area.locator(".pairwise-relations tbody tr")).toHaveCount(28);
+    await area.locator(".classical-evidence>summary").click();
+    await expect(area.locator(".classical-evidence")).toContainText(
+      "15 处录文已核对",
+    );
+    await expect(area.locator(".classical-citations")).toContainText(
+      "三命通会",
+    );
+    await expect(area.locator(".classical-citations")).toContainText("说卦");
+    const link = area.locator(".classical-citations a").first();
+    await expect(link).toHaveAttribute(
+      "href",
+      /github\.com\/kanripo\/[^/]+\/blob\/[0-9a-f]{40}\//,
+    );
+    const pending = page.waitForEvent("download");
+    await page.locator("#downloadReport").click();
+    const report = await readFile(await (await pending).path(), "utf8");
+    for (const text of [
+      "经典原文与计算方法",
+      "原文位置：https://github.com/kanripo/",
+      "四柱阴阳五行与生克关系",
+      "按日主生克分项权重",
+      "字义寓意说明",
+    ])
+      expect(report).toContain(text);
+    expect(report).not.toContain("古籍出处与参数核验状态：待复核");
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBeTruthy();
+  });
