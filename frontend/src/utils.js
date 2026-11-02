@@ -165,16 +165,7 @@ export function friendlyError(message) {
   return match ? match[1] : text || "暂时无法生成方案，请稍后重试。";
 }
 
-export function downloadReportFile(
-  lastRequest,
-  lastAnalysis,
-  lastCandidates,
-  showToast,
-) {
-  if (!lastRequest || !lastCandidates.length) {
-    showToast("先生成名字方案，再下载命名记录。", "info");
-    return;
-  }
+export function reportText(lastRequest, lastAnalysis, lastCandidates, reference = "") {
   const analysis = lastAnalysis;
   if (!analysis?.bazi) return;
   const chart = analysis.bazi;
@@ -204,6 +195,7 @@ export function downloadReportFile(
   const lines = [
     lastRequest.purpose === "rename" ? "# 序名 · 改名分析与推荐方案" : "# 序名 · 命名参考方案",
     "",
+    ...(reference ? [`申请编号：${reference}`, ""] : []),
     `姓氏：${lastRequest.surname || "未填写"}`,
     `用途：${workflowLabel(lastRequest)}`,
     ...(lastRequest.purpose === "rename" ? [`现用姓名：${analysis.current_name || lastRequest.currentName}`] : []),
@@ -299,7 +291,13 @@ export function downloadReportFile(
     );
     lines.push("");
   });
-  const blob = new Blob([`\ufeff${lines.join("\n")}`], {
+  return lines.join("\n");
+}
+
+export function downloadReportFile(lastRequest, lastAnalysis, lastCandidates, showToast, reference = "") {
+  const content = reportText(lastRequest, lastAnalysis, lastCandidates, reference);
+  if (!content) return;
+  const blob = new Blob([`\ufeff${content}`], {
     type: "text/markdown;charset=utf-8",
   });
   const url = URL.createObjectURL(blob);
@@ -309,7 +307,8 @@ export function downloadReportFile(
     "",
   );
   link.href = url;
-  link.download = `序名-${safeSurname || "方案"}.md`;
+  const safeReference=String(reference).replace(/[^A-Za-z0-9-]/g, "").slice(0,36);
+  link.download = `序名-${safeSurname || "方案"}${safeReference ? `-${safeReference}` : ""}.md`;
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast("命名方案已下载到本地。");

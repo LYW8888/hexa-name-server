@@ -24,3 +24,5 @@ test('client preserves server selection and rejects incomplete metadata', () => 
   engine.setCounts({'1': 15, '2': 15, '3': 5});
   assert.equal(engine.countForLength(1), 15);
 });
+
+test('free proposals expose names and short meanings without evidence fields',()=>{const value=engine.candidates({}, {access:'proposal_only'}, [{given:'沐安',name:'林沐安',pinyin:'lín mù ān',meaning:'安定明净',score:99,ranking:{secret:true}}]);assert.equal(value[0].fullName,'林沐安');assert.equal(value[0].score,undefined);assert.equal(value[0].ranking,undefined);});

@@ -1,6 +1,7 @@
 """Local server for 序名; four pillars and candidate suggestions are distinct."""
 from __future__ import annotations
 import json, os, re, sqlite3
+import ipaddress
 from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,8 @@ import naming_auxiliary
 import mingli
 import solar_time
 import classical_sources
+import public_proposals
+import report_client
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -406,6 +409,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         route = urlparse(self.path).path
+        if route == '/api/report-service':
+            return self.json({'available': bool(getattr(self, 'report_socket', None) or os.environ.get('XUMING_REPORTS_SOCKET')), 'retention_days': 30})
         if route == '/api/customer/session':
             # Anonymous capability stub only. A separately deployed customer
             # service takes over this prefix at the reverse proxy.
@@ -437,7 +442,7 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
     def do_POST(self):
         route = urlparse(self.path).path
-        if route not in ("/api/analyze", "/api/name-review"):
+        if route not in ("/api/analyze", "/api/name-review", "/api/report-requests"):
             return self.send_error(404)
         try:
             size = int(self.headers.get("Content-Length", "0"))
@@ -445,7 +450,24 @@ class Handler(SimpleHTTPRequestHandler):
             if size > 64 * 1024: raise ValueError("request too large")
             payload = json.loads(self.rfile.read(size) or b"{}")
             if not isinstance(payload, dict): raise ValueError("request body must be a JSON object")
-            return self.json(review_name(payload) if route == "/api/name-review" else analyze(payload))
+            if route == '/api/report-requests':
+                if set(payload) - {'request_key', 'input', 'consent', 'expected_names'}:
+                    raise ValueError('请求包含无效字段。')
+                if self.headers.get('Origin') and urlparse(self.headers['Origin']).netloc != self.headers.get('Host'):
+                    return self.json({'error': '请在本站提交报告申请。'}, 403)
+                if not self.headers.get('Content-Type', '').lower().startswith('application/json'):
+                    return self.json({'error': '请使用本站报告申请入口。'}, 415)
+                client = self.client_address[0]
+                if os.environ.get('XUMING_TRUST_PROXY') == '1' and ipaddress.ip_address(client).is_loopback:
+                    try: client = str(ipaddress.ip_address(self.headers.get('X-Real-IP', client)))
+                    except ValueError: return self.json({'error':'来源地址无效。'},400)
+                return self.json(report_client.call('create', {**payload, 'client': client}, socket_path=getattr(self, 'report_socket', None)), 201)
+            result = review_name(payload) if route == "/api/name-review" else analyze(payload)
+            return self.json(public_proposals.project(result))
+        except report_client.ReportUnavailable as exc:
+            return self.json({'error': str(exc)}, 503)
+        except report_client.ReportRejected as exc:
+            return self.json({'error': str(exc)}, exc.status)
         except (ValueError, json.JSONDecodeError) as exc:
             return self.json({"error": str(exc)}, 400)
     def json(self, body, status=200):

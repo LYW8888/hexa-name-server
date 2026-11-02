@@ -26,11 +26,6 @@ async function generate(page, options = {}) {
   await page.locator("#namingForm button[type=submit]").click();
   await expect(page.locator("#cards .card")).toHaveCount(3);
 }
-async function downloaded(page, selector = "#downloadReport") {
-  const pending = page.waitForEvent("download");
-  await page.locator(selector).click();
-  return readFile(await (await pending).path(), "utf8");
-}
 
 for (const width of [1280, 390]) {
   test(`首次预产期起名一页填写、一次生成 ${width}px`, async ({ page }) => {
@@ -43,7 +38,7 @@ for (const width of [1280, 390]) {
     page.on("request", request => { if (request.url().endsWith("/api/analyze")) calls++; });
     await fillInfo(page);
     const request = page.waitForRequest("**/api/analyze");
-    await page.getByRole("button", { name: "生成名字方案 ✦", exact: true }).click();
+    await page.getByRole("button", { name: "生成名字提案 ✦", exact: true }).click();
     const input = (await request).postDataJSON();
     await expect(page.locator("#cards .card")).toHaveCount(3);
     expect(calls).toBe(1);
@@ -54,18 +49,12 @@ for (const width of [1280, 390]) {
     await expect(page.locator("#namingForm")).not.toContainText("下一步");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   });
-  test(`已出生资料直接生成，结果及报告独立 ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 950 }); await page.goto("/");
-    const response = page.waitForResponse("**/api/analyze");
-    await generate(page, { scenario: "born", date: "2024-02-04", time: "16:27" });
-    const data = await (await response).json();
-    expect(data.analysis.bazi.reference).toBe(false);
-    await expect(page.locator("[name=dueDate]")).toHaveCount(0);
-    await expect(page.locator("#summary")).toContainText("新生儿起名 · 已出生");
-    await expect(page.locator(".boundary-notice")).toContainText("出生时刻");
-    const report = await downloaded(page);
-    expect(report).toContain("实际出生信息：2024-02-04 16:27");
-    expect(report).not.toContain("预产期参考四柱");
+  test(`已出生起名只返回免费名字提案 ${width}px`, async ({page})=>{
+    await page.setViewportSize({width,height:950});await page.goto('/');
+    const pending=page.waitForResponse('**/api/analyze');await generate(page,{scenario:'born',date:'2024-02-04',time:'16:27'});
+    const data=await (await pending).json();expect(data.analysis).toMatchObject({mode:'born',access:'proposal_only'});expect(data.analysis).not.toHaveProperty('bazi');
+    await expect(page.locator('[name=dueDate]')).toHaveCount(0);await expect(page.locator('#summary')).toContainText('新生儿起名 · 已出生');
+    await expect(page.locator('#downloadReport')).toHaveCount(0);
   });
   test(`改名自动识别复姓、先报告再一次推荐 ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 950 }); await page.goto("/");
@@ -79,31 +68,25 @@ for (const width of [1280, 390]) {
     await expect(page.locator("#cards .card")).toHaveCount(0);
     expect(calls).toEqual(["/api/name-review"]);
     await expect(page.locator("#currentReviewTitle")).toBeFocused();
-    await expect(page.getByRole("button", { name: "根据这份报告推荐新名字", exact: true })).toBeInViewport();
-    await page.getByRole("button", { name: "根据这份报告推荐新名字", exact: true }).click();
+    await expect(page.getByRole("button", { name: "查看改名提案", exact: true })).toBeInViewport();
+    await page.getByRole("button", { name: "查看改名提案", exact: true }).click();
     await expect(page.locator("#cards .card")).toHaveCount(3);
     expect(calls).toEqual(["/api/name-review", "/api/analyze"]);
     await expect(page.locator("#summary")).toContainText("改名方案");
     await expect(page.locator("#summary")).not.toContainText("新生儿");
     expect(await page.locator("#cards h3").allTextContents()).not.toContain("欧阳明哲");
-    const report = await downloaded(page);
-    expect(report.indexOf("## 现用姓名分析")).toBeLessThan(report.indexOf("## 改名候选"));
-    expect(report).toContain("现用姓名：欧阳明哲");
+    await expect(page.locator("#formNameReview")).toContainText("完整现名分析");
+    await expect(page.locator("#downloadReport")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   });
-  test(`古籍原句、六维与报告有据可查 ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 950 }); await page.goto("/");
-    const response = page.waitForResponse("**/api/analyze"); await generate(page);
-    const result = await (await response).json(); expect(result.analysis.corpus.character_records).toBe(3636);
-    expect(result.analysis.available_candidate_count).toBeGreaterThan(65);
-    const card = page.locator("#cards .card").first();
-    await expect(card.locator(".card-status")).toHaveText("原句已对照");
-    await card.locator(".literary-citations > summary").click();
-    await expect(card.locator("blockquote").first()).toHaveText(result.candidates[0].citations[0].quote);
-    await card.locator(".name-evidence > summary").click();
-    await expect(card.locator(".name-evidence")).toContainText("典故出处");
-    const report = await downloaded(page);
-    for (const value of ["literary-match-v3", "文件SHA-256", "取字方式", "逐字康熙笔画", "全名读音", "经典原文与计算方法"]) expect(report).toContain(value);
+  test(`免费接口和页面均不包含完整报告 ${width}px`,async({page})=>{
+    await page.setViewportSize({width,height:950});await page.goto('/');const pending=page.waitForResponse('**/api/analyze');await generate(page);
+    const value=await(await pending).json();expect(value.analysis.access).toBe('proposal_only');
+    for(const field of ['bazi','mingli','gua','source_audit','name_review','naming_reference']) expect(value.analysis).not.toHaveProperty(field);
+    for(const item of value.candidates)expect(Object.keys(item).sort()).toEqual(['given','meaning','name','pinyin']);
+    await expect(page.locator('#cards details')).toHaveCount(0);await expect(page.locator('#downloadReport')).toHaveCount(0);
+    await expect(page.locator('#reportRequest')).toContainText('LCEX511');await expect(page.locator('#reportRequest')).toContainText('19437771');
+    expect((await page.request.get('/api/reports')).status()).toBe(404);
   });
 }
 
@@ -148,10 +131,10 @@ test("改名分析失败可重试，出生资料变更后必须重新分析", as
   await page.locator("button[type=submit]").click(); await expect(page.locator("#formMessage")).toContainText("无法连接");
   await page.unroute("**/api/name-review", abort); await page.locator("button[type=submit]").click(); await expect(page.locator("#formNameReview")).toBeVisible();
   await page.locator("[name=birthTime]").fill("13:48"); await expect(page.locator(".review-stale")).toBeVisible();
-  await expect(page.getByRole("button", { name: "根据这份报告推荐新名字" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "查看改名提案" })).toHaveCount(0);
   const response = page.waitForResponse("**/api/name-review"); await page.getByRole("button", { name: "重新分析现用姓名", exact: true }).click();
-  expect((await (await response).json()).analysis.name_review.findings.at(-1).detail).toContain("13:48");
-  await page.getByRole("button", { name: "根据这份报告推荐新名字", exact: true }).click(); await expect(page.locator("#cards .card")).toHaveCount(3);
+  const updated=await response;expect(updated.request().postDataJSON().birthTime).toBe("13:48");expect((await updated.json()).analysis.review_completed).toBe(true);
+  await page.getByRole("button", { name: "查看改名提案", exact: true }).click(); await expect(page.locator("#cards .card")).toHaveCount(3);
 });
 
 test("现名报告可重复查看且不重复请求，未来偏好不阻挡分析", async ({ page }) => {
@@ -160,7 +143,7 @@ test("现名报告可重复查看且不重复请求，未来偏好不阻挡分�
   let requests = 0; page.on("request", r => { if (r.url().endsWith("/api/name-review")) requests++; });
   await page.locator("button[type=submit]").click(); await expect(page.locator("#formNameReview")).toBeVisible();
   await page.locator("button[type=submit]").click(); expect(requests).toBe(1);
-  await page.getByRole("button", { name: "根据这份报告推荐新名字", exact: true }).click(); await expect(page.locator("#formMessage")).toContainText("冲突"); await expect(page.locator("[name=requiredChars]")).toBeFocused();
+  await page.getByRole("button", { name: "查看改名提案", exact: true }).click(); await expect(page.locator("#formMessage")).toContainText("冲突"); await expect(page.locator("[name=requiredChars]")).toBeFocused();
 });
 
 test("识别的姓氏可修正，修改名字后保留明确的姓氏设置", async ({ page }) => {
@@ -172,14 +155,14 @@ test("识别的姓氏可修正，修改名字后保留明确的姓氏设置", as
 
 test("切换到改名立即收起新生儿旧方案和下载入口", async ({ page }) => {
   await page.goto("/"); await generate(page); await selectScenario(page, "rename");
-  await expect(page.locator("#cards .card")).toHaveCount(0); await expect(page.locator("#downloadReport")).toBeDisabled(); await expect(page.locator("#summary")).not.toContainText("新生儿");
+  await expect(page.locator("#cards .card")).toHaveCount(0); await expect(page.locator("#downloadReport")).toHaveCount(0); await expect(page.locator("#summary")).toHaveCount(0);
 });
 
 test("修改偏好需要应用，失败保留旧结果并可重试", async ({ page }) => {
   await page.goto("/"); await generate(page); const names = await page.locator("#cards h3").allTextContents();
   await page.getByRole("button", { name: "调整偏好", exact: true }).first().click(); await expect(page.locator("#preferencesTitle")).toBeFocused(); await page.locator("[name=likedChars]").fill("安");
   await expect(page.getByRole("region", { name: "尚未应用的修改" })).toBeVisible(); const abort = route => route.abort(); await page.route("**/api/analyze", abort);
-  await page.getByRole("button", { name: "应用修改并生成", exact: true }).click(); await expect(page.locator("#formMessage")).toContainText("无法连接"); expect(await page.locator("#cards h3").allTextContents()).toEqual(names); await expect(page.locator("#downloadReport")).toBeEnabled();
+  await page.getByRole("button", { name: "应用修改并生成", exact: true }).click(); await expect(page.locator("#formMessage")).toContainText("无法连接"); expect(await page.locator("#cards h3").allTextContents()).toEqual(names); await expect(page.locator("#downloadReport")).toHaveCount(0);
   await page.unroute("**/api/analyze", abort); const request = page.waitForRequest("**/api/analyze"); await page.getByRole("button", { name: "应用修改并生成", exact: true }).click(); expect((await request).postDataJSON().likedChars).toBe("安"); await expect(page.getByRole("region", { name: "尚未应用的修改" })).toHaveCount(0);
 });
 
@@ -211,7 +194,7 @@ test("必用字与避讳生效，冲突展开定位且旧结果保留", async ({
 });
 
 test("未覆盖必用字返回空候选，修改入口直接定位", async ({ page }) => {
-  await page.goto("/"); await fillInfo(page); await openDetail(page, ".naming-constraints"); await page.locator("[name=requiredChars]").fill("龘"); await page.locator("button[type=submit]").click(); await expect(page.locator("#cards .empty-result")).toContainText("龘"); await expect(page.locator("#downloadReport")).toBeDisabled();
+  await page.goto("/"); await fillInfo(page); await openDetail(page, ".naming-constraints"); await page.locator("[name=requiredChars]").fill("龘"); await page.locator("button[type=submit]").click(); await expect(page.locator("#cards .empty-result")).toContainText("龘"); await expect(page.locator("#downloadReport")).toHaveCount(0);
   await page.getByRole("button", { name: "调整必用字或避讳", exact: true }).click(); await expect(page.locator("[name=requiredChars]")).toBeFocused();
 });
 
@@ -221,22 +204,21 @@ test("单字必用只有一个结果，看完不循环", async ({ page }) => {
 
 test("五格严格筛选与未知笔画可以调整", async ({ page }) => {
   await page.goto("/"); await fillInfo(page); await openDetail(page, ".naming-constraints"); await page.locator("[name=numerologyMode]").selectOption("strict");
-  let response = page.waitForResponse("**/api/analyze"); await page.locator("button[type=submit]").click(); expect((await (await response).json()).candidates.every(x => x.numerology.strict_pass)).toBeTruthy(); await expect(page.locator("#cards .card")).toHaveCount(3);
+  let response = page.waitForResponse("**/api/analyze"); await page.locator("button[type=submit]").click(); expect((await (await response).json()).candidates.every(x => !x.numerology)).toBeTruthy(); await expect(page.locator("#cards .card")).toHaveCount(3);
   await page.locator("[name=requiredChars]").fill("清"); await page.locator("button[type=submit]").click(); await expect(page.locator("#cards .empty-result")).toBeVisible();
   await page.getByRole("button", { name: "调整数理筛选", exact: true }).click(); await expect(page.locator("[name=numerologyMode]")).toBeFocused(); await page.locator("[name=numerologyMode]").selectOption("off"); await page.locator("button[type=submit]").click(); await expect(page.locator("#cards .card")).toHaveCount(3);
 });
 
 test("多音姓读法贯穿生成和报告", async ({ page }) => {
-  await page.goto("/"); await fillInfo(page, { surname: "单" }); await openDetail(page, ".family-options"); await page.locator("[name=surnameReading]").fill("dān"); const response = page.waitForResponse("**/api/analyze"); await page.locator("button[type=submit]").click(); expect((await (await response).json()).candidates.every(x => x.pronunciation.evaluation.full_pinyin.startsWith("dān "))).toBeTruthy(); await expect(page.locator("#cards .name-full-reading").first()).toContainText("dān");
+  await page.goto("/"); await fillInfo(page, { surname: "单" }); await openDetail(page, ".family-options"); await page.locator("[name=surnameReading]").fill("dān"); const response = page.waitForResponse("**/api/analyze"); await page.locator("button[type=submit]").click(); expect((await (await response).json()).candidates.every(x => x.pinyin.startsWith("dān "))).toBeTruthy(); await expect(page.locator("#cards .pinyin").first()).toContainText("dān");
 });
 
-for (const width of [1280, 390]) test(`真太阳时、旺衰与经典依据保留 ${width}px`, async ({ page }) => {
-  await page.setViewportSize({ width, height: 950 }); await page.goto("/"); await fillInfo(page, { scenario: "born", date: "2024-02-10", time: "23:05" });
-  await page.locator("[name=place]").fill("喀什"); await page.getByRole("button", { name: /北京时间 · 调整/ }).click(); await expect(page.locator("[name=zone]")).toBeFocused(); await page.locator("[name=timeBasis]").selectOption("apparent_solar"); await expect(page.locator("[name=longitude]")).toHaveValue("75.99"); await expect(page.locator("select[name=locationId]")).toHaveCount(0); await page.locator("button[type=submit]").click(); await expect(page.locator("#cards .card")).toHaveCount(3);
-  await expect(page.getByRole("region", { name: "排盘时间修正" })).toContainText("23:05:00"); await expect(page.getByRole("region", { name: "排盘时间修正" })).toContainText("日柱、时柱有变化");
-  const area = page.getByRole("region", { name: "格局旺衰与喜用参考" }); await area.locator(".classical-evidence > summary").click(); await expect(area.locator(".classical-evidence")).toContainText("15 处录文已核对");
-  await expect(page.locator("#summary .time-basis-note")).toContainText("真太阳时已应用"); await expect(page.locator("#summary .time-basis-note")).toContainText("喀什");
-  const report = await downloaded(page); for (const word of ["真太阳钟", "75.99", "城市中心近似经度（喀什）", "四柱分析：", "扶抑喜用参考", "经典原文与计算方法"]) expect(report).toContain(word);
+for(const width of [1280,390]) test(`真太阳时选项参与请求但完整依据由后台交付 ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:950});await page.goto('/');await fillInfo(page,{scenario:'born',date:'2024-02-10',time:'23:05',place:'喀什'});
+  await openDetail(page,'.time-settings');await page.locator('[name=timeBasis]').selectOption('apparent_solar');await expect(page.locator('[name=longitude]')).toHaveValue('75.99');
+  const pending=page.waitForResponse('**/api/analyze');await page.locator('button[type=submit]').click();const response=await pending;
+  expect(response.request().postDataJSON()).toMatchObject({timeBasis:'apparent_solar',longitude:'75.99',locationId:'kashgar'});expect((await response.json()).analysis).not.toHaveProperty('bazi');
+  await expect(page.locator('#cards .card')).toHaveCount(3);await expect(page.locator('#summary .time-basis-note')).toHaveCount(0);
 });
 
 test("真太阳时缺失经度会展开定位，输入完整可继续", async ({ page }) => {
@@ -249,15 +231,14 @@ for (const scenario of ["due_date", "born", "rename"]) test(`民用时间不填�
   await expect(page.locator("#placeHelp")).toContainText("可留空");
   if (scenario === "rename") {
     await page.locator("button[type=submit]").click(); await expect(page.locator("#formNameReview")).toBeVisible();
-    await expect(page.locator(".simple-review .time-basis-note")).toContainText("按民用时间排盘");
+    await expect(page.locator("#formNameReview")).toContainText("现名分析已完成");
   }
   const pending=page.waitForRequest("**/api/analyze");
-  if (scenario === "rename") await page.getByRole("button", {name:"根据这份报告推荐新名字",exact:true}).click();
+  if (scenario === "rename") await page.getByRole("button", {name:"查看改名提案",exact:true}).click();
   else await page.locator("button[type=submit]").click();
   const data=(await pending).postDataJSON(); expect(data.place).toBe(""); expect(data).not.toHaveProperty("longitude"); expect(data).not.toHaveProperty("locationId");
-  await expect(page.locator("#cards .card")).toHaveCount(3); await expect(page.locator("#summary")).toContainText("地点未填写");
-  await expect(page.locator("#summary .time-basis-note")).toContainText("不用于经度修正");
-  expect(await downloaded(page)).toContain("出生地点：未填写");
+  await expect(page.locator("#cards .card")).toHaveCount(3); await expect(page.locator("#summary")).toContainText("免费提案");
+  await expect(page.locator("#downloadReport")).toHaveCount(0);
 });
 
 test("城市只选一次，更换地点清除旧经度，手动0经度可用", async ({ page }) => {
@@ -270,8 +251,8 @@ test("城市只选一次，更换地点清除旧经度，手动0经度可用", a
   await page.locator("button[type=submit]").click(); await expect(page.locator("[name=longitude]")).toBeFocused();
   await page.locator("[name=longitude]").fill("0"); const pending=page.waitForResponse("**/api/analyze"); await page.locator("button[type=submit]").click();
   await expect(page.locator("#placeHelp")).toContainText("已填写手动经度0°E");
-  const value=await (await pending).json(); expect(value.analysis.bazi.time_correction).toMatchObject({applied:true,longitude:0,location:{coordinate_source:"manual"}});
-  await expect(page.locator("#cards .card")).toHaveCount(3); await expect(page.locator("#summary .time-basis-note")).toContainText("0°E"); await expect(page.locator("#summary .time-basis-note")).toContainText("手动填写经度");
+  const response=await pending;expect(response.request().postDataJSON().longitude).toBe("0");const value=await response.json();expect(value.analysis.access).toBe("proposal_only");
+  await expect(page.locator("#cards .card")).toHaveCount(3); await expect(page.locator("#summary .time-basis-note")).toHaveCount(0);
 });
 
 test("真太阳时切回民用时间时不提交经度，重新启用仍保留调整", async ({ page }) => {
@@ -287,10 +268,9 @@ test("改名换城市后重新分析，并把同一修正依据用于推荐", as
   await page.locator("button[type=submit]").click(); await expect(page.locator("#formNameReview")).toBeVisible();
   await page.locator("[name=place]").fill("成都"); await expect(page.locator(".review-stale")).toBeVisible();
   const pending=page.waitForResponse("**/api/name-review"); await page.getByRole("button",{name:"重新分析现用姓名",exact:true}).click();
-  const review=await (await pending).json(); expect(review.analysis.bazi.time_correction.location.label).toBe("成都");
-  const recommendation=page.waitForResponse("**/api/analyze"); await page.getByRole("button",{name:"根据这份报告推荐新名字",exact:true}).click();
-  const value=await (await recommendation).json(); expect(value.analysis.bazi.time_correction).toEqual(review.analysis.bazi.time_correction);
-  await expect(page.locator("#summary .time-basis-note")).toContainText("成都");
+  const response=await pending;expect(response.request().postDataJSON()).toMatchObject({place:"成都",longitude:"104.07"});const review=await response.json();expect(review.analysis.review_completed).toBe(true);
+  const recommendation=page.waitForResponse("**/api/analyze"); await page.getByRole("button",{name:"查看改名提案",exact:true}).click();
+  const selected=await recommendation;expect(selected.request().postDataJSON()).toMatchObject({place:"成都",longitude:"104.07"});expect((await selected.json()).analysis).not.toHaveProperty("bazi");
 });
 
 for (const [status, body, text] of [[404, "missing", "未接通起名接口"], [502, "<html>bad gateway</html>", "暂时不可用"], [200, "<html>static page</html>", "无法识别"]]) test(`接口错误${status}-${text}可见并支持重试`, async ({ page }) => {
@@ -370,4 +350,26 @@ test("宝宝与改名对象的出生资料分别保留，不自动混填", async
   await page.locator("[name=birthDate]").fill("1998-08-13"); await page.locator("[name=birthTime]").fill("13:48"); await page.locator("[name=place]").fill("台北");
   await selectScenario(page, "born"); await expect(page.locator("[name=birthDate]")).toHaveValue("2024-01-05"); await expect(page.locator("[name=place]")).toHaveValue("杭州"); await expect(page.locator("[name=gender]")).toHaveValue("male");
   await selectScenario(page, "rename"); await expect(page.locator("[name=birthDate]")).toHaveValue("1998-08-13"); await expect(page.locator("[name=zone]")).toHaveValue("Asia/Taipei");
+});
+
+test('完整报告须主动同意登记，咨询复制不附带出生资料',async({page})=>{
+  await page.route('**/api/report-service',route=>route.fulfill({json:{available:true}}));
+  await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.__copied=value;}}}));
+  let input, calls=0;const id='11111111-1111-4111-8111-111111111111';
+  await page.route('**/api/report-requests',async route=>{calls++;input=route.request().postDataJSON();await route.fulfill({json:{id,status:'new',reused:false}});});
+  await page.goto('/');await generate(page);const section=page.locator('#reportRequest');
+  const submit=section.getByRole('button',{name:'登记资料，获取申请编号'});await expect(submit).toBeDisabled();expect(calls).toBe(0);
+  await section.getByRole('button',{name:'复制微信号'}).click();expect(await page.evaluate(()=>window.__copied)).toBe('LCEX511');
+  await section.getByRole('checkbox').check();await submit.click();await expect(section.locator('code')).toHaveText(id);expect(calls).toBe(1);
+  expect(input.consent).toBe(true);expect(input.input.dueDate).toBe('2099-12-23');expect(input.expected_names).toEqual(await page.locator('#cards h3').allTextContents());expect(input).not.toHaveProperty('analysis');expect(input).not.toHaveProperty('report');
+  await section.getByRole('button',{name:'复制申请编号与名字'}).click();const copied=await page.evaluate(()=>window.__copied);expect(copied).toContain(id);expect(copied).not.toContain('2099');expect(copied).not.toContain('dueDate');
+});
+
+test('登记失败可重试并复用编号，修改偏好后须应用才可登记',async({page})=>{
+  await page.route('**/api/report-service',route=>route.fulfill({json:{available:true}}));const inputs=[];
+  await page.route('**/api/report-requests',async route=>{inputs.push(route.request().postDataJSON());await route.fulfill(inputs.length===1?{status:503,json:{error:'登记暂时不可用'}}:{json:{id:'22222222-2222-4222-8222-222222222222'}});});
+  await page.goto('/');await generate(page);const section=page.locator('#reportRequest');await section.getByRole('checkbox').check();await section.getByRole('button',{name:'登记资料，获取申请编号'}).click();await expect(section.getByRole('alert')).toContainText('登记暂时不可用');
+  await section.getByRole('button',{name:'登记资料，获取申请编号'}).click();await expect(section.locator('code')).toBeVisible();expect(inputs[0].request_key).toBe(inputs[1].request_key);
+  await page.getByRole('button',{name:'调整偏好',exact:true}).click();await page.locator('[name=likedChars]').fill('安');await expect(section.getByRole('checkbox')).toHaveCount(0);await expect(section.locator('code')).toHaveCount(0);
+  await page.getByRole('button',{name:'应用修改并生成',exact:true}).click();await expect(page.locator('.draft-notice')).toHaveCount(0);await expect(section.getByRole('checkbox')).toBeVisible();await expect(section.getByRole('checkbox')).not.toBeChecked();
 });

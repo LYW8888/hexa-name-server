@@ -18,6 +18,7 @@ from django.utils.crypto import constant_time_compare, salted_hmac
 from django.views.decorators.http import require_GET, require_POST
 from . import sms
 from .models import CustomerProfile, SmsChallenge, ServiceRecord, CustomerEvent, Gate
+from public_proposals import project
 
 INPUT_FIELDS = {'surname','mode','purpose','gender','zone','dueDate','dueTime','birthDate','birthTime',
                 'algorithm','requiredChars','tabooChars','tabooHomophones','surnameReading','numerologyMode','length','candidateCount','place','parents','currentName','meaning','likedChars','avoidedChars','styles','variant','elementPreference','honorParents','timeBasis','longitude','locationId'}
@@ -217,7 +218,7 @@ def save_record(request):
         try: report = analyze(payload)
         except ValueError: return error('本次出生信息或命名偏好未通过校验，请修改后重试。')
         if not report['candidates']: return error('当前条件没有匹配候选，请调整后再保存。')
-        envelope = {'version':1,'kind':'free_preview','data':payload,**report}
+        envelope = {'version':2,'kind':'free_proposal','data':payload,**project(report)}
         encrypted = Fernet(settings.REPORT_KEY.encode()).encrypt(json.dumps(envelope,ensure_ascii=False).encode())
         record = ServiceRecord.objects.create(customer=request.customer,request_key=key,input_hash=payload_hash,
                     encrypted_report=encrypted,candidate_count=len(report['candidates']),expires_at=timezone.now()+timedelta(days=settings.REPORT_RETENTION_DAYS))
@@ -233,7 +234,8 @@ def report(request, record_id):
     if not row: return error('记录不存在或已过期。',404)
     result = json.loads(Fernet(settings.REPORT_KEY.encode()).decrypt(bytes(row.encrypted_report)))
     CustomerEvent.objects.create(customer=request.customer,action='report.retrieved',record_id=row.pk)
-    return JsonResponse({'report':result})
+    # Project legacy snapshots too: old saved free records do not grant report access.
+    return JsonResponse({'report': {'version':2, 'kind':'free_proposal', 'data':result['data'], **project(result)}})
 
 
 @require_POST

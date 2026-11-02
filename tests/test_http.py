@@ -98,8 +98,9 @@ class HttpHandlerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn('no-store', headers['Cache-Control'])
         data = json.loads(body)
-        self.assertEqual(len(data['analysis']['bazi']['pillars']), 4)
-        self.assertEqual(data['candidates'][0]['pronunciation']['source']['library'], 'pypinyin')
+        self.assertEqual(data['analysis']['access'], 'proposal_only')
+        self.assertNotIn('bazi',data['analysis'])
+        self.assertEqual(set(data['candidates'][0]),{'name','given','pinyin','meaning'})
         for raw in (b'[]', b'null', b'{', json.dumps({**valid, 'styles': [{}]}).encode()):
             with self.subTest(body=raw):
                 status, _, body = self.request('POST', '/api/analyze', raw, {'Content-Type': 'application/json'})
@@ -118,7 +119,9 @@ class HttpHandlerTest(unittest.TestCase):
         self.assertIn('no-store',headers['Cache-Control'])
         value = json.loads(body)
         self.assertEqual(value['candidates'],[])
-        self.assertEqual(value['analysis']['name_review']['full_name'],'李景和')
+        self.assertEqual(value['analysis']['current_name'],'李景和')
+        self.assertTrue(value['analysis']['review_completed'])
+        self.assertNotIn('name_review',value['analysis'])
         for data in ({**payload,'currentName':''},{**payload,'purpose':'newborn'},{**payload,'dueDate':'2099-01-01'}):
             with self.subTest(data=data):
                 status, _, _ = self.request('POST','/api/name-review',json.dumps(data),{'Content-Type':'application/json'})
@@ -155,7 +158,36 @@ class HttpHandlerTest(unittest.TestCase):
                 status, _, body = self.request('POST', '/api/analyze', json.dumps({**base, **extra}), {'Content-Type':'application/json'})
                 self.assertEqual(status, 200)
                 analysis = json.loads(body)['analysis']
-                self.assertEqual(analysis['bazi']['time_correction']['applied'], applied)
-                if applied:
-                    self.assertEqual(analysis['zone'], 'Asia/Taipei')
-                    self.assertEqual(analysis['bazi']['time_correction']['longitude'], 121.57)
+                self.assertEqual(analysis['access'],'proposal_only')
+                self.assertNotIn('bazi',analysis)
+
+    def test_report_access_cannot_be_obtained_by_flags_headers_or_old_download_routes(self):
+        payload={'surname':'林','dueDate':'2099-01-01','algorithm':'literary_v3','includeReport':True,'paid':True,'role':'owner'}
+        status,_,body=self.request('POST','/api/analyze?full=1',json.dumps(payload),{'Content-Type':'application/json','X-Role':'owner'})
+        self.assertEqual(status,200)
+        value=json.loads(body)
+        self.assertNotIn('bazi',value['analysis'])
+        self.assertNotIn('ranking',value['candidates'][0])
+        for path in ('/api/reports','/api/report-requests/11111111-1111-4111-8111-111111111111','/reports.sqlite3','/report_service.py'):
+            self.assertEqual(self.request('GET',path)[0],404)
+
+    def test_report_registration_requires_only_supported_fields_and_same_origin(self):
+        from unittest.mock import patch
+        with patch('server.report_client.call',return_value={'id':'receipt','status':'new'}) as call:
+            args={'request_key':'test','consent':True,'input':{},'expected_names':['林安']}
+            status,_,_=self.request('POST','/api/report-requests',json.dumps(args),{'Content-Type':'application/json','Origin':'https://other.invalid'})
+            self.assertEqual(status,403);call.assert_not_called()
+            status,_,_=self.request('POST','/api/report-requests',json.dumps({**args,'report':{}}),{'Content-Type':'application/json'})
+            self.assertEqual(status,400);call.assert_not_called()
+            status,_,body=self.request('POST','/api/report-requests',json.dumps(args),{'Content-Type':'application/json'})
+            self.assertEqual(status,201);self.assertEqual(json.loads(body)['id'],'receipt')
+            self.assertEqual(call.call_args.args[1]['client'],'127.0.0.1')
+
+    def test_source_header_is_trusted_only_behind_explicit_loopback_proxy_configuration(self):
+        from unittest.mock import patch
+        args={'request_key':'test','consent':True,'input':{},'expected_names':['林安']}
+        with patch('server.report_client.call',return_value={'id':'receipt'}) as call:
+            for trust, expected in (('0','127.0.0.1'),('1','203.0.113.8')):
+                with patch.dict('os.environ',{'XUMING_TRUST_PROXY':trust}):
+                    self.request('POST','/api/report-requests',json.dumps(args),{'Content-Type':'application/json','X-Real-IP':'203.0.113.8'})
+                    self.assertEqual(call.call_args.args[1]['client'],expected)

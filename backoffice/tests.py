@@ -12,6 +12,26 @@ PASSWORD = 'Test-Only-Long-Passphrase-684!'
 
 
 class BackofficeTest(TestCase):
+    @patch('backoffice.views.report_client.call')
+    def test_reports_require_owner_totp_and_never_open_to_other_roles(self, call):
+        reference='11111111-1111-4111-8111-111111111111'
+        self.assertEqual(self.client.get('/api/reports').status_code,401)
+        for role in ('support','finance','delivery'):
+            self.as_role(role)
+            self.assertEqual(self.client.get('/api/reports').status_code,403)
+            self.assertEqual(self.client.get('/api/reports/'+reference).status_code,403)
+            self.assertEqual(self.post('/api/reports/'+reference+'/deliver').status_code,403)
+        call.assert_not_called()
+
+    @patch('backoffice.views.report_client.call', return_value={'requests':[]})
+    def test_owner_reports_forward_only_fixed_actions_and_keep_audit(self, call):
+        user=self.as_role('owner')
+        self.assertEqual(self.client.get('/api/reports').status_code,200)
+        call.assert_called_with('list',{'query':''},f'staff:{user.pk}',__import__('django.conf',fromlist=['settings']).settings.REPORTS_SOCKET)
+        reference='11111111-1111-4111-8111-111111111111'
+        self.assertEqual(self.post('/api/reports/'+reference+'/delete',{'sql':'DELETE'}).status_code,400)
+        self.assertEqual(self.post('/api/reports/'+reference+'/deliver').status_code,200)
+        self.assertTrue(AuditEvent.objects.filter(action='reports.deliver',subject=reference).exists())
     @classmethod
     def setUpTestData(cls):
         cls.accounts = {}

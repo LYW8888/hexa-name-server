@@ -10,8 +10,6 @@ import React, {
 import { formRequest, inferSurname, nameReviewKey } from "./form-state.js";
 import { longitudeText, matchCity, withPlace } from "./location-state.js";
 import { requestNameReview } from "./analysis.js";
-import NameReview from "./NameReview.jsx";
-import { Chart, ClockSummary } from "./Results.jsx";
 import LOCATIONS from "../../data/locations.json";
 import { friendlyError, getClockInZone } from "./utils.js";
 
@@ -214,8 +212,8 @@ export default forwardRef(function NamingForm(
     <div className="intro">
       <p className="eyebrow">A NAME BEGINS HERE</p>
       <h2>填好基本信息，<br />让名字有个好开始。</h2>
-      <p>偏好可以以后再调。先看看适合的名字与依据。</p>
-      <div className="simple-flow-note"><b>{rename ? "先了解现名，再推荐新名" : "一页填写，直接生成"}</b><span>{rename ? "填写资料 → 现名报告 → 推荐改名" : "填好姓氏和时间即可，城市和偏好按需补充。"}</span></div>
+      <p>偏好可以以后再调，先看看喜欢的名字方向。</p>
+      <div className="simple-flow-note"><b>{rename ? "先分析现名，再推荐新名" : "一页填写，直接生成"}</b><span>{rename ? "填写资料 → 现名分析 → 改名提案" : "填好姓氏和时间即可，城市和偏好按需补充。"}</span></div>
     </div>
     <form id="namingForm" ref={formRef} noValidate aria-busy={locked} onChange={event => {
       if (invalidField.current?.name === event.target.name) clearError();
@@ -286,17 +284,14 @@ export default forwardRef(function NamingForm(
         </fieldset>
       </details>
       <div className="simple-submit">
-        <button className="primary" type="submit" disabled={locked}>{reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看现名报告" : "分析现用姓名" : "生成名字方案 ✦"}</button>
+        <button className="primary" type="submit" disabled={locked}>{reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看分析状态" : "分析现用姓名" : "生成名字提案 ✦"}</button>
         <small>无需登录。资料不会自动保存。</small>
       </div>
-      {rename && review && <section className="simple-review" aria-label="现名报告与改名推荐">
-        <h3 id="currentReviewTitle" tabIndex={-1}>先看现名，再选新名</h3>
+      {rename && review && <section className="simple-review" aria-label="现名分析状态与改名推荐">
+        <h3 id="currentReviewTitle" tabIndex={-1}>先分析现名，再推荐改名</h3>
         {reviewCurrent ? <>
-          <p className="review-basis">分析依据：{dates.birthDate} {dates.birthTime} · {place || "地点未填写"}</p>
-          <NameReview review={review.payload.analysis.name_review} id="formNameReview" compact />
-          <ClockSummary chart={review.payload.analysis.bazi} />
-          <details className="review-chart"><summary>查看本次四柱与起卦依据</summary><Chart analysis={review.payload.analysis} id="reviewTraditionalBasis" /></details>
-          <div className="review-next"><button type="button" className="secondary" onClick={() => edit(0)}>修改资料</button><button type="button" className="primary" disabled={locked} onClick={() => generate(true)}>{busy ? "正在推荐…" : "根据这份报告推荐新名字"}</button></div>
+          <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来可免费查看改名提案。完整现名分析、出生依据与改名说明，请联系经营者获取。</p><a href="#reportRequest">了解完整报告与联系方式 ↗</a></div>
+          <div className="review-next"><button type="button" className="secondary" onClick={() => edit(0)}>修改资料</button><button type="button" className="primary" disabled={locked} onClick={() => generate(true)}>{busy ? "正在推荐…" : "查看改名提案"}</button></div>
         </> : <div className="review-stale"><p>姓名或出生资料已修改，请重新分析现名后继续。</p><button type="button" className="primary" disabled={locked} onClick={analyzeCurrentName}>重新分析现用姓名</button></div>}
       </section>}
       <p className="generation-progress" role="status" hidden={!locked}>{reviewBusy ? "正在整理现名分析与出生依据…" : "正在整理名字与取字依据…"}</p>

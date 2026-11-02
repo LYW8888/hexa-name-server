@@ -1,4 +1,6 @@
 :root {
+  --line:#dfd4c8;
+  --bg:#f6f2ed;
   font-family: Inter, "PingFang SC", "Noto Sans CJK SC", sans-serif;
   color: #302725;
   background: #f5f2ec;
@@ -439,3 +441,4 @@ td button {
     grid-template-columns: 1fr;
   }
 }
+.report-search{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:24px 0}.report-search label{flex:1;min-width:220px}.private-report{margin-top:28px;border-top:1px solid var(--line);padding-top:24px;min-width:0}.private-report-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.private-report-heading p{overflow-wrap:anywhere}.report-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.report-facts>div{padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:12px}.report-facts small,.report-facts b,.report-facts span{display:block;margin-bottom:7px;overflow-wrap:anywhere}.report-facts small,.report-facts span{font-size:12px}.report-preview{font:13px/1.9 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:650px;overflow:auto;padding:18px;background:#f7f9fa;border:1px solid var(--line);border-radius:12px}.report-admin-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}@media(max-width:600px){.report-facts{grid-template-columns:1fr}.report-search label{min-width:0;width:100%}.private-report-heading>.accent{width:100%}.report-preview{padding:12px;font-size:12px}}

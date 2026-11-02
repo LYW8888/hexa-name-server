@@ -89,7 +89,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
 valid = [r for r in results if r['ok']]
 invalid = [r for r in results if not r['ok']]
 scenarios = Counter(r['body']['analysis']['scenario'] for r in valid)
-purposes = Counter(r['body']['analysis']['purpose'] for r in valid)
+purposes = Counter(r['body']['analysis']['purpose_code'] for r in valid)
 counts = Counter(r['body']['analysis']['candidate_count'] for r in valid)
 errors = Counter(r['body'].get('error', 'unknown') for r in invalid)
 lengths = Counter(len(r['body']['candidates']) for r in valid)
@@ -100,7 +100,7 @@ report = {
     'actual_candidate_counts': dict(counts), 'returned_candidate_lengths': dict(lengths),
     'errors': dict(errors),
     'first_successes': [
-        {'purpose': r['body']['analysis']['purpose'], 'scenario': r['body']['analysis']['scenario'], 'candidates': [x['name'] for x in r['body']['candidates'][:3]]}
+        {'purpose': r['body']['analysis']['purpose_code'], 'scenario': r['body']['analysis']['scenario'], 'candidates': [x['name'] for x in r['body']['candidates'][:3]]}
         for r in valid[:5]
     ],
 }

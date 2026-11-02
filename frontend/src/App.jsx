@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Header, Hero, Plans, Method, Footer } from "./Layout.jsx";
 import NamingForm from "./NamingForm.jsx";
-import Results from "./Results.jsx";
+import Results from "./ProposalResults.jsx";
+import ReportContact from "./ReportContact.jsx";
+import PRODUCT from "../../data/product.json";
 import Keepsake from "./Keepsake.jsx";
 import CustomerArea from "./CustomerArea.jsx";
 import SavedNames from "./SavedNames.jsx";
 import { requestKey, workflowId } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
-import { copyText, friendlyError, downloadReportFile } from "./utils.js";
+import { copyText, friendlyError } from "./utils.js";
 
 const DEFAULT_STATUS = "完成信息后，这里会出现可比较的名字方向。";
 function stored() {
@@ -57,7 +59,7 @@ export default function App() {
     [savedOpen, setSavedOpen] = useState(false),
     [selection, setSelection] = useState(null);
   const [counts, setCounts] = useState({}),
-    [product, setProduct] = useState(null),
+    [product, setProduct] = useState(PRODUCT),
     [message, setMessage] = useState("");
   const [session, setSession] = useState({ pages: [], index: 0, id: 0 }),
     [draft, setDraft] = useState(null),
@@ -212,18 +214,18 @@ export default function App() {
         requested = Number(data.candidateCount || 3);
       const prefix = isRegenerate
         ? `已换到第 ${Number(data.variant) + 1} 组，共 ${count} 个名字。`
-        : `已生成 ${count} 个方向，可加入比较，或展开卡片查看选字依据。`;
+        : `已生成 ${count} 个名字提案，可比较、收藏；完整报告请联系经营者。`;
       setStatus(
         count
           ? `${prefix}${count < requested ? `当前条件下，字库实际匹配 ${count} 个。` : ""}`
-          : "四柱已计算，当前条件下没有符合要求的候选。",
+          : "当前条件下没有符合要求的候选，请调整名字设置。",
       );
       if (!isRegenerate) scroll("#results");
       toast(
         count
           ? isRegenerate
             ? "已重新整理候选方向。"
-            : data.purpose === "rename" ? "改名方案已生成，可查看与现名的变化。" : "名字方案已生成，先收藏喜欢的方向。"
+            : data.purpose === "rename" ? "改名提案已生成，可以比较喜欢的名字。" : "名字提案已生成，先收藏喜欢的方向。"
           : "请调整避用字或名字字数后重试。",
         count && !isRegenerate ? "success" : "info",
       );
@@ -235,7 +237,7 @@ export default function App() {
       } else {
         setStatus(
           result?.candidates?.length
-            ? "本次修改未能生成，上一份方案仍可查看、收藏和下载。"
+            ? "本次修改未能生成，上一份名字提案仍可查看和收藏。"
             : "暂时无法生成方案。",
         );
         setMessage(friendlyError(error.message || ""));
@@ -247,7 +249,7 @@ export default function App() {
     }
   }
   function regenerate() {
-    if (!result?.analysis?.bazi) {
+    if (!result?.analysis) {
       formController.current?.resume();
       toast("先完成信息，就能生成名字方案。", "info");
       return;
@@ -358,31 +360,15 @@ export default function App() {
           }
           onPrevious={previousGroup}
           onRegenerate={regenerate}
-          onDownload={() =>
-            downloadReportFile(
-              result.data,
-              result.analysis,
-              result.candidates,
-              toast,
-            )
-          }
           onCopy={copy}
           onSave={save}
           onKeepsake={openKeepsake}
         />
+        <div className="wrap"><ReportContact result={!dirty ? result : null} contact={product.contact} toast={toast} /></div>
         <CustomerArea
           result={result}
           toast={toast}
           onSaved={showSaved}
-          onDownload={() =>
-            result &&
-            downloadReportFile(
-              result.data,
-              result.analysis,
-              result.candidates,
-              toast,
-            )
-          }
         />
         <Keepsake selection={selection} toast={toast} />
         <Plans product={product} toast={toast} />

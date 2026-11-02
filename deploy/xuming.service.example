@@ -9,6 +9,8 @@ Group=xuming
 WorkingDirectory=/opt/xuming/app
 Environment=HOST=127.0.0.1
 Environment=PORT=4173
+# Optional: socket path and proxy flag only; never put the report encryption key here.
+EnvironmentFile=-/etc/xuming/public.env
 ExecStart=/opt/xuming/venv/bin/python /opt/xuming/app/server.py
 Restart=on-failure
 RestartSec=3

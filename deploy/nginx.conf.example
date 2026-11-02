@@ -2,6 +2,7 @@
 # Obtain and renew certificates using the deployment's chosen ACME process.
 # Define this in the nginx http context; review real client IP handling for any CDN.
 limit_req_zone $binary_remote_addr zone=xuming_customer_sms:10m rate=2r/m;
+limit_req_zone $binary_remote_addr zone=xuming_reports:10m rate=3r/m;
 server {
     listen 80;
     server_name example.com;
@@ -16,6 +17,15 @@ server {
     client_max_body_size 64k;
     # No per-request access log; avoid retaining request URLs and user inputs.
     access_log off;
+    location = /api/report-requests {
+        limit_req zone=xuming_reports burst=5 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:4173;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
     # Enable customer locations after deploying the separate customer service.
     # Omit them for an anonymous-only naming site.
     location = /api/customer/request-code {
@@ -38,6 +48,7 @@ server {
         proxy_pass http://127.0.0.1:4173;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_connect_timeout 5s;
         proxy_read_timeout 30s;

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const load = () => import('../frontend/src/analysis.js');
-const complete = {analysis:{bazi:{pillars:[{},{},{},{}],day_master:{},element_counts:{},conventions:[],source:{}}},candidates:[]};
+const complete = {analysis:{access:'proposal_only',report_delivery:'operator'},candidates:[]};
 
 test('analysis accepts complete results and reports validation errors', async()=>{
  const {requestAnalysis}=await load();
@@ -10,7 +10,7 @@ test('analysis accepts complete results and reports validation errors', async()=
 });
 test('missing route, proxy HTML and incomplete data give actionable errors', async()=>{
  const {requestAnalysis}=await load();
- for(const [response,message] of [[new Response('not found',{status:404}),/未接通起名接口/],[new Response('blocked',{status:403}),/访问受限/],[new Response('<html>bad gateway</html>',{status:502}),/暂时不可用/],[new Response('<html>static page</html>'),/无法识别/],[new Response('{}'),/未返回完整方案/]]){
+ for(const [response,message] of [[new Response('not found',{status:404}),/未接通起名接口/],[new Response('blocked',{status:403}),/访问受限/],[new Response('<html>bad gateway</html>',{status:502}),/暂时不可用/],[new Response('<html>static page</html>'),/无法识别/],[new Response('{}'),/未返回完整名字提案/]]){
   await assert.rejects(requestAnalysis({}, {fetcher:async()=>response}),message);
  }
 });
@@ -29,9 +29,11 @@ test('scenario mismatch and missing original-name evidence cannot be displayed a
  const {requestAnalysis,requestNameReview}=await load();
  const data={purpose:'rename',mode:'born',currentName:'李景和'};
  await assert.rejects(requestAnalysis(data,{fetcher:async()=>new Response(JSON.stringify(complete))}),/场景与提交内容不一致/);
- const value={...complete,analysis:{...complete.analysis,purpose_code:'rename',mode:'born',current_name:'李景和'}};
- await assert.rejects(requestAnalysis(data,{fetcher:async()=>new Response(JSON.stringify(value))}),/未返回完整现名分析/);
- value.analysis.name_review={full_name:'李景和',findings:[{title:'结构',detail:'三字全名'}],directions:[]};value.analysis.phase='name_review';
+ const value={...complete,analysis:{...complete.analysis,purpose_code:'rename',mode:'born',current_name:'另一名字'}};
+ await assert.rejects(requestAnalysis(data,{fetcher:async()=>new Response(JSON.stringify(value))}),/未完成对应现名分析/);
+ value.analysis.current_name='李景和';value.analysis.review_completed=true;value.analysis.phase='name_review';
  await assert.rejects(requestNameReview(data,{fetcher:async()=>new Response(JSON.stringify({...value,analysis:{...value.analysis,phase:'recommendations'}}))}),/错误阶段/);
  let url;await requestNameReview(data,{fetcher:async(path)=>{url=path;return new Response(JSON.stringify(value));}});assert.equal(url,'/api/name-review');
 });
+
+test('public client rejects full analysis even if labelled as a proposal',async()=>{const {requestAnalysis}=await load();await assert.rejects(requestAnalysis({}, {fetcher:async()=>new Response(JSON.stringify({...complete,analysis:{...complete.analysis,bazi:{pillars:[]}}}))}),/错误的访问范围/);});

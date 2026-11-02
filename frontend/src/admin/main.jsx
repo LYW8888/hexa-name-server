@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
+import ReportsManager from "./ReportsManager.jsx";
 
 const roles = {
   owner: "经营者",
@@ -297,7 +298,7 @@ function App() {
   const tabs = [
     ["overview", "工作总览"],
     ...(user.role === "owner"
-      ? [["users", "员工与权限"]]
+      ? [["reports", "完整报告"], ["users", "员工与权限"]]
       : [["workspace", `${roles[user.role]}工作台`]]),
     ["audit", "操作记录"],
     ["password", "修改密码"],
@@ -357,6 +358,7 @@ function App() {
           </section>
         ) : (
           <>
+            {tab === "reports" && user.role === "owner" && <ReportsManager api={api} notify={setNotice} />}
             {tab === "overview" && (
               <>
                 <p className="muted">

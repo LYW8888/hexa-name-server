@@ -65,22 +65,23 @@ def check_site(base_url, timeout=10, expected_modules=None):
     # creates an account, saved report, payment or order.
     result=json_request('/api/analyze',{'algorithm':'literary_v3','surname':'林','mode':'due_date','dueDate':'2099-01-01','dueTime':'12:00','place':'杭州','gender':'unknown','length':2,'candidateCount':3})
     analysis=result.get('analysis')
-    chart=analysis.get('bazi') if isinstance(analysis,dict) else None
     candidates=result.get('candidates')
-    if not isinstance(chart,dict) or not isinstance(chart.get('pillars'),list) or len(chart['pillars'])!=4 or not isinstance(candidates,list) or len(candidates)!=3 or any(not isinstance(item,dict) or not isinstance(item.get('given'),str) or len(item['given'])!=2 for item in candidates):
-        raise CheckFailure('起名接口未返回完整四柱和所选字数的 3 个候选，请确认前后端来自同一提交。')
-    if analysis.get('algorithm')!='literary_v3' or analysis.get('ranking_version')!='literary-match-v3':
+    if not isinstance(analysis,dict) or analysis.get('access')!='proposal_only' or not isinstance(candidates,list) or len(candidates)!=3 or any(not isinstance(item,dict) or set(item)!={'name','given','pinyin','meaning'} or len(item['given'])!=2 for item in candidates):
+        raise CheckFailure('起名接口未返回限定范围的3个免费名字提案，请确认前后端来自同一提交。')
+    if any(key in analysis for key in ('bazi','mingli','gua','name_review','naming_reference')):
+        raise CheckFailure('免费接口仍暴露完整报告，请更新访问控制。')
+    if analysis.get('algorithm')!='literary_v3':
         raise CheckFailure('古籍取名v3算法尚未加载，请更新服务和参考资料库。')
-    if analysis.get('workflow',{}).get('id')!='newborn_due_date' or chart.get('reference') is not True:
+    if analysis.get('purpose_code')!='newborn' or analysis.get('mode')!='due_date':
         raise CheckFailure('预产期场景标识或时间依据错误，请更新后端服务。')
     # Also exercise the born and rename paths; no reports are persisted.
     born={'algorithm':'literary_v3','purpose':'newborn','mode':'born','surname':'李','birthDate':'1998-08-13','birthTime':'13:48','place':'河南南阳'}
     actual=json_request('/api/analyze',born)
-    if actual.get('analysis',{}).get('workflow',{}).get('id')!='newborn_born' or actual.get('analysis',{}).get('bazi',{}).get('reference') is not False:
+    if actual.get('analysis',{}).get('purpose_code')!='newborn' or actual.get('analysis',{}).get('mode')!='born' or actual.get('analysis',{}).get('access')!='proposal_only':
         raise CheckFailure('已出生场景标识或时间依据错误。')
     original=json_request('/api/name-review',{**born,'purpose':'rename','currentName':'李景和'})
     review=original.get('analysis',{})
-    if review.get('workflow',{}).get('id')!='rename' or review.get('phase')!='name_review' or review.get('name_review',{}).get('full_name')!='李景和' or original.get('candidates')!=[]:
+    if review.get('purpose_code')!='rename' or review.get('phase')!='name_review' or review.get('current_name')!='李景和' or review.get('review_completed') is not True or original.get('candidates')!=[] or 'name_review' in review:
         raise CheckFailure('改名现名分析接口未完整部署，请更新服务与代理路由。')
     if review.get('algorithm')!='literary_v3':
         raise CheckFailure('改名接口尚未加载古籍取名v3算法。')

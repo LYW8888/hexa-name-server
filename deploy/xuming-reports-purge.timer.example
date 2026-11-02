@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily expiry of Xuming private report records
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=15m
+Unit=xuming-reports-purge.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,26 @@
+[Unit]
+Description=Xuming private operator report service
+After=network.target
+
+[Service]
+Type=simple
+User=xuming-reports
+Group=xuming-report-clients
+WorkingDirectory=/opt/xuming/app
+EnvironmentFile=/etc/xuming/reports.env
+StateDirectory=xuming-reports
+StateDirectoryMode=0700
+RuntimeDirectory=xuming-reports
+RuntimeDirectoryMode=0750
+ExecStart=/opt/xuming/venv/bin/python /opt/xuming/app/report_service.py --directory /var/lib/xuming-reports --socket /run/xuming-reports/worker.sock --public-uid ${XUMING_PUBLIC_UID} --admin-uid ${XUMING_ADMIN_UID}
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xuming-reports /run/xuming-reports
+
+[Install]
+WantedBy=multi-user.target

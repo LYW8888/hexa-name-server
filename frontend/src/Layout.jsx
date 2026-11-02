@@ -92,7 +92,7 @@ export function Hero({ onBegin }) {
             第一份心意。
           </h1>
           <p className="lede">
-            以出生时光呈现四柱参考，结合姓氏与家庭心意，整理一份值得慢慢读的名字方案。
+            结合出生时光、姓氏与家庭心意，先免费看看名字提案；完整依据与分析报告，联系经营者获取。
           </p>
           <div className="hero-actions">
             <a
@@ -143,7 +143,7 @@ export function Hero({ onBegin }) {
       <section className="trust wrap">
         <div>
           ◌ <b>规则可解释</b>
-          <small>四柱、阴阳五行与起卦均可复算</small>
+          <small>名字提案免费 · 完整报告人工交付</small>
         </div>
         <div>
           ⌁ <b>信息有分寸</b>
@@ -169,7 +169,7 @@ export function Plans({ product, toast }) {
           陪家人慢慢比较每个名字。
         </h2>
         <p className="pricing-lede">
-          序名把传统文化线索整理成可读的参考报告，帮助家人一起比较和讨论。
+          名字提案免费查看。想了解完整出生依据和逐名分析，可以联系经营者获取报告。
         </p>
         <div id="planGrid" className="plan-grid">
           {plans.map((plan, index) => (
@@ -177,7 +177,7 @@ export function Plans({ product, toast }) {
               key={plan.id}
               className={`plan ${index === 1 ? "featured" : ""}`}
             >
-              {index === 1 && <span className="plan-badge">PLANNED</span>}
+              {index === 1 && <span className="plan-badge">人工交付</span>}
               <h3>{plan.name}</h3>
               <div className="plan-price">{plan.price}</div>
               <p>{plan.description}</p>
@@ -190,27 +190,19 @@ export function Plans({ product, toast }) {
                 className={`${index === 0 ? "secondary" : "primary"} plan-action`}
                 type="button"
                 data-plan={plan.id}
-                onClick={() =>
-                  toast(
-                    plan.id === "free"
-                      ? "免费体验可直接使用，先完成上方信息探索名字。"
-                      : product.payment_status ||
-                          "完整服务尚在规划，当前没有开通购买。",
-                    plan.id === "free" ? "success" : "info",
-                  )
-                }
+                onClick={() => document.getElementById(plan.id === 'free' ? 'form' : 'reportRequest')?.scrollIntoView({block:'start'})}
               >
-                {index === 0 ? "当前免费" : "了解方案"}
+                {index === 0 ? "免费起名" : "联系获取报告"}
               </button>
             </article>
           ))}
         </div>
         <p className="pricing-note">
-          当前功能免费体验，付费服务尚在规划，未开放购买。
+          名字提案免费；完整报告的内容、费用与交付时间请通过微信或QQ确认。
         </p>
         {product?.service_policy && (
           <section className="service-policy" aria-label="单次服务机制">
-            <p className="eyebrow">单次服务机制 · 规划中</p>
+            <p className="eyebrow">单次服务 · 人工交付</p>
             <h3>{product.service_policy.title}</h3>
             <div className="service-policy-grid">
               {product.service_policy.items.map((item, index) => (
@@ -246,14 +238,14 @@ export function Method() {
             <b>01</b>
             <h3>梳理出生时光</h3>
             <p>
-              按民用时钟或真太阳时计算四柱，展示阴阳、藏干、十神与生辰起卦；预产期结果明确标为参考。
+              按民用时钟或真太阳时整理出生依据，用于选名；完整四柱与生克分析在报告中说明，预产期仅作参考。
             </p>
           </article>
           <article>
             <b>02</b>
             <h3>聆听家庭心意</h3>
             <p>
-              按字数和避用字筛选，结合字形五行、读音、风格与心意用字排序；父母姓氏可主动启用，也可选择限定口径的扶抑喜用参考；经典引用与计算方法可查看。
+              按字数和避用字筛选，结合五行、读音、风格与心意用字整理名字。免费查看提案，出处与选名依据由经营者通过完整报告说明。
             </p>
           </article>
           <article>

@@ -1,0 +1,16 @@
+[Unit]
+Description=Expire Xuming report applications and audit history
+
+[Service]
+Type=oneshot
+User=xuming-reports
+Group=xuming-report-clients
+WorkingDirectory=/opt/xuming/app
+EnvironmentFile=/etc/xuming/reports.env
+ExecStart=/opt/xuming/venv/bin/python /opt/xuming/app/report_service.py --directory /var/lib/xuming-reports --purge-only
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/xuming-reports

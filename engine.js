@@ -8,6 +8,11 @@
     return Number(counts[String(length)]) || 0;
   }
   function candidates(data, analysis, selected = []) {
+    if (analysis.access === 'proposal_only') return selected.map((candidate, index) => {
+      if (['given','name','pinyin','meaning'].some(key => typeof candidate[key] !== 'string' || !candidate[key]))
+        throw new Error('名字提案不完整，请重新生成。');
+      return {given:candidate.given, fullName:candidate.name, pinyin:candidate.pinyin, meaning:candidate.meaning, rank:index+1};
+    });
     return selected.map((candidate, index) => {
       if (!candidate.given || !candidate.name || !candidate.pinyin || !Array.isArray(candidate.tags) ||
           !candidate.meaning || !candidate.source || !candidate.score_evidence || !candidate.gua_evidence ||

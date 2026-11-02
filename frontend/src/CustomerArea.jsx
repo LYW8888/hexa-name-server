@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import { downloadReportFile } from "./utils.js";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 const FIELDS = [
   "algorithm", "requiredChars", "tabooChars", "tabooHomophones", "surnameReading", "numerologyMode",
   "surname",
@@ -30,7 +29,8 @@ const FIELDS = [
 const newKey = () => globalThis.crypto?.randomUUID?.() || null;
 const displayDate = (value) =>
   new Date(value).toLocaleString("zh-CN", { hour12: false });
-export default function CustomerArea({ result, toast, onSaved, onDownload }) {
+export default function CustomerArea({ result, toast, onSaved }) {
+  const [openedProposal, setOpenedProposal] = useState(null);
   const [customer, setCustomer] = useState(null),
     [available, setAvailable] = useState(false),
     [connectionFailed, setConnectionFailed] = useState(false),
@@ -50,7 +50,8 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
     generation = useRef(0),
     pageKeys = useRef(new WeakMap()),
     savedPages = useRef(new Map());
-  useEffect(() => {
+  useLayoutEffect(() => setOpenedProposal(null), [customer?.id]);
+  useLayoutEffect(() => {
     setConsent(false);
     if (result) {
       if (!pageKeys.current.has(result)) pageKeys.current.set(result, newKey());
@@ -219,18 +220,15 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
   }
   function download(id) {
     run(async () => {
+      const current = generation.current;
       const { report } = await api(`records/${id}`);
-      const candidates = window.NameEngine.candidates(
-        report.data,
-        report.analysis,
-        report.candidates,
-      );
-      downloadReportFile(report.data, report.analysis, candidates, toast);
+      if (current === generation.current) setOpenedProposal(report);
     });
   }
   function remove(id) {
     run(async () => {
       await api(`records/${id}/delete`, {});
+      setOpenedProposal(null);
       const page = savedPages.current.get(id);
       if (page) {
         pageKeys.current.delete(page);
@@ -243,7 +241,7 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
       setConsent(false);
       setDeleteId(null);
       await refresh();
-      setMessage("这份账号记录已删除，已下载的本地文件不会同步删除。");
+      setMessage("这份账号记录已删除，本机收藏可以单独清理。");
     });
   }
   return (
@@ -264,7 +262,7 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
           <span>账号独立保护</span>
         </div>
         <p className="customer-scope">
-          当前提供免费体验记录。登录保存由你主动选择；本机收藏与下载方案可直接使用。
+          登录后可主动保存和找回名字提案；完整分析报告请联系经营者，本机收藏无需登录。
         </p>
       </div>
       <div className="customer-panel">
@@ -350,11 +348,9 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
               <strong>
                 {connectionFailed ? "账号服务暂时不可用" : "手机号登录暂未开通"}
               </strong>
-              <p>免费体验、本地收藏、下载方案与制作心愿卡均可直接使用。</p>
+              <p>免费名字提案和本地收藏可直接使用；完整报告请联系经营者。</p>
               {result?.candidates?.length ? (
-                <button className="primary" type="button" onClick={onDownload}>
-                  下载当前方案
-                </button>
+                <a className="primary" href="#reportRequest">联系获取完整报告</a>
               ) : (
                 <a className="primary" href="#form">
                   开始免费起名 ↗
@@ -434,7 +430,7 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
                         disabled={busy}
                         onClick={() => download(record.id)}
                       >
-                        获取报告
+                        查看名字提案
                       </button>
                       <button
                         className="customer-delete"
@@ -469,6 +465,7 @@ export default function CustomerArea({ result, toast, onSaved, onDownload }) {
             )}
           </>
         )}
+        {customer && openedProposal && <section className="account-proposal" aria-label="账号名字提案"><h4>已保存的名字提案</h4><button type="button" className="secondary" onClick={()=>setOpenedProposal(null)}>关闭提案</button>{openedProposal.candidates.map(x=><article key={x.name}><b>{x.name}</b><p>{x.pinyin}</p><p>{x.meaning}</p></article>)}<a href="#reportRequest">完整报告请联系经营者 ↗</a></section>}
       </div>
     </section>
   );

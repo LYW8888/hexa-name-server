@@ -77,3 +77,4 @@ LOGGING = {'version': 1, 'disable_existing_loggers': False,
            'loggers': {'axes': {'handlers': ['null'], 'propagate': False}}}
 WORKER_SOCKETS = {role: os.environ.get(f'XUMING_{role.upper()}_SOCKET', f'/run/xuming-{role}/worker.sock')
                   for role in ('support', 'finance', 'delivery')}
+REPORTS_SOCKET = os.environ.get('XUMING_REPORTS_SOCKET', '/run/xuming-reports/worker.sock')

@@ -16,6 +16,7 @@ from . import gateway
 from .models import AuditEvent, StaffProfile
 from .provision import create_staff
 from operations.worker import ACTIONS
+import report_client
 
 
 def error(text, status=400):
@@ -58,6 +59,10 @@ def staff(view):
             return error(str(exc), 409)
         except gateway.WorkerUnavailable as exc:
             return error(str(exc), 503)
+        except report_client.ReportUnavailable as exc:
+            return error(str(exc), 503)
+        except report_client.ReportRejected as exc:
+            return error(str(exc), exc.status)
     return wrapped
 
 
@@ -221,6 +226,24 @@ def audit(request):
     if not own_role(request, 'owner'): return error('只有经营者可查看账号与授权审计。', 403)
     event(request.user, 'audit.read')
     return JsonResponse({'events': list(AuditEvent.objects.order_by('-id').values('id', 'at', 'actor_id', 'action', 'subject')[:200])})
+
+
+@staff
+def reports(request, reference=None, action=None):
+    if not own_role(request, 'owner'):
+        return error('完整报告仅经营者可查看与交付。', 403)
+    actor = f'staff:{request.user.pk}'
+    if request.method == 'GET' and not action:
+        command = 'read' if reference else 'list'
+        args = {'id': str(reference)} if reference else {'query': request.GET.get('query', '')}
+    elif request.method == 'POST' and action in ('deliver', 'delete') and reference:
+        body(request, ())
+        command, args = action, {'id': str(reference)}
+    else:
+        return HttpResponseNotAllowed(['GET'] if not action else ['POST'])
+    result = report_client.call(command, args, actor, settings.REPORTS_SOCKET)
+    event(request.user, f'reports.{command}', reference or '')
+    return JsonResponse(result)
 
 
 def csrf_failure(request, reason=''):

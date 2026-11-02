@@ -150,8 +150,8 @@ class CustomerTest(TestCase):
         fetched=self.client.get('/api/customer/records/'+record['id'])
         self.assertEqual(fetched.status_code,200)
         self.assertEqual(fetched.json()['report']['data']['surname'],'林')
-        self.assertEqual(len(fetched.json()['report']['analysis']['bazi']['pillars']),4)
-        self.assertEqual(fetched.json()['report']['kind'],'free_preview')
+        self.assertNotIn('bazi',fetched.json()['report']['analysis'])
+        self.assertEqual(fetched.json()['report']['kind'],'free_proposal')
         self.assertIn('no-store',fetched['Cache-Control'])
         self.assertEqual(ServiceRecord.objects.count(),1)
 
@@ -160,9 +160,9 @@ class CustomerTest(TestCase):
         response = self.save(purpose='rename',mode='born',dueDate='',birthDate='1998-08-13',birthTime='13:48',currentName='林景和')
         self.assertEqual(response.status_code,201)
         report = self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
-        self.assertEqual(report['analysis']['workflow']['id'],'rename')
-        self.assertEqual(report['analysis']['purpose'],'改名方案')
-        self.assertEqual(report['analysis']['name_review']['full_name'],'林景和')
+        self.assertEqual(report['analysis']['purpose_code'],'rename')
+        self.assertEqual(report['analysis']['current_name'],'林景和')
+        self.assertNotIn('name_review',report['analysis'])
         self.assertTrue(all(row['name']!='林景和' for row in report['candidates']))
         self.assertNotIn('林景和'.encode(),bytes(ServiceRecord.objects.get().encrypted_report))
 
@@ -172,18 +172,15 @@ class CustomerTest(TestCase):
         self.assertEqual(response.status_code, 201)
         report = self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
         self.assertEqual(report['data']['place'], '')
-        self.assertFalse(report['analysis']['bazi']['time_correction']['applied'])
+        self.assertNotIn('bazi',report['analysis'])
 
     def test_saved_solar_report_resolves_birth_city_once(self):
         self.sign_in()
         response = self.save(place='臺北市', timeBasis='apparent_solar')
         self.assertEqual(response.status_code, 201)
         report = self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
-        time = report['analysis']['bazi']['time_correction']
-        self.assertEqual(report['analysis']['zone'], 'Asia/Taipei')
-        self.assertEqual(time['longitude'], 121.57)
-        self.assertEqual(time['location']['coordinate_source'], 'city_centre')
-        self.assertEqual(time['location']['label'], '台北')
+        self.assertEqual(report['data']['place'],'臺北市')
+        self.assertNotIn('bazi',report['analysis'])
 
     def test_save_rejects_mixed_flows_and_missing_current_name(self):
         self.sign_in()
@@ -192,17 +189,32 @@ class CustomerTest(TestCase):
                 self.assertEqual(self.save(**changes).status_code,400)
         self.assertEqual(ServiceRecord.objects.count(),0)
 
-    def test_saved_literary_report_recomputes_and_preserves_quotes_constraints_and_numerology(self):
+    def test_saved_free_proposal_applies_constraints_without_returning_report_fields(self):
         self.sign_in()
         response=self.save(algorithm='literary_v3',requiredChars='安',tabooChars='宁',numerologyMode='strict',surnameReading='lín')
         self.assertEqual(response.status_code,201)
         report=self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
         self.assertEqual(report['analysis']['algorithm'],'literary_v3')
-        self.assertEqual(report['analysis']['corpus']['character_records'],3636)
+        self.assertEqual(report['analysis']['access'],'proposal_only')
         self.assertEqual(report['data']['requiredChars'],'安')
-        self.assertTrue(all('安' in x['given'] and '宁' not in x['given'] and x['numerology']['strict_pass'] for x in report['candidates']))
-        self.assertTrue(all(x['citations'] for x in report['candidates']))
+        self.assertTrue(all('安' in x['given'] and '宁' not in x['given'] for x in report['candidates']))
+        self.assertTrue(all(set(x)=={'name','given','pinyin','meaning'} for x in report['candidates']))
         self.assertNotIn('安'.encode(),bytes(ServiceRecord.objects.get().encrypted_report))
+
+    def test_legacy_free_report_is_projected_even_when_full_snapshot_was_saved(self):
+        from cryptography.fernet import Fernet
+        from django.conf import settings
+        import server
+        self.sign_in()
+        response=self.save()
+        row=ServiceRecord.objects.get()
+        original={'version':1,'kind':'free_preview','data':VALID,**server.analyze(VALID)}
+        row.encrypted_report=Fernet(settings.REPORT_KEY.encode()).encrypt(json.dumps(original,ensure_ascii=False).encode())
+        row.save(update_fields=['encrypted_report'])
+        value=self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
+        self.assertEqual(value['kind'],'free_proposal')
+        self.assertNotIn('bazi',value['analysis'])
+        self.assertNotIn('score',value['candidates'][0])
 
     def test_literary_filter_conflicts_cannot_create_a_saved_record(self):
         self.sign_in()
@@ -217,15 +229,10 @@ class CustomerTest(TestCase):
         report=self.client.get('/api/customer/records/'+response.json()['record']['id']).json()['report']
         self.assertEqual(report['data']['elementPreference'],'水')
         self.assertEqual(report['data']['honorParents'],'true')
-        self.assertTrue(report['analysis']['bazi']['time_correction']['applied'])
+        self.assertNotIn('bazi',report['analysis'])
         self.assertEqual(report['data']['longitude'],'120.16')
-        self.assertEqual(report['analysis']['mingli']['classical_source_status'],'text_checked')
-        self.assertEqual(report['analysis']['source_audit']['framework_status'],'text_checked')
-        self.assertEqual(len(report['analysis']['traditional']['relationships']['pairs']),28)
-        self.assertEqual(report['analysis']['naming_reference']['element'],'水')
-        self.assertIn('polarity_counts',report['analysis']['traditional'])
-        self.assertIn('arithmetic',report['analysis']['gua'])
-        self.assertTrue(all(n['ranking']['version']=='naming-match-v2' for n in report['candidates']))
+        for field in ('mingli','source_audit','traditional','naming_reference','gua'):
+            self.assertNotIn(field,report['analysis'])
 
     def test_other_customer_cannot_list_retrieve_or_delete_record(self):
         self.sign_in(); record=self.save().json()['record']['id']

@@ -39,29 +39,23 @@ async function requestReport(
         throw new Error("起名接口返回的内容无法识别，请检查网站部署后重试。");
       }
       if (!response.ok) throw new Error(payload?.error || "分析请求未通过校验");
+      const proposal = payload?.analysis?.access === 'proposal_only';
       const chart = payload?.analysis?.bazi;
       if (
-        !chart ||
-        !Array.isArray(chart.pillars) ||
-        chart.pillars.length !== 4 ||
-        !chart.day_master ||
-        !chart.element_counts ||
-        !Array.isArray(chart.conventions) ||
-        !chart.source ||
-        !Array.isArray(payload.candidates)
+        !proposal || payload.analysis.report_delivery !== 'operator' || !Array.isArray(payload.candidates) ||
+        payload.candidates.some(row => !row || ['name','given','pinyin','meaning'].some(key => typeof row[key] !== 'string' || !row[key]))
       ) {
-        throw new Error("服务未返回完整方案，请检查服务版本后重新生成。");
+        throw new Error("服务未返回完整名字提案，请同步更新页面和服务后重试。");
       }
+      if (chart || payload.analysis.mingli || payload.analysis.naming_reference || payload.candidates.some(row => row.ranking || row.citations))
+        throw new Error("服务返回了错误的访问范围，请联系维护人员。");
       if (data.algorithm && payload.analysis.algorithm !== data.algorithm)
         throw new Error("命名服务版本与页面不一致，请刷新后重试。维护人员需同步更新前后端。");
       if (data.purpose && (payload.analysis.purpose_code !== data.purpose || payload.analysis.mode !== data.mode))
         throw new Error("服务返回的起名场景与提交内容不一致，请更新服务后重试。");
       if (data.purpose === "rename") {
-        const review = payload.analysis.name_review;
-        if (!review || payload.analysis.current_name !== data.currentName?.trim() || review.full_name !== data.currentName?.trim()
-          || !Array.isArray(review.findings) || !review.findings.length || review.findings.some(x => !x || typeof x.title !== "string" || typeof x.detail !== "string")
-          || !Array.isArray(review.directions))
-          throw new Error("服务未返回完整现名分析，请更新服务后重试。");
+        if (payload.analysis.current_name !== data.currentName?.trim() || (endpoint === "/api/name-review" && !payload.analysis.review_completed))
+          throw new Error("服务未完成对应现名分析，请更新服务后重试。");
       }
       if (endpoint === "/api/name-review" && (payload.analysis.phase !== "name_review" || payload.candidates.length))
         throw new Error("现名分析接口返回了错误阶段的数据，请更新服务后重试。");

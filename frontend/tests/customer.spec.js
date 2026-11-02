@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 async function generate(page) {
   await page.locator("[name=surname]").fill("林");
   await page.locator("[name=dueDate]").fill("2099-01-01");
@@ -12,7 +11,7 @@ async function generate(page) {
   await page.locator("[name=elementPreference]").selectOption("水");
   await page
     .locator("button[type=submit]")
-    .filter({ hasText: "生成名字方案" })
+    .filter({ hasText: "生成名字提案" })
     .click();
   await expect(page.locator("#cards .card")).toHaveCount(3);
 }
@@ -26,7 +25,7 @@ async function login(page, phone) {
   await expect(account.getByRole("button", { name: "退出账号" })).toBeVisible();
   return account;
 }
-test("免费体验免登录，主动确认保存，刷新找回、下载及删除", async ({ page }) => {
+test("免费提案免登录，主动保存后只找回提案，可删除", async ({ page }) => {
   await page.goto("/");
   await generate(page);
   expect((await page.request.get("/api/customer/records")).status()).toBe(401);
@@ -47,18 +46,11 @@ test("免费体验免登录，主动确认保存，刷新找回、下载及删�
   );
   await expect(account.getByRole("button", { name: "退出账号" })).toBeVisible();
   await expect(account.locator(".customer-records li")).toHaveCount(1);
-  const pending = page.waitForEvent("download");
-  await account.getByRole("button", { name: "获取报告" }).click();
-  const report = await readFile(await (await pending).path(), "utf8");
-  expect(report).toContain("姓氏：林");
-  expect(report).toContain("2099-01-01");
-  expect(report).toContain("四柱阴阳");
-  expect(report).toContain("起卦方法");
-  expect(report).toContain("选字参考：自选水意象");
-  expect(report).toContain("真太阳钟");
-  expect(report).toContain("格局线索");
-  expect(report).toContain("经典原文与计算方法");
-  expect(report).toContain("四柱阴阳五行与生克关系");
+  const pending = page.waitForResponse(r=>r.url().includes('/api/customer/records/')&&!r.url().endsWith('/save'));
+  await account.getByRole('button',{name:'查看名字提案'}).click();
+  const value=await(await pending).json();expect(value.report.analysis.access).toBe('proposal_only');expect(value.report.analysis).not.toHaveProperty('bazi');
+  await expect(account.getByRole('region',{name:'账号名字提案'})).toContainText('完整报告请联系经营者');
+  await expect(page.locator('#downloadReport')).toHaveCount(0);
   await account.getByRole("button", { name: "删除", exact: true }).click();
   await account.getByRole("button", { name: "确认删除", exact: true }).click();
   await expect(account.locator(".customer-records li")).toHaveCount(0);

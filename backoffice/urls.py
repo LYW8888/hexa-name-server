@@ -9,4 +9,7 @@ urlpatterns = [
     path('api/service-status/<str:service_id>', views.service_status),
     path('api/staff', views.users), path('api/staff/<int:user_id>/disable', views.disable_user),
     path('api/audit', views.audit),
+    path('api/reports', views.reports),
+    path('api/reports/<uuid:reference>', views.reports),
+    path('api/reports/<uuid:reference>/<str:action>', views.reports),
 ]
