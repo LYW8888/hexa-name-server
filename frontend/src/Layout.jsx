@@ -1,161 +1,52 @@
 import React, { useState } from "react";
+import {Badge, Button, Card, Dialog, IconButton} from "@radix-ui/themes";
+import {ArrowDown, ArrowUpRight, CalendarDays, Check, FileText, Heart, Menu, Sparkles} from "lucide-react";
 
 export function Header({ count, onSaved, onAccount }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const links = [
-    ["#form", "开始起名"],
-    ["#account", "我的服务"],
-    ["#results", "名字方案"],
-    ["#keepsake", "心愿卡"],
-    ["#method", "命名方法"],
-    ["#pricing", "产品方案"],
-  ];
-  return (
-    <header
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && menuOpen) {
-          setMenuOpen(false);
-          document.getElementById("mobileMenuButton")?.focus();
-        }
-      }}
-    >
-      <a className="brand" href="#top">
-        <b>序</b>
-        <span>
-          序名<small>ORIGIN &amp; NAME</small>
-        </span>
-      </a>
+  const links = [["#form","开始起名"],["#results","名字提案"],["#reportRequest","完整报告"],["#account","我的服务"],["#keepsake","心愿卡"],["#method","命名方法"]];
+  return <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
+    <header className="site-header">
+      <a className="brand" href="#top"><b>序</b><span>序名<small>ORIGIN & NAME</small></span></a>
       <nav aria-label="主导航">
-        <a href="#method">命名方法</a>
-        <a href="#results">名字方案</a>
-        <a href="#keepsake">心愿卡</a>
-        <a href="#pricing">产品方案</a>
-        <button
-          className="customer-entry"
-          type="button"
-          onClick={() => {
-            setMenuOpen(false);
-            onAccount();
-          }}
-        >
-          我的服务
-        </button>
-        <button
-          id="savedButton"
-          type="button"
-          onClick={() => {
-            setMenuOpen(false);
-            onSaved();
-          }}
-        >
-          收藏 <i id="savedCount">{count}</i>
-        </button>
-        <button
-          id="mobileMenuButton"
-          className="mobile-menu-button"
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls="mobileMenu"
-          aria-label={menuOpen ? "关闭导航菜单" : "打开导航菜单"}
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
-        </button>
+        <a href="#results">名字提案</a><a href="#method">命名方法</a><a href="#reportRequest">完整报告</a>
+        <Button variant="ghost" color="gray" className="customer-entry" type="button" onClick={onAccount}>我的服务</Button>
+        <Button id="savedButton" variant="soft" color="jade" type="button" onClick={onSaved}><Heart size={16} aria-hidden="true"/>收藏 <i id="savedCount">{count}</i></Button>
+        <Dialog.Trigger><IconButton id="mobileMenuButton" className="mobile-menu-button" variant="ghost" color="gray" aria-label={menuOpen?"关闭导航菜单":"打开导航菜单"}><Menu size={21}/></IconButton></Dialog.Trigger>
       </nav>
-      <div id="mobileMenu" className="mobile-menu" hidden={!menuOpen}>
-        {links.map(([href, label], index) => (
-          <a href={href} key={href} onClick={() => setMenuOpen(false)}>
-            <span>
-              <small>0{index + 1}</small>
-              {label}
-            </span>
-            <span aria-hidden="true">↗</span>
-          </a>
-        ))}
-      </div>
     </header>
-  );
+    <Dialog.Content id="mobileMenu" className="product-mobile-nav" maxWidth="460px">
+      <Dialog.Title>从一个名字，开始探索</Dialog.Title><Dialog.Description>选择你要前往的页面内容。</Dialog.Description>
+      <div className="product-mobile-links">{links.map(([href,label],index)=><Dialog.Close asChild key={href}><a href={href}><small>0{index+1}</small>{label}<ArrowUpRight size={18}/></a></Dialog.Close>)}</div>
+      <Dialog.Close><Button className="mobile-nav-close" variant="soft" color="gray">关闭导航</Button></Dialog.Close>
+    </Dialog.Content>
+  </Dialog.Root>;
 }
 export function Hero({ onBegin }) {
-  return (
-    <>
-      <section className="hero wrap">
-        <div className="hero-copy">
-          <p className="eyebrow hero-eyebrow">
-            <span>序名 · ORIGIN &amp; NAME</span> NAMING FOR A NEW BEGINNING
-          </p>
-          <h1>
-            名字，
-            <br />
-            <em>是给未来的</em>
-            <br />
-            第一份心意。
-          </h1>
-          <p className="lede">
-            结合出生时光、姓氏与家庭心意，先免费看看名字提案；完整依据与分析报告，联系经营者获取。
-          </p>
-          <div className="hero-actions">
-            <a
-              className="primary"
-              href="#form"
-              onClick={(e) => {
-                if (onBegin) {
-                  e.preventDefault();
-                  onBegin();
-                }
-              }}
-            >
-              开始探索名字 <span aria-hidden="true">↗</span>
-            </a>
-            <a className="under" href="#method">
-              了解命名方法 <span aria-hidden="true">↓</span>
-            </a>
-          </div>
-          <div className="hero-meta">
-            <span>预产期 / 出生信息</span>
-            <span>多种名字字数</span>
-            <span>本地收藏</span>
-          </div>
-          <small className="note">传统文化参考 · 经典依据 · 心意选名</small>
+  return <>
+    <section className="hero wrap atelier-hero">
+      <div className="hero-copy">
+        <Badge size="2" variant="soft" className="hero-badge"><span className="live-dot"/>新生儿起名 · 改名</Badge>
+        <p className="eyebrow hero-eyebrow">A NAME. A NEW BEGINNING.</p>
+        <h1>名字，<br/>是一生<span className="hero-title-mark">最初的</span><br/><em>礼物。</em></h1>
+        <p className="lede">把出生时光、家族心意和文字之美，放进一个名字。先免费探索喜欢的方向，再读懂它背后的依据。</p>
+        <div className="hero-actions">
+          <Button size="4" className="primary" asChild><a href="#form" onClick={e=>{if(onBegin){e.preventDefault();onBegin();}}}>开始探索名字<ArrowUpRight size={18}/></a></Button>
+          <a className="under" href="#method">了解命名方法<ArrowDown size={15}/></a>
         </div>
-        <div className="hero-visual" aria-hidden="true">
-          <div className="visual-heading">
-            <span>THE ORIGIN OF A NAME</span>
-            <span>时光 · 姓氏 · 心意</span>
-          </div>
-          <div className="orb">
-            <i className="orbit-dot orbit-dot-one" />
-            <i className="orbit-dot orbit-dot-two" />
-            <div className="seal">
-              序<small>名</small>
-            </div>
-            <span className="north">时 · 光</span>
-            <span className="east">姓 · 氏</span>
-            <span className="south">心 · 意</span>
-            <span className="west">名 · 字</span>
-          </div>
-          <div className="visual-footer">
-            <span>TRADITION / CONTEMPORARY</span>
-            <span>01 — 04</span>
-          </div>
-        </div>
-      </section>
-      <section className="trust wrap">
-        <div>
-          ◌ <b>规则可解释</b>
-          <small>名字提案免费 · 完整报告人工交付</small>
-        </div>
-        <div>
-          ⌁ <b>信息有分寸</b>
-          <small>出生资料不自动保存</small>
-        </div>
-        <div>
-          ✦ <b>名字有温度</b>
-          <small>兼顾寓意、读写与日常使用</small>
-        </div>
-      </section>
-    </>
-  );
+        <div className="hero-meta"><span><Check size={14}/>免费名字提案</span><span><Check size={14}/>无需注册</span><span><Check size={14}/>手机电脑皆可用</span></div>
+      </div>
+      <div className="hero-visual atelier-art" aria-label="序名东方文字艺术">
+        <div className="visual-heading"><span>THE NAME ATELIER</span><span>序名 · 文字有光</span></div>
+        <div className="orb" aria-hidden="true"><i className="orbit-dot orbit-dot-one"/><i className="orbit-dot orbit-dot-two"/><div className="seal">名<small>ORIGIN</small></div><span className="north">时光</span><span className="east">心意</span><span className="south">新生</span><span className="west">传承</span></div>
+        <div className="art-name-note"><span>名字灵感 · 示例</span><strong>知序<span>景宁</span>予安</strong><small>每一个字，都藏着一份期待。</small></div>
+        <div className="visual-footer"><span>CRAFTED WITH MEANING</span><Sparkles size={15}/></div>
+      </div>
+    </section>
+    <section className="trust wrap atelier-trust" aria-label="起名服务流程">
+      {[["01","留下出生时光","预产期、已出生与改名，清晰分开。",CalendarDays],["02","遇见心动的名字","免费比较姓名、读音和简短寓意。",Sparkles],["03","读懂完整的依据","联系经营者，获取核对后的完整报告。",FileText]].map(([n,title,note,Icon])=><Card asChild key={n}><article><div className="trust-card-top"><Icon size={20}/><span>{n}</span></div><b>{title}</b><small>{note}</small></article></Card>)}
+    </section>
+  </>;
 }
 export function Plans({ product, toast }) {
   const plans = product?.plans || [];

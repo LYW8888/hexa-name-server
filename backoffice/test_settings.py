@@ -8,4 +8,4 @@ os.environ['XUMING_ADMIN_HOME'] = _TEST_HOME.name
 os.environ['XUMING_ADMIN_DEV'] = '1'
 from .settings import *  # noqa
 ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
-PASSWORD_HASHERS = ['django.contrib.auth.hashers.PBKDF2PasswordHasher']
+PASSWORD_HASHERS = ['django.contrib.auth.hashers.PBKDF2PasswordHasher', 'django.contrib.auth.hashers.Argon2PasswordHasher']

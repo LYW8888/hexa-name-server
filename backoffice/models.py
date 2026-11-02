@@ -8,6 +8,10 @@ class StaffProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='staff_profile')
     role = models.CharField(max_length=16, choices=[(r, r) for r in ROLES])
     must_change_password = models.BooleanField(default=True)
+    is_superadmin = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['is_superadmin'], condition=models.Q(is_superadmin=True), name='one_superadmin_profile')]
 
 
 class AuditEvent(models.Model):

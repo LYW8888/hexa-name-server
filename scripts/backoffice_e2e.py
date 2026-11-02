@@ -5,10 +5,17 @@ import socketserver
 import sys
 import tempfile
 import threading
+import json
+import stat
+import signal
+import atexit
+from io import StringIO
 from pathlib import Path
 
 if os.environ.get('XUMING_E2E_TEST') != '1':
     raise SystemExit('This fixture requires XUMING_E2E_TEST=1 and is only for browser tests.')
+def stop(signum,frame):raise SystemExit(0)
+signal.signal(signal.SIGTERM,stop)
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 with tempfile.TemporaryDirectory(prefix='xuming-browser-test-') as directory:
@@ -41,6 +48,22 @@ with tempfile.TemporaryDirectory(prefix='xuming-browser-test-') as directory:
     user = get_user_model().objects.create_user('reports_browser', password='Browser-Test-Only-482!')
     StaffProfile.objects.create(user=user,role='owner',must_change_password=False)
     TOTPDevice.objects.create(user=user,confirmed=True,key='00112233445566778899aabbccddeeff00112233')
+    # Exercise the real random bootstrap. Deliver its test-only bundle through
+    # a private local file, never through a browser route or process logs.
+    call_command('bootstrap_superadmin',write_credentials=True,stdout=StringIO())
+    handoff=Path(os.environ['XUMING_ADMIN_TEST_HANDOFF'])
+    info=handoff.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.geteuid() or stat.S_IMODE(info.st_mode)&0o077:
+        raise PermissionError('test handoff directory must be private and owned by current UID')
+    initial=auth/'initial-superadmin.json'
+    test_bundle=json.loads(initial.read_text());test_bundle['initial_file']=str(initial)
+    descriptor=os.open(handoff/'superadmin.json',os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(descriptor,'w') as stream:json.dump(test_bundle,stream)
+    def clean_handoff():
+        (handoff/'superadmin.json').unlink(missing_ok=True)
+        try:handoff.rmdir()
+        except FileNotFoundError:pass
+    atexit.register(clean_handoff)
     # This fixture intentionally simulates the role identities under one test UID.
     # Production workers always enforce distinct OS identities; never serve this fixture to users.
     console.require_identity = lambda role: None
@@ -68,6 +91,7 @@ with tempfile.TemporaryDirectory(prefix='xuming-browser-test-') as directory:
         with make_server('127.0.0.1',4192,get_wsgi_application(),handler_class=Quiet) as server:
             server.serve_forever()
     finally:
+        clean_handoff()
         public.shutdown();public.server_close()
         for worker in workers:
             worker.shutdown(); worker.server_close()

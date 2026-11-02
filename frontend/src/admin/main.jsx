@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import DesignSystem from '../ui/DesignSystem.jsx';
+import { Badge, Button, Card, Callout, IconButton, Spinner, TextField } from '@radix-ui/themes';
+import { ArrowUpRight, Eye, EyeOff, FileText, Headphones, History, KeyRound, LayoutDashboard, LockKeyhole, RefreshCw, ShieldCheck, Truck, Users, Wallet, Info } from 'lucide-react';
 import "./style.css";
+import './modern.css';
 import ReportsManager from "./ReportsManager.jsx";
 
 const roles = {
@@ -70,6 +74,7 @@ function Confirm({ label, onConfirm, disabled }) {
   );
 }
 function App() {
+  const [showPassword,setShowPassword]=useState(false);
   const [user, setUser] = useState(null),
     [ready, setReady] = useState(false),
     [tab, setTab] = useState("overview"),
@@ -192,6 +197,8 @@ function App() {
     e.preventDefault();
     const form = e.currentTarget,
       data = Object.fromEntries(new FormData(form));
+    if(data.new_password !== data.confirm_password){setNotice('两次新密码不一致，请重新确认。');return;}
+    delete data.confirm_password;
     run(async () => {
       const result = await api("/api/password", data);
       form.reset();
@@ -209,9 +216,7 @@ function App() {
       setTab("overview");
     });
   const message = notice && (
-    <div className="admin-notice" role="status">
-      {notice}
-    </div>
+    <Callout.Root className="admin-notice" role="status" size="2"><Callout.Icon><Info size={17}/></Callout.Icon><Callout.Text>{notice}</Callout.Text></Callout.Root>
   );
   const passwordForm = (
     <form onSubmit={password} className="admin-form">
@@ -233,9 +238,8 @@ function App() {
           required
         />
       </Field>
-      <button className="accent" disabled={busy}>
-        更新密码
-      </button>
+      <Field label="确认新密码"><TextField.Root size="3" name="confirm_password" type="password" autoComplete="new-password" minLength={12} maxLength={256} required /></Field>
+      <Button className="accent" size="3" type="submit" disabled={busy}>{busy?<Spinner/>:<ShieldCheck size={16}/>}更新密码</Button>
     </form>
   );
   if (!ready)
@@ -244,57 +248,20 @@ function App() {
         <p>正在连接经营工作台…</p>
       </main>
     );
-  if (!user)
-    return (
-      <main className="auth-page">
-        <section className="auth-card">
-          <p className="kicker">序名 / WORKSPACE</p>
-          <h1>
-            每一份心意，
-            <br />
-            都有妥善的安排。
-          </h1>
-          <p className="muted">经营工作台 · 岗位独立授权</p>
-          {message}
-          <form onSubmit={login}>
-            <Field label="员工账号">
-              <input
-                name="username"
-                autoComplete="username"
-                required
-                maxLength={64}
-              />
-            </Field>
-            <Field label="密码">
-              <input
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                maxLength={256}
-              />
-            </Field>
-            <Field label="验证器动态码">
-              <input
-                name="token"
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                minLength={6}
-                maxLength={6}
-                required
-              />
-            </Field>
-            <button className="accent" disabled={busy}>
-              {busy ? "正在验证…" : "安全登录 →"}
-            </button>
-          </form>
-          <p className="small muted">
-            使用独立员工账号与验证器登录。没有默认账号，请联系经营者开通。
-          </p>
-        </section>
-      </main>
-    );
+  if (!user) return <main className="auth-page">
+    <section className="auth-intro"><a className="auth-brand" href="/"><span>序</span>序名 <small>WORKSPACE</small></a><Badge size="2" variant="soft"><ShieldCheck size={14}/>独立管理工作台</Badge><h1>认真对待<br/>每一个<span>新开始。</span></h1><p>让名字有据可循，<br/>让每份心意都有妥善的交付。</p><div className="auth-intro-foot"><LockKeyhole size={16}/><span>岗位授权 · 动态码验证 · 操作留痕</span></div></section>
+    <Card asChild className="auth-card"><section>
+      <div className="auth-card-icon"><ShieldCheck size={25}/></div><p className="kicker">WELCOME BACK</p><h2>登录经营工作台</h2><p className="muted">使用你的账号、密码与验证器动态码。</p>{message}
+      <form onSubmit={login}>
+        <Field label="员工账号"><TextField.Root size="3" name="username" autoComplete="username" required maxLength={64} placeholder="输入管理员或员工账号"><TextField.Slot><Users size={17}/></TextField.Slot></TextField.Root></Field>
+        <Field label="密码"><TextField.Root size="3" name="password" type={showPassword?'text':'password'} autoComplete="current-password" required maxLength={256} placeholder="输入密码"><TextField.Slot><KeyRound size={17}/></TextField.Slot><TextField.Slot side="right"><IconButton type="button" variant="ghost" color="gray" size="1" aria-label={showPassword?'隐藏密码':'显示密码'} onClick={()=>setShowPassword(x=>!x)}>{showPassword?<EyeOff size={16}/>:<Eye size={16}/>}</IconButton></TextField.Slot></TextField.Root></Field>
+        <Field label="验证器动态码"><TextField.Root size="3" name="token" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} required placeholder="6位动态验证码"><TextField.Slot><ShieldCheck size={17}/></TextField.Slot></TextField.Root></Field>
+        <Button size="3" className="accent" type="submit" disabled={busy}>{busy?<Spinner/>:<LockKeyhole size={16}/>}<span>{busy?'正在验证…':'安全登录 →'}</span></Button>
+      </form>
+      <details className="auth-help"><summary>首次使用或需要找回账号？</summary><p>超级管理员初始凭据由部署负责人通过可信渠道交付；员工账号请联系管理员开通。首次登录后需要修改初始密码。</p></details>
+      <p className="auth-caption">序名 · ORIGIN & NAME</p>
+    </section></Card>
+  </main>;
   const tabs = [
     ["overview", "工作总览"],
     ...(user.role === "owner"
@@ -320,14 +287,13 @@ function App() {
               aria-current={tab === key ? "page" : undefined}
               onClick={() => setTab(key)}
             >
-              {label}
-              <span aria-hidden="true">↗</span>
+              <span className="nav-label">{React.createElement(({overview:LayoutDashboard,reports:FileText,users:Users,audit:History,password:KeyRound,workspace:({support:Headphones,finance:Wallet,delivery:Truck})[user.role]})[key],{size:18,'aria-hidden':true})}{label}</span><ArrowUpRight size={14} aria-hidden="true"/>
             </button>
           ))}
         </nav>
         <div className="identity">
           <b>{user.username}</b>
-          <span>{roles[user.role]} · 动态码验证</span>
+          <Badge color="jade" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}</Badge><span>动态码验证 · 独立会话</span>
           <button onClick={logout} disabled={busy}>
             退出登录
           </button>
@@ -347,7 +313,7 @@ function App() {
             disabled={busy || user.must_change_password}
             onClick={() => run(refresh)}
           >
-            刷新数据 ↻
+            <RefreshCw size={15} aria-hidden="true"/>刷新数据
           </button>
         </header>
         {message}
@@ -361,9 +327,7 @@ function App() {
             {tab === "reports" && user.role === "owner" && <ReportsManager api={api} notify={setNotice} />}
             {tab === "overview" && (
               <>
-                <p className="muted">
-                  只展示当前岗位可见的信息。收支为手工登记汇总，交付为内部状态登记。
-                </p>
+                <Card className="workspace-welcome"><div><Badge color="jade" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>把每一份心意，交付妥当。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('reports')}>处理报告<ArrowUpRight size={16}/></Button>}</Card>
                 <div className="summary-grid">
                   {Object.entries(summary || {}).map(([role, item]) => (
                     <section className="surface metric-card" key={role}>
@@ -406,7 +370,7 @@ function App() {
                     重复请求复用原服务，失败在原服务下重试，达到上限后转人工处理。
                   </p>
                   <p className="small muted">
-                    支付、客户报告存储及真实报告交付尚未接入；这里的登记不代表收款或客户已收到报告。
+                    收支与旧交付状态属于内部登记，不代表实际收付款。完整报告由经营者在报告工作台核对并人工交付。
                   </p>
                 </div>
               </>
@@ -519,13 +483,13 @@ function App() {
                         {rows.map((row) => (
                           <tr key={row.id}>
                             <td>{row.username}</td>
-                            <td>{roles[row.role]}</td>
+                            <td><Badge variant="soft" color={row.is_superadmin?'jade':'gray'}>{row.is_superadmin?'超级管理员':roles[row.role]}</Badge></td>
                             <td>{row.active ? "启用" : "已停用"}</td>
                             <td>
                               <Confirm
                                 label="停用"
                                 disabled={
-                                  busy || !row.active || row.id === user.id
+                                  busy || !row.active || row.id === user.id || row.is_superadmin
                                 }
                                 onConfirm={() =>
                                   run(async () => {
@@ -835,4 +799,4 @@ function DeliveryAction({ row, action, busy }) {
     </div>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<DesignSystem admin><App /></DesignSystem>);

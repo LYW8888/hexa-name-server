@@ -12,6 +12,8 @@
     "test:e2e:customer": "npm run build && playwright test --config playwright.customer.config.js"
   },
   "dependencies": {
+    "@radix-ui/themes": "3.3.0",
+    "lucide-react": "1.66.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { createHmac, randomUUID } from "node:crypto";
-function token() {
+function token(secretKey=Buffer.from("00112233445566778899aabbccddeeff00112233", "hex")) {
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
   const hash = createHmac(
     "sha1",
-    Buffer.from("00112233445566778899aabbccddeeff00112233", "hex"),
+    secretKey,
   )
     .update(counter)
     .digest();
@@ -154,8 +154,8 @@ test('客户只看提案，经营者凭编号导出完整报告并人工交付',
   await page.getByRole('button',{name:'查看完整报告',exact:true}).click();const workspace=page.getByRole('region',{name:'经营者完整报告'});
   await expect(workspace).toContainText('真太阳时');await expect(workspace.locator('.report-preview')).toContainText('四柱阴阳五行与生克关系');
   if(process.env.XUMING_CAPTURE_REPORTS==='1') {
-    await client.locator('#cards').screenshot({path:'../reports/images/free-proposals-mobile.png'});
-    await section.screenshot({path:'../reports/images/report-contact-mobile.png'});
+    await client.locator('#cards').screenshot({path:'../reports/images/free-proposals-mobile.png',style:'.site-header{visibility:hidden!important}'});
+    await section.screenshot({path:'../reports/images/report-contact-mobile.png',style:'.site-header{visibility:hidden!important}'});
     await page.setViewportSize({width:1280,height:950});
     await workspace.screenshot({path:'../reports/images/operator-report-desktop.png'});
     await page.setViewportSize({width:390,height:950});
@@ -176,4 +176,37 @@ test('客户只看提案，经营者凭编号导出完整报告并人工交付',
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
   await page.getByRole('button',{name:'退出登录'}).click();expect((await page.request.get('/api/reports/'+second.id)).status()).toBe(401);
   await other.close();
+});
+
+function base32(secret) {
+  let bits=0,value=0;const bytes=[];
+  for(const char of secret.replace(/=+$/,'')){value=(value<<5)|'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(char.toUpperCase());bits+=5;if(bits>=8){bits-=8;bytes.push((value>>>bits)&255);}}
+  return Buffer.from(bytes);
+}
+test('随机超级管理员首次登录、密码确认及初始化凭据清理',async({page})=>{
+  test.setTimeout(60000);
+  const {readFile,stat}=await import('node:fs/promises');const {join}=await import('node:path');
+  const bundle=JSON.parse(await readFile(join(process.env.XUMING_ADMIN_TEST_HANDOFF,'superadmin.json'),'utf8'));
+  expect(bundle.username).toMatch(/^sa_[0-9a-f]{16}$/);
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');
+  if(process.env.XUMING_CAPTURE_REPORTS==='1') {
+    await page.setViewportSize({width:1440,height:950});await page.screenshot({path:'../reports/images/modern-admin-login-desktop.png'});
+    await page.setViewportSize({width:390,height:950});await page.screenshot({path:'../reports/images/modern-admin-login-mobile.png'});
+  }
+  await page.locator('[name=username]').fill(bundle.username);await page.locator('[name=password]').fill(bundle.password);
+  await page.getByRole('button',{name:'显示密码',exact:true}).click();await expect(page.locator('[name=password]')).toHaveAttribute('type','text');
+  await page.getByRole('button',{name:'隐藏密码',exact:true}).click();await expect(page.locator('[name=password]')).toHaveAttribute('type','password');
+  const secret=base32(new URL(bundle.totp_uri).searchParams.get('secret'));await page.locator('[name=token]').fill(token(secret));await page.getByRole('button',{name:'安全登录',exact:false}).click();
+  await expect(page.getByRole('heading',{name:'设置你的独立密码'})).toBeVisible();expect((await page.request.get('/api/reports')).status()).toBe(403);
+  await page.locator('[name=current_password]').fill(bundle.password);await page.locator('[name=new_password]').fill('Private-New-Owner-Password-582!');await page.locator('[name=confirm_password]').fill('Private-Different-Password-481!');
+  await page.getByRole('button',{name:'更新密码',exact:true}).click();await expect(page.getByRole('status')).toContainText('两次新密码不一致');
+  await page.locator('[name=confirm_password]').fill('Private-New-Owner-Password-582!');await page.getByRole('button',{name:'更新密码',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'工作总览',exact:true})).toBeVisible();await expect(page.locator('.identity')).toContainText('超级管理员');
+  await expect.poll(async()=>{try{await stat(bundle.initial_file);return true;}catch{return false;}}).toBe(false);
+  const session=await(await page.request.get('/api/session')).json();expect(session.user.is_superadmin).toBe(true);expect(session.user.must_change_password).toBe(false);
+  expect((await page.request.get('/api/ops/finance/list')).status()).toBe(403);expect((await page.request.get('/initial-superadmin.json')).status()).toBe(404);
+  if(process.env.XUMING_CAPTURE_REPORTS==='1'){await page.setViewportSize({width:1440,height:950});await page.screenshot({path:'../reports/images/modern-admin-overview.png'});}
+  await page.getByRole('button',{name:'员工与权限',exact:true}).click();const rootRow=page.getByRole('row').filter({hasText:bundle.username});await expect(rootRow.getByRole('button',{name:'停用',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'退出登录',exact:true}).click();expect((await page.request.get('/api/reports')).status()).toBe(401);expect(errors).toEqual([]);
 });

@@ -7,6 +7,8 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { Badge, Button, Callout, Card, Spinner, TextField } from '@radix-ui/themes';
+import { Info, MapPin, Sparkles, UserRound } from 'lucide-react';
 import { formRequest, inferSurname, nameReviewKey } from "./form-state.js";
 import { longitudeText, matchCity, withPlace } from "./location-state.js";
 import { requestNameReview } from "./analysis.js";
@@ -205,12 +207,13 @@ export default forwardRef(function NamingForm(
   }
   function surnameField() {
     return <label><span className="field-label">姓氏</span>
-      <input name="surname" value={surname} onChange={e => rename ? setSurnameOverride(e.target.value) : setNewbornSurname(e.target.value)} required maxLength={4} placeholder="例如：林、欧阳" />
+      <TextField.Root size="3" name="surname" value={surname} onChange={e => rename ? setSurnameOverride(e.target.value) : setNewbornSurname(e.target.value)} required maxLength={4} placeholder="例如：林、欧阳"><TextField.Slot><UserRound size={16}/></TextField.Slot></TextField.Root>
     </label>;
   }
   return <section className="form-section simple-form-section wrap" id="form">
     <div className="intro">
       <p className="eyebrow">A NAME BEGINS HERE</p>
+      <Badge variant="soft" size="2">01 · 从基本信息开始</Badge>
       <h2>填好基本信息，<br />让名字有个好开始。</h2>
       <p>偏好可以以后再调，先看看喜欢的名字方向。</p>
       <div className="simple-flow-note"><b>{rename ? "先分析现名，再推荐新名" : "一页填写，直接生成"}</b><span>{rename ? "填写资料 → 现名分析 → 改名提案" : "填好姓氏和时间即可，城市和偏好按需补充。"}</span></div>
@@ -222,18 +225,18 @@ export default forwardRef(function NamingForm(
       <input type="hidden" name="algorithm" value="literary_v3" />
       <input type="hidden" name="purpose" value={rename ? "rename" : "newborn"} />
       <input type="hidden" name="mode" value={born ? "born" : "due_date"} />
-      <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message}</div>
+      <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message && <Callout.Root color="red" size="1"><Callout.Icon><Info size={16}/></Callout.Icon><Callout.Text>{message}</Callout.Text></Callout.Root>}</div>
       <fieldset className="basic-info" disabled={locked}>
         <legend id="basicInfoTitle" tabIndex={-1}>这次为谁取名</legend>
         <div className="scenario-choices" role="group" aria-label="起名场景">
-          {SCENARIOS.map(([value, title, hint]) => <label key={value}>
+          {SCENARIOS.map(([value, title, hint]) => <Card asChild key={value}><label>
             <input type="radio" name="scenario" value={value} checked={scenario === value} onChange={() => changeScenario(value)} />
             <span>{title}</span><small>{hint}</small>
-          </label>)}
+          </label></Card>)}
         </div>
         <div className="grid basic-fields">
           {rename ? <label id="currentNameField"><span className="field-label">现用姓名</span><input name="currentName" value={currentName} onChange={e => { setCurrentName(e.target.value); if (surnameOverride !== null && !e.target.value.trim().startsWith(surnameOverride)) setSurnameOverride(null); }} required maxLength={20} placeholder="例如：欧阳明哲" /><small className="surname-detection">{surname ? `已识别姓氏：${surname}` : "输入全名后自动识别姓氏"}<button type="button" onClick={() => edit(0, "surname")}>修改姓氏</button></small></label> : surnameField()}
-          <label><span className="field-label">性别<span className="optional-label">可选</span></span><select name="gender" value={gender} onChange={e => updatePerson("gender", e.target.value)}><option value="unknown">未知 / 暂不确定</option><option value="male">男</option><option value="female">女</option></select></label>
+          <label><span className="field-label">性别<span className="optional-label">可选</span></span><select name="gender" value={gender} onChange={e => updatePerson("gender", e.target.value)}><option value="unknown">未知</option><option value="male">男</option><option value="female">女</option></select></label>
         </div>
       </fieldset>
       <fieldset className="birth-info" disabled={locked}>
@@ -241,7 +244,7 @@ export default forwardRef(function NamingForm(
         <div className="grid birth-fields">
           <label className={!born ? "due-date-field" : ""}><span className="field-label">{born ? "实际出生日期" : "预产期日期"}</span><input type="date" name={born ? "birthDate" : "dueDate"} min="1900-01-01" max="2100-12-31" required value={born ? dates.birthDate : dates.dueDate} onChange={e => setDates(v => ({ ...v, [born ? "birthDate" : "dueDate"]: e.target.value }))} /></label>
           {born && <label><span className="field-label">准确出生时间</span><input name="birthTime" type="time" required value={dates.birthTime} onChange={e => setDates(v => ({ ...v, birthTime: e.target.value }))} /></label>}
-          <label className={born ? "place-field full-width" : "place-field"}><span className="field-label">{born ? "出生城市或地区" : "预计出生城市或地区"}<span className="optional-label">可选</span></span><input name="place" value={place} onChange={e => setCity(e.target.value)} list="birthCities" placeholder="选城市可自动带入时区与经度" autoComplete="off" aria-describedby="placeHelp" /><datalist id="birthCities">{LOCATIONS.cities.map(c => <option key={c.id} value={c.name} />)}</datalist></label>
+          <label className={born ? "place-field full-width" : "place-field"}><span className="field-label">{born ? "出生城市或地区" : "预计出生城市或地区"}<span className="optional-label">可选</span></span><TextField.Root size="3" name="place" value={place} onChange={e => setCity(e.target.value)} list="birthCities" placeholder="选城市可自动带入时区与经度" autoComplete="off" aria-describedby="placeHelp"><TextField.Slot><MapPin size={16}/></TextField.Slot></TextField.Root><datalist id="birthCities">{LOCATIONS.cities.map(c => <option key={c.id} value={c.name} />)}</datalist></label>
         </div>
         <p id="placeHelp" className="place-help">{city ? `已匹配${city.name}，${cityCoordinate ? `城市中心约${longitudeText(longitude)}` : longitude !== "" ? `自定义经度${longitudeText(longitude)}` : "请补充经度"}。` : longitude !== "" ? `已填写手动经度${longitudeText(longitude)}。` : place.trim() ? "该地点尚未匹配经度，可保留文字；真太阳时需手动填写经度。" : "可留空；选城市后自动带入时区和经度。"}{timeBasis === "civil" ? "当前按民用时间排盘，不作经度修正。" : "已启用真太阳时，经度将用于排盘修正。"}</p>
         <p className="simple-time-note">{born ? "请按出生记录填写。" : "预产期可填未来日期，默认12:00作参考。"}<button type="button" onClick={() => edit(1, "zone")}>{zoneLabel} · 调整</button></p>
@@ -284,7 +287,7 @@ export default forwardRef(function NamingForm(
         </fieldset>
       </details>
       <div className="simple-submit">
-        <button className="primary" type="submit" disabled={locked}>{reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看分析状态" : "分析现用姓名" : "生成名字提案 ✦"}</button>
+        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : <Sparkles size={17}/>}<span>{reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看分析状态" : "分析现用姓名" : "生成名字提案 ✦"}</span></Button>
         <small>无需登录。资料不会自动保存。</small>
       </div>
       {rename && review && <section className="simple-review" aria-label="现名分析状态与改名推荐">

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Badge, Button, Card, IconButton, Tooltip } from '@radix-ui/themes';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Check, Copy, Heart, Layers2, RefreshCw, Sparkles } from 'lucide-react';
 import { workflowLabel } from './form-state.js';
 
 export default function ProposalResults({data, analysis, candidates, status, busy, saved, dirty, onApply, onEdit,
@@ -9,17 +11,17 @@ export default function ProposalResults({data, analysis, candidates, status, bus
     setSelected(previous=>previous.some(x=>x.fullName===item.fullName) ? previous.filter(x=>x.fullName!==item.fullName) : previous.length<3 ? [...previous,item] : previous);
   }
   return <section id="results" className="results-section wrap public-proposals" aria-label="免费名字提案">
-    <div className="section-heading"><div><p className="eyebrow">A THOUGHTFUL SHORTLIST</p><h2>名字提案</h2></div><button type="button" className="secondary" disabled={busy || !analysis || !hasNext} onClick={onRegenerate}>换一组名字</button></div>
+    <div className="section-heading"><div><Badge variant="soft" size="2">02 · 遇见喜欢的名字</Badge><p className="eyebrow">A THOUGHTFUL SHORTLIST</p><h2>名字提案<span className="heading-dot">。</span></h2></div><Button type="button" variant="outline" color="gray" className="secondary" disabled={busy || !analysis || !hasNext} onClick={onRegenerate}><RefreshCw size={15}/>换一组名字</Button></div>
     <p id="resultStatus" className="results-status" role="status">{status}</p>
     {dirty && <section className="draft-notice" aria-label="尚未应用的修改"><div><b>填写内容已修改</b><p>当前仍是上一份提案，请应用修改后再申请报告。</p></div><button type="button" className="primary" disabled={busy} onClick={onApply}>应用修改并生成</button></section>}
     {analysis && <div id="summary" className="proposal-context"><strong>{data.surname} · {workflowLabel(data)}</strong><span>第{groupIndex+1}组 · {data.length || 2}字名 · 免费提案</span><button type="button" className="edit-context" onClick={()=>onEdit(1)}>修改出生信息</button></div>}
     <div id="cards" className="cards">
-      {candidates.map((item,index)=><article className="card proposal-card" key={item.fullName} tabIndex={-1}>
-        <div className="proposal-card-top"><span>{String(index+1).padStart(2,'0')} / 名字提案</span><span className="proposal-free">免费</span></div>
+      {candidates.map((item,index)=><Card asChild key={item.fullName}><article className="card proposal-card" tabIndex={-1}>
+        <div className="proposal-card-top"><span>{String(index+1).padStart(2,'0')} / 名字提案</span><Badge color="jade" variant="soft" className="proposal-free">免费</Badge></div>
         <h3>{item.fullName}</h3><p className="pinyin">{item.pinyin}</p><p className="meaning">{item.meaning}</p>
-        <div className="proposal-actions"><button type="button" className="save" aria-pressed={saved.includes(item.fullName)} onClick={()=>onSave(item)}>{saved.includes(item.fullName)?'已收藏':'收藏'}</button><button type="button" onClick={()=>onCopy(item.fullName)}>复制名字</button>
-          <button type="button" className="compare-name" aria-pressed={selected.some(x=>x.fullName===item.fullName)} disabled={selected.length>=3 && !selected.some(x=>x.fullName===item.fullName)} onClick={()=>compare(item)}>加入比较</button><button type="button" className="make-keepsake" onClick={()=>onKeepsake(item.fullName)}>名字卡</button></div>
-      </article>)}
+        <div className="proposal-actions"><Button type="button" size="1" variant={saved.includes(item.fullName)?'solid':'soft'} color="jade" className="save" aria-pressed={saved.includes(item.fullName)} onClick={()=>onSave(item)}><Heart size={13}/>{saved.includes(item.fullName)?'已收藏':'收藏'}</Button><Button type="button" size="1" variant="ghost" color="gray" onClick={()=>onCopy(item.fullName)}><Copy size={13}/>复制名字</Button>
+          <Button type="button" size="1" variant="ghost" color="gray" className="compare-name" aria-pressed={selected.some(x=>x.fullName===item.fullName)} disabled={selected.length>=3 && !selected.some(x=>x.fullName===item.fullName)} onClick={()=>compare(item)}><Layers2 size={13}/>加入比较</Button><Button type="button" size="1" variant="ghost" color="gray" className="make-keepsake" onClick={()=>onKeepsake(item.fullName)}>名字卡</Button></div>
+      </article></Card>)}
       {analysis && !candidates.length && <div className="empty-result"><p>当前条件{data.requiredChars?`（必用字：${data.requiredChars}）`:''}下没有匹配的名字，请调整设置后重试。</p><button type="button" className="secondary" onClick={()=>onEdit(2,'requiredChars')}>调整必用字或避讳</button><button type="button" className="secondary" onClick={()=>onEdit(2,'numerologyMode')}>调整数理筛选</button></div>}
       {!analysis && <div className="empty-result"><p>填好基本信息，先免费看看名字提案。</p></div>}
     </div>

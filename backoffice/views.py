@@ -77,7 +77,7 @@ def session_response(request):
     user = request.user
     profile = StaffProfile.objects.filter(user=user).first() if user.is_authenticated and user.is_active and getattr(user, 'otp_device', None) else None
     return JsonResponse({'csrf': get_token(request), 'user': {'id': user.pk, 'username': user.username,
-                         'role': profile.role, 'must_change_password': profile.must_change_password} if profile else None})
+                         'role': profile.role, 'is_superadmin': profile.is_superadmin, 'must_change_password': profile.must_change_password} if profile else None})
 
 
 @require_GET
@@ -135,6 +135,9 @@ def change_password(request):
         request.staff_profile.save(update_fields=['must_change_password'])
         event(request.user, 'password.changed')
     update_session_auth_hash(request, request.user)
+    if request.staff_profile.is_superadmin:
+        from .bootstrap import remove_initial_credentials
+        if remove_initial_credentials(request.user): event(request.user, 'superadmin.initial_credentials_removed')
     return session_response(request)
 
 
@@ -188,7 +191,7 @@ def users(request):
         rows = list(StaffProfile.objects.select_related('user').order_by('user_id'))
         event(request.user, 'staff.list')
         return JsonResponse({'users': [{'id': p.user_id, 'username': p.user.username, 'role': p.role,
-                              'active': p.user.is_active, 'must_change_password': p.must_change_password} for p in rows]})
+                              'active': p.user.is_active, 'is_superadmin':p.is_superadmin, 'must_change_password': p.must_change_password} for p in rows]})
     if request.method != 'POST': return HttpResponseNotAllowed(['GET', 'POST'])
     data = body(request, ('username', 'password', 'role'))
     if not isinstance(data.get('password'), str) or len(data['password']) > 256:
@@ -212,6 +215,8 @@ def disable_user(request, user_id):
     with transaction.atomic():
         user = get_user_model().objects.filter(pk=user_id, staff_profile__isnull=False).first()
         if not user: return error('账号不存在。', 404)
+        if user.staff_profile.is_superadmin:
+            return error('超级管理员不能通过网页停用；凭据恢复请使用可信终端。',403)
         if user.staff_profile.role == 'owner' and StaffProfile.objects.filter(role='owner', user__is_active=True).count() <= 1:
             return error('必须保留一个可用经营者账号。')
         user.is_active = False

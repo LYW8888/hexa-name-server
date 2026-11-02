@@ -9,6 +9,7 @@ frontend/playwright-report/
 *.sqlite3-*
 *.sock
 .private-admin/
+initial-superadmin.json
 .env
 .env.*
 *.env

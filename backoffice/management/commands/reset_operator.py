@@ -29,5 +29,8 @@ class Command(BaseCommand):
             TOTPDevice.objects.filter(user=user).delete()
             device=TOTPDevice.objects.create(user=user, name='工作验证器', confirmed=True)
             AuditEvent.objects.create(action='staff.recovered_via_cli', subject=str(user.pk))
+        if user.staff_profile.is_superadmin:
+            from backoffice.bootstrap import remove_initial_credentials
+            remove_initial_credentials(user)
         self.stdout.write('仅在可信终端中交付以下新验证器地址，首次登录需更改初始密码：')
         self.stdout.write(device.config_url)

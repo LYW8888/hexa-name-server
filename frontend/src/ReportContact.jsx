@@ -1,5 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { copyText } from "./utils.js";
+import { Badge, Button, Card, Spinner } from '@radix-ui/themes';
+import { ArrowUpRight, CheckCheck, Copy, FileCheck2, MessageCircle } from 'lucide-react';
 
 export default function ReportContact({ result, contact, toast }) {
   const [available, setAvailable] = useState(false), [consent, setConsent] = useState(false);
@@ -35,19 +37,19 @@ export default function ReportContact({ result, contact, toast }) {
     finally {clearTimeout(timer);submitting.current=false;setBusy(false);}
   }
   return <section id="reportRequest" className="report-contact" aria-label="联系获取完整报告">
-    <div className="report-contact-heading"><p className="eyebrow">BEYOND THE NAME</p><h3>喜欢这个名字，也想了解它的依据？</h3>
+    <div className="report-contact-heading"><Badge size="2" variant="soft" className="contact-badge">03 · 把名字的依据讲清楚</Badge><p className="eyebrow">BEYOND THE NAME</p><h3>名字之外，<br/>还有一份认真。</h3>
       <p>免费提供名字提案。完整现名分析、四柱排盘、五行喜用、古籍出处与选名说明，由经营者核对后人工交付。</p></div>
     <div className="contact-channels">
-      {contact?.wechat && <div><span>微信</span><b>{contact.wechat}</b><button type="button" className="secondary" onClick={()=>copy(contact.wechat,'微信号')}>复制微信号</button></div>}
-      {contact?.qq && <div><span>QQ</span><b>{contact.qq}</b><button type="button" className="secondary" onClick={()=>copy(contact.qq,'QQ号')}>复制QQ号</button></div>}
+      {contact?.wechat && <Card asChild><div><MessageCircle size={18}/><span>微信</span><b>{contact.wechat}</b><Button type="button" size="2" variant="soft" className="secondary" onClick={()=>copy(contact.wechat,'微信号')}><Copy size={13}/>复制微信号</Button></div></Card>}
+      {contact?.qq && <Card asChild><div><MessageCircle size={18}/><span>QQ</span><b>{contact.qq}</b><Button type="button" size="2" variant="soft" className="secondary" onClick={()=>copy(contact.qq,'QQ号')}><Copy size={13}/>复制QQ号</Button></div></Card>}
     </div>
-    {receipt ? <div className="report-receipt" role="status"><b>资料已登记，请联系经营者并提供申请编号</b><code>{receipt.id}</code>
+    {receipt ? <div className="report-receipt" role="status"><CheckCheck size={25}/><b>资料已登记，请联系经营者并提供申请编号</b><code>{receipt.id}</code>
       <button type="button" className="primary" onClick={()=>copy(`序名完整报告申请\n申请编号：${receipt.id}\n名字提案：${result.candidates.map(x=>x.fullName).join('、')}`,'咨询信息')}>复制申请编号与名字</button>
       <p>登记不代表已经购买。请通过上方渠道确认报告范围、费用与交付时间；完整报告由经营者发送。</p></div>
       : result?.candidates?.length && available ? <div className="report-application">
         <label className="report-consent"><input type="checkbox" checked={consent} disabled={busy} onChange={e=>setConsent(e.target.checked)} />
           <span>我同意将本次出生资料、命名偏好和名字提案提交给经营者，用于整理和人工交付报告，保留30天。</span></label>
-        <button type="button" className="primary" disabled={!consent || busy} onClick={submit}>{busy?'正在登记…':'登记资料，获取申请编号'}</button>
+        <Button type="button" size="3" className="primary" disabled={!consent || busy} onClick={submit}>{busy?<Spinner/>:<FileCheck2 size={17}/>}<span>{busy?'正在登记…':'登记资料，获取申请编号'}</span></Button>
         <small>先登记，再通过微信或QQ联系；不会自动扣费。</small>
       </div> : <p className="contact-direct">{result?.candidates?.length ? '可直接通过微信或QQ联系经营者，确认完整报告的内容、费用与交付时间。' : '先免费生成名字提案，也可以直接联系经营者说明需求。'}</p>}
     {message && <p className="form-message error" role="alert">{message}</p>}

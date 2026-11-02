@@ -120,8 +120,10 @@ test("隐藏偏好中的数量错误会展开定位，输入不会丢失", async
 });
 
 test("字库数量晚到会修正选中的数量上限", async ({ page }) => {
-  await page.route("**/api/name-counts*", async route => { await new Promise(resolve => setTimeout(resolve, 700)); await route.fulfill({ json: { counts: { 1: 15, 2: 15, 3: 5 } } }); });
+  let release;const gate=new Promise(resolve=>{release=resolve;});
+  await page.route("**/api/name-counts*", async route => { await gate; await route.fulfill({ json: { counts: { 1: 15, 2: 15, 3: 5 } } }); });
   await page.goto("/"); await openSettings(page); await page.locator("[name=length]").selectOption("3"); await page.locator("[name=candidateCount]").fill("11");
+  release();
   await expect(page.locator("[name=candidateCount]")).toHaveValue("5");
 });
 
