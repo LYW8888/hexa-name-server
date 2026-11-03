@@ -23,7 +23,7 @@ class ReportRejected(Exception):
 def call(action, args, actor='public', socket_path=None, *, timeout=20):
     target = socket_path or os.environ.get('XUMING_REPORTS_SOCKET')
     if not target:
-        raise ReportUnavailable('报告登记暂未开通，请通过微信或QQ联系经营者。')
+        raise ReportUnavailable('报告体验暂时无法连接，请稍后重试。')
     raw = json.dumps({'action': action, 'args': args, 'actor': actor}, ensure_ascii=False).encode() + b'\n'
     if len(raw) > 65536:
         raise ReportRejected('提交内容过大，请减少文字后重试。')

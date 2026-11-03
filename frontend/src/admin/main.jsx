@@ -268,7 +268,7 @@ function App() {
   const tabs = [
     ["overview", "工作总览"],
     ...(user.role === "owner"
-      ? [["reports", "完整报告"], ["experience", "体验反馈与内测"], ["users", "员工与权限"]]
+      ? [["experience", "体验反馈与内测"], ["reports", "历史报告"], ["users", "员工与权限"]]
       : [["workspace", `${roles[user.role]}工作台`]]),
     ["audit", "操作记录"],
     ["password", "修改密码"],
@@ -331,7 +331,7 @@ function App() {
             {tab === "experience" && user.role === "owner" && <ExperienceManager ref={experienceController} api={api} notify={setNotice}/>}
             {tab === "overview" && (
               <>
-                <Card className="workspace-welcome"><div><Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>每一份心意，都有妥善的回音。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('reports')}>处理报告<ArrowUpRight size={16}/></Button>}</Card>
+                <Card className="workspace-welcome"><div><Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>每一份心意，都有妥善的回音。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('experience')}>报告与体验<ArrowUpRight size={16}/></Button>}</Card>
                 <div className="summary-grid">
                   {Object.entries(summary || {}).map(([role, item]) => (
                     <section className="surface metric-card" key={role}>
@@ -374,7 +374,7 @@ function App() {
                     重复请求复用原服务，失败在原服务下重试，达到上限后转人工处理。
                   </p>
                   <p className="small muted">
-                    收支与旧交付状态属于内部登记，不代表实际收付款。完整报告由经营者在报告工作台核对并人工交付。
+                    收支与旧交付状态属于内部登记，不代表实际收付款。公开内测报告和免费名额在“体验反馈与内测”管理；原人工申请在“历史报告”保留。
                   </p>
                 </div>
               </>

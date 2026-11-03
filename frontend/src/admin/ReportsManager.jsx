@@ -30,7 +30,7 @@ export default function ReportsManager({api, notify}) {
   const report=current?.report;
   const candidates=report?.candidates.map(x=>({...x,fullName:x.name,scoreEvidence:x.score_evidence,elementEvidence:x.element_evidence,guaEvidence:x.gua_evidence,yinyangEvidence:x.yinyang_evidence})) || [];
   return <section className="surface reports-workspace" aria-label="完整报告工作台">
-    <h2>报告申请与人工交付</h2><p className="small muted">按客户提供的申请编号查找，核对后导出并通过微信或QQ人工发送。其他岗位无权读取此处资料。</p>
+    <h2>历史报告申请与人工交付</h2><p className="small muted">仅保留原人工申请记录。当前公开内测报告请进入“体验反馈与内测”；历史记录仍可按申请编号查询、导出或删除。其他岗位无权读取此处资料。</p>
     <form className="report-search" onSubmit={e=>{e.preventDefault();setCurrent(null);setArmed('');load();}}><label>申请编号<input name="reportQuery" value={query} onChange={e=>setQuery(e.target.value)} placeholder="粘贴申请编号或客户的咨询信息" maxLength={1000}/></label><button disabled={busy}>查找申请</button><button type="button" disabled={busy} onClick={()=>{setQuery('');setCurrent(null);load('');}}>查看最近申请</button></form>
     {message&&<p role="alert" className="notice error">{message}</p>}
     <div className="table-wrap"><table><thead><tr><th>申请编号 / 时间</th><th>提案 / 状态</th><th>操作</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td className="mono">{row.id}<small>{when(row.created_at)}</small></td><td>{row.names.join('、')}<small>{row.purpose} · {row.status==='delivered'?'已人工交付':'待核对与交付'}</small></td><td><button type="button" disabled={busy} onClick={()=>open(row.id)}>查看完整报告</button></td></tr>)}</tbody></table></div>

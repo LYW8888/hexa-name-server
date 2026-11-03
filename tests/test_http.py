@@ -203,23 +203,36 @@ class HttpHandlerTest(unittest.TestCase):
         for path in ('/api/reports','/api/report-requests/11111111-1111-4111-8111-111111111111','/reports.sqlite3','/report_service.py'):
             self.assertEqual(self.request('GET',path)[0],404)
 
-    def test_report_registration_requires_only_supported_fields_and_same_origin(self):
+    def test_retired_contact_registration_and_public_quota(self):
         from unittest.mock import patch
-        with patch('server.report_client.call',return_value={'id':'receipt','status':'new'}) as call:
-            args={'request_key':'test','consent':True,'input':{},'expected_names':['林安']}
-            status,_,_=self.request('POST','/api/report-requests',json.dumps(args),{'Content-Type':'application/json','Origin':'https://other.invalid'})
-            self.assertEqual(status,403);call.assert_not_called()
-            status,_,_=self.request('POST','/api/report-requests',json.dumps({**args,'report':{}}),{'Content-Type':'application/json'})
-            self.assertEqual(status,400);call.assert_not_called()
-            status,_,body=self.request('POST','/api/report-requests',json.dumps(args),{'Content-Type':'application/json'})
-            self.assertEqual(status,201);self.assertEqual(json.loads(body)['id'],'receipt')
-            self.assertEqual(call.call_args.args[1]['client'],'127.0.0.1')
+        import report_client
+        with patch('server.report_client.call',return_value={}) as call:
+            self.assertEqual(self.request('POST','/api/report-requests','{}',{'Content-Type':'application/json'})[0],410)
+            call.assert_not_called()
+        quota={'available':True,'total':100,'used':7,'remaining':93,'enabled':True,'revision':8}
+        with patch('server.report_client.call',return_value=quota):
+            status,headers,body=self.request('GET','/api/beta-quota')
+            self.assertEqual(status,200);self.assertEqual(json.loads(body),quota)
+            self.assertIn('no-store',str(headers).lower())
+        with patch('server.report_client.call',side_effect=report_client.ReportUnavailable('offline')):
+            status,_,body=self.request('GET','/api/beta-quota')
+            self.assertEqual(status,503);self.assertFalse(json.loads(body)['available'])
+            self.assertNotIn('total',json.loads(body))
+
+    def test_public_report_claim_checks_same_origin_and_supported_fields(self):
+        from unittest.mock import patch
+        args={'generation_id':'test','generation_token':'token','input':{},'expected_names':['林安'],'consent':True}
+        with patch('server.report_client.call',return_value={'id':'receipt'}) as call:
+            self.assertEqual(self.request('POST','/api/beta-reports',json.dumps(args),{'Content-Type':'application/json','Origin':'https://other.invalid'})[0],403)
+            call.assert_not_called()
+            self.assertEqual(self.request('POST','/api/beta-reports',json.dumps({**args,'report':{}}),{'Content-Type':'application/json'})[0],400)
+            call.assert_not_called()
 
     def test_source_header_is_trusted_only_behind_explicit_loopback_proxy_configuration(self):
         from unittest.mock import patch
-        args={'request_key':'test','consent':True,'input':{},'expected_names':['林安']}
+        args={'generation_id':'test','generation_token':'token','consent':True,'input':{},'expected_names':['林安']}
         with patch('server.report_client.call',return_value={'id':'receipt'}) as call:
             for trust, expected in (('0','127.0.0.1'),('1','203.0.113.8')):
                 with patch.dict('os.environ',{'XUMING_TRUST_PROXY':trust}):
-                    self.request('POST','/api/report-requests',json.dumps(args),{'Content-Type':'application/json','X-Real-IP':'203.0.113.8'})
+                    self.request('POST','/api/beta-reports',json.dumps(args),{'Content-Type':'application/json','X-Real-IP':'203.0.113.8'})
                     self.assertEqual(call.call_args.args[1]['client'],expected)

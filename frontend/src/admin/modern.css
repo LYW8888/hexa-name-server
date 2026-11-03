@@ -220,3 +220,5 @@
   .experience-filters label { min-width:110px; }
   .experience-filters>button { width:100%; }
 }
+
+.quota-admin-form{display:flex;align-items:end;gap:20px;flex-wrap:wrap;margin-top:22px}.quota-admin-form label{margin:0}.quota-admin-form input[type=checkbox]{display:inline-block;width:17px;min-height:17px;margin-right:8px}.quota-admin-form button{min-height:44px}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Header, Hero, Plans, Method, Footer } from "./Layout.jsx";
+import { Header, Hero, Method, Footer } from "./Layout.jsx";
 import NamingForm from "./NamingForm.jsx";
 import Results from "./ProposalResults.jsx";
 import ReportContact from "./ReportContact.jsx";
@@ -8,6 +8,7 @@ import Keepsake from "./Keepsake.jsx";
 import CustomerArea from "./CustomerArea.jsx";
 import SavedNames from "./SavedNames.jsx";
 import ExperiencePanel from './ExperiencePanel.jsx';
+import usePublicQuota from './usePublicQuota.js';
 import { requestKey, workflowId } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
 import { copyText, friendlyError } from "./utils.js";
@@ -50,12 +51,14 @@ function scroll(id, immediate = false) {
   requestAnimationFrame(() =>
     (() => {
       const element = document.querySelector(id);
+      for(let parent=element?.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
       if (immediate) element?.focus({ preventScroll: true });
       element?.scrollIntoView({ behavior: immediate ? "instant" : behavior(), block: "start" });
     })(),
   );
 }
 export default function App() {
+  const quota=usePublicQuota();
   const [favorite, setFavorite] = useState(stored),
     [savedOpen, setSavedOpen] = useState(false),
     [selection, setSelection] = useState(null);
@@ -85,6 +88,11 @@ export default function App() {
     timer.current = window.setTimeout(() => setNotice(null), 3200);
   }, []);
   useEffect(() => () => window.clearTimeout(timer.current), []);
+  useEffect(()=>{
+    const openHash=()=>{const id=window.location.hash.slice(1),el=document.getElementById(id);for(let parent=el?.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;};
+    window.addEventListener('hashchange',openHash);openHash();return()=>window.removeEventListener('hashchange',openHash);
+  },[]);
+
   useEffect(() => {
     let active = true;
     fetch("/api/name-counts?algorithm=literary_v3")
@@ -215,7 +223,7 @@ export default function App() {
         requested = Number(data.candidateCount || 3);
       const prefix = isRegenerate
         ? `已换到第 ${Number(data.variant) + 1} 组，共 ${count} 个名字。`
-        : `已生成 ${count} 个名字提案，可比较、收藏；完整报告请联系经营者。`;
+        : `已生成 ${count} 个名字提案，可比较、收藏，并按剩余名额体验完整报告。`;
       setStatus(
         count
           ? `${prefix}${count < requested ? `当前条件下，字库实际匹配 ${count} 个。` : ""}`
@@ -315,7 +323,8 @@ export default function App() {
         onAccount={() => scroll("#account")}
       />
       <main id="top">
-        <Hero activeScenario={draft?.purpose === 'rename' ? 'rename' : draft?.mode || 'due_date'} busy={busy} onBegin={scenario => scenario ? formController.current?.startScenario(scenario) : formController.current?.resume()} />
+        <Hero quota={quota}/>
+        <div className="workspace-grid wrap">
         <NamingForm
           ref={formController}
           onDraftChange={setDraft}
@@ -326,7 +335,7 @@ export default function App() {
           setMessage={setMessage}
           toast={toast}
         />
-        <Results
+        <div className="workspace-output"><Results
           data={result?.data}
           analysis={result?.analysis}
           candidates={result?.candidates || []}
@@ -365,16 +374,16 @@ export default function App() {
           onSave={save}
           onKeepsake={openKeepsake}
         />
-        <ExperiencePanel result={!dirty ? result : null} toast={toast}/>
-        <div className="wrap"><ReportContact result={!dirty ? result : null} contact={product.contact} toast={toast} /></div>
-        <CustomerArea
+        <ExperiencePanel result={!dirty ? result : null} toast={toast} quota={quota}/>
+        </div></div>
+        <div className="workspace-extras wrap"><details id="accountTools"><summary>我的服务<span>保存与找回免费提案</span></summary><CustomerArea
           result={result}
           toast={toast}
           onSaved={showSaved}
-        />
-        <Keepsake selection={selection} toast={toast} />
-        <Plans product={product} toast={toast} />
-        <Method />
+        /></details>
+        <details id="keepsakeTools"><summary>名字心愿卡<span>把喜欢的名字留给家人</span></summary><Keepsake selection={selection} toast={toast}/></details>
+        <details id="methodTools"><summary>命名方法<span>了解出生时光与古籍依据</span></summary><Method/></details></div>
+        <ReportContact contact={product.contact} toast={toast}/>
       </main>
       <Footer clear={clear} />
       <SavedNames

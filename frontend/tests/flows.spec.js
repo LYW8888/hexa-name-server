@@ -28,20 +28,18 @@ async function generate(page, options = {}) {
 }
 
 for (const width of [1280, 390]) {
-  test(`首页三个入口同步场景且保留各自资料 ${width}px`, async ({page})=>{
+  test(`三种场景切换且保留各自资料 ${width}px`, async ({page})=>{
     await page.setViewportSize({width,height:950});await page.goto('/');
-    const launcher=page.getByRole('group',{name:'快捷选择起名场景'});
-    await launcher.getByRole('button',{name:'预产期起名',exact:true}).click();
-    await expect(page.locator('[name=scenario][value=due_date]')).toBeChecked();
+    await selectScenario(page,'due_date');
     await page.locator('[name=surname]').fill('林');await page.locator('[name=dueDate]').fill('2099-12-23');
-    await launcher.getByRole('button',{name:'已出生起名',exact:true}).click();
-    await expect(page.locator('[name=scenario][value=born]')).toBeChecked();await expect(page.locator('[name=dueDate]')).toHaveCount(0);
+    await selectScenario(page,'born');
+    await expect(page.locator('[name=dueDate]')).toHaveCount(0);
     await page.locator('[name=birthDate]').fill('2024-01-05');await page.locator('[name=birthTime]').fill('13:48');
-    await launcher.getByRole('button',{name:'改名',exact:true}).click();
+    await selectScenario(page,'rename');
     await expect(page.locator('[name=currentName]')).toBeVisible();await expect(page.locator('[name=birthDate]')).toHaveValue('');
     await page.locator('[name=currentName]').fill('欧阳明哲');
-    await launcher.getByRole('button',{name:'预产期起名',exact:true}).click();
-    await expect(launcher.getByRole('button',{name:'预产期起名',exact:true})).toHaveAttribute('aria-pressed','true');
+    await selectScenario(page,'due_date');
+    await expect(page.locator('[name=scenario][value=due_date]')).toBeChecked();
     await expect(page.locator('[name=currentName]')).toHaveCount(0);await expect(page.locator('[name=dueDate]')).toHaveValue('2099-12-23');
     const request=page.waitForRequest('**/api/analyze');await page.locator('#namingForm button[type=submit]').click();
     expect((await request).postDataJSON()).toMatchObject({surname:'林',purpose:'newborn',mode:'due_date'});
@@ -323,9 +321,7 @@ test("旧收藏可用，心愿卡与推荐链接不含出生信息", async ({ pa
 test("320px键盘可选择场景和操作导航，减少动态效果生效", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 850 }); await page.emulateMedia({ reducedMotion: "reduce" }); await page.goto("/"); await page.locator("[name=scenario][value=rename]").focus(); await page.keyboard.press("Space"); await expect(page.locator("[name=currentName]")).toBeVisible();
   const button = page.locator("#mobileMenuButton"); await button.focus(); await page.keyboard.press("Enter"); await expect(page.locator("#mobileMenu")).toBeVisible(); await page.keyboard.press("Escape"); await expect(button).toBeFocused();
-  expect(await page.locator(".orb").evaluate(el => getComputedStyle(el, "::before").animationName)).toBe("none");
-  expect(await page.locator('.celestial-glyph').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
-  expect(await page.locator('.celestial-stars').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+  expect(await page.locator('.scenario-choices label').first().evaluate(el=>getComputedStyle(el).transitionDuration)).toBe('0s');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 
@@ -363,6 +359,7 @@ test("表单资料不落本机收藏，离线仍能制作心愿卡", async ({ pa
   const stored = await page.evaluate(() => JSON.stringify(Object.entries(localStorage)));
   expect(stored).not.toContain("2099-12-23"); expect(stored).not.toContain("dueDate"); expect(stored).not.toContain("birthDate");
   await page.evaluate(() => navigator.serviceWorker.ready); await context.setOffline(true); await page.reload();
+  await page.locator("#keepsakeTools > summary").click();
   await page.locator("#keepsakeName").fill("林安");
   const pending = page.waitForEvent("download"); await page.locator("#downloadKeepsake").click(); const image = await readFile(await (await pending).path());
   expect(image.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
@@ -377,24 +374,19 @@ test("宝宝与改名对象的出生资料分别保留，不自动混填", async
   await selectScenario(page, "rename"); await expect(page.locator("[name=birthDate]")).toHaveValue("1998-08-13"); await expect(page.locator("[name=zone]")).toHaveValue("Asia/Taipei");
 });
 
-test('完整报告须主动同意登记，咨询复制不附带出生资料',async({page})=>{
-  await page.route('**/api/report-service',route=>route.fulfill({json:{available:true}}));
+test('联系方式仅展示复制，不提交出生资料或解锁报告',async({page})=>{
   await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.__copied=value;}}}));
-  let input, calls=0;const id='11111111-1111-4111-8111-111111111111';
-  await page.route('**/api/report-requests',async route=>{calls++;input=route.request().postDataJSON();await route.fulfill({json:{id,status:'new',reused:false}});});
-  await page.goto('/');await generate(page);const section=page.locator('#reportRequest');
-  const submit=section.getByRole('button',{name:'登记资料，获取申请编号'});await expect(submit).toBeDisabled();expect(calls).toBe(0);
+  const calls=[];page.on('request',r=>{if(r.url().includes('report-requests'))calls.push(r.url());});
+  await page.goto('/');await generate(page);const section=page.getByRole('region',{name:'联系方式',exact:true});
+  await expect(section.getByRole('checkbox')).toHaveCount(0);await expect(section).not.toContainText('解锁');
   await section.getByRole('button',{name:'复制微信号'}).click();expect(await page.evaluate(()=>window.__copied)).toBe('LCEX511');
-  await section.getByRole('checkbox').check();await submit.click();await expect(section.locator('code')).toHaveText(id);expect(calls).toBe(1);
-  expect(input.consent).toBe(true);expect(input.input.dueDate).toBe('2099-12-23');expect(input.expected_names).toEqual(await page.locator('#cards h3').allTextContents());expect(input).not.toHaveProperty('analysis');expect(input).not.toHaveProperty('report');
-  await section.getByRole('button',{name:'复制申请编号与名字'}).click();const copied=await page.evaluate(()=>window.__copied);expect(copied).toContain(id);expect(copied).not.toContain('2099');expect(copied).not.toContain('dueDate');
+  await section.getByRole('button',{name:'复制QQ号'}).click();expect(await page.evaluate(()=>window.__copied)).toBe('19437771');expect(calls).toEqual([]);
 });
 
-test('登记失败可重试并复用编号，修改偏好后须应用才可登记',async({page})=>{
-  await page.route('**/api/report-service',route=>route.fulfill({json:{available:true}}));const inputs=[];
-  await page.route('**/api/report-requests',async route=>{inputs.push(route.request().postDataJSON());await route.fulfill(inputs.length===1?{status:503,json:{error:'登记暂时不可用'}}:{json:{id:'22222222-2222-4222-8222-222222222222'}});});
-  await page.goto('/');await generate(page);const section=page.locator('#reportRequest');await section.getByRole('checkbox').check();await section.getByRole('button',{name:'登记资料，获取申请编号'}).click();await expect(section.getByRole('alert')).toContainText('登记暂时不可用');
-  await section.getByRole('button',{name:'登记资料，获取申请编号'}).click();await expect(section.locator('code')).toBeVisible();expect(inputs[0].request_key).toBe(inputs[1].request_key);
-  await page.getByRole('button',{name:'调整偏好',exact:true}).click();await page.locator('[name=likedChars]').fill('安');await expect(section.getByRole('checkbox')).toHaveCount(0);await expect(section.locator('code')).toHaveCount(0);
-  await page.getByRole('button',{name:'应用修改并生成',exact:true}).click();await expect(page.locator('.draft-notice')).toHaveCount(0);await expect(section.getByRole('checkbox')).toBeVisible();await expect(section.getByRole('checkbox')).not.toBeChecked();
+test('名额失败不伪造零，保留真实值并忽略过时响应',async({page})=>{
+  let version=1;
+  await page.route('**/api/beta-quota',route=>route.fulfill(version===3?{status:503,json:{available:false}}:{json:{available:true,total:100,used:version===1?12:8,remaining:version===1?88:92,enabled:true,revision:version===1?13:9}}));
+  await page.goto('/');await expect(page.locator('[data-quota=used]')).toHaveText('12');
+  version=2;await page.getByRole('button',{name:'刷新体验名额'}).click();await expect(page.locator('[data-quota=used]')).toHaveText('12');
+  version=3;await page.getByRole('button',{name:'刷新体验名额'}).click();await expect(page.locator('#trialQuota')).toContainText('待刷新');await expect(page.locator('[data-quota=used]')).toHaveText('12');
 });

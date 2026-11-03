@@ -20,6 +20,7 @@ class BackofficeTest(TestCase):
             self.as_role(role)
             self.assertEqual(self.client.get('/api/experience').status_code,403)
             self.assertEqual(self.post('/api/experience/invites').status_code,403)
+            self.assertEqual(self.post('/api/experience/quota',{'total':100,'enabled':True,'expected_config_version':1}).status_code,403)
             self.assertEqual(self.client.get('/api/experience/reports/'+reference).status_code,403)
             self.assertEqual(self.post('/api/experience/update/'+reference,{'state':'resolved'}).status_code,403)
         call.assert_not_called()
@@ -27,10 +28,11 @@ class BackofficeTest(TestCase):
     @patch('backoffice.views.report_client.call',return_value={'ok':True})
     def test_experience_forwards_fixed_actions_without_privilege_or_data_injection(self, call):
         user=self.as_role('owner');reference='11111111-1111-4111-8111-111111111111'
-        self.assertEqual(self.post('/api/experience/invites',{'role':'owner'}).status_code,400)
+        self.assertEqual(self.post('/api/experience/quota',{'total':100,'used':0}).status_code,400)
         call.assert_not_called()
-        self.assertEqual(self.post('/api/experience/invites').status_code,200)
-        self.assertEqual(call.call_args.args[:3],('beta.invite',{},f'staff:{user.pk}'))
+        self.assertEqual(self.post('/api/experience/invites').status_code,410)
+        self.assertEqual(self.post('/api/experience/quota',{'total':100,'enabled':True,'expected_config_version':1}).status_code,200)
+        self.assertEqual(call.call_args.args[:3],('quota.update',{'total':100,'enabled':True,'expected_config_version':1},f'staff:{user.pk}'))
         self.assertEqual(self.post('/api/experience/update/'+reference,{'state':'planned','rating':5}).status_code,400)
         self.assertEqual(self.post('/api/experience/update/'+reference,{'state':'planned'}).status_code,200)
         self.assertEqual(call.call_args.args[:3],('experience.update',{'state':'planned','id':reference},f'staff:{user.pk}'))

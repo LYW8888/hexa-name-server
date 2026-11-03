@@ -12,7 +12,7 @@ export default function ProposalResults({data, analysis, candidates, status, bus
     setSelected(previous=>previous.some(x=>x.fullName===item.fullName) ? previous.filter(x=>x.fullName!==item.fullName) : previous.length<3 ? [...previous,item] : previous);
   }
   return <section id="results" className="results-section wrap public-proposals" aria-label="免费名字提案">
-    <div className="section-heading"><div><p className="eyebrow"><span>02</span> 名字提案 / YOUR POSSIBILITIES</p><h2>名字里，藏着新的可能<span className="heading-dot">。</span></h2></div><Button type="button" variant="outline" color="gray" className="secondary" disabled={busy || !analysis || !hasNext} onClick={onRegenerate}><RefreshCw size={15}/>换一组名字</Button></div>
+    <div className="section-heading"><div><p className="eyebrow"><span>02</span> 命名结果 / YOUR SHORTLIST</p><h2>你的名字提案</h2></div><Button type="button" variant="outline" color="gray" className="secondary" disabled={busy || !analysis || !hasNext} onClick={onRegenerate}><RefreshCw size={15}/>换一组名字</Button></div>
     <p id="resultStatus" className="results-status" role="status">{status}</p>
     {dirty && <section className="draft-notice" aria-label="尚未应用的修改"><div><b>填写内容已修改</b><p>当前仍是上一份提案，请应用修改后再申请报告。</p></div><button type="button" className="primary" disabled={busy} onClick={onApply}>应用修改并生成</button></section>}
     {analysis && <div id="summary" className="proposal-context"><strong>{data.surname} · {workflowLabel(data)}</strong><span>第{groupIndex+1}组 · {data.length || 2}字名 · 免费提案</span><button type="button" className="edit-context" onClick={()=>onEdit(1)}>修改出生信息</button></div>}
@@ -29,7 +29,7 @@ export default function ProposalResults({data, analysis, candidates, status, bus
     {!!selected.length && <section id="candidateComparison" className="proposal-comparison" aria-label="名字比较"><div className="comparison-heading"><h3>放在一起，读一读 <small>已选 {selected.length}/3</small></h3><button type="button" onClick={()=>setSelected([])}>清空比较</button></div><div className="proposal-compare-grid">
       {selected.map(item=><article key={item.fullName}><h4>{item.fullName}</h4><p>{item.pinyin}</p><p>{item.meaning}</p><button type="button" onClick={()=>compare(item)}>移除{item.fullName}</button></article>)}
     </div></section>}
-    {analysis && <div className="proposal-footer"><div><button id="previousGroup" type="button" className="secondary" disabled={busy || !hasPrevious} onClick={onPrevious}>上一组</button><button id="regenerate" type="button" className="secondary" disabled={busy || !hasNext} onClick={onRegenerate}>下一组</button><button type="button" className="secondary" onClick={()=>onEdit(2)}>调整偏好</button><button type="button" className="secondary" onClick={onSaved}>查看收藏</button></div><a className="primary" href="#reportRequest">联系获取完整报告 ↗</a></div>}
-    <p className="proposal-scope">这里免费展示姓名、读音与简短寓意；完整分析和报告请联系经营者获取。</p>
+    {analysis && <div className="proposal-footer"><div><button id="previousGroup" type="button" className="secondary" disabled={busy || !hasPrevious} onClick={onPrevious}>上一组</button><button id="regenerate" type="button" className="secondary" disabled={busy || !hasNext} onClick={onRegenerate}>下一组</button><button type="button" className="secondary" onClick={()=>onEdit(2)}>调整偏好</button><button type="button" className="secondary" onClick={onSaved}>查看收藏</button></div></div>}
+    <p className="proposal-scope">先比较姓名、读音与寓意。想了解四柱、五行与逐名依据，可在下方免费体验完整报告。</p>
   </section>;
 }

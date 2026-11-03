@@ -4,7 +4,7 @@ import '@radix-ui/themes/styles.css';
 import './celestial-art.css';
 
 export default function DesignSystem({children, admin=false}) {
-  return <Theme appearance="dark" accentColor="iris" grayColor="slate" radius="large"
+  return <Theme appearance={admin?'dark':'light'} accentColor="iris" grayColor="slate" radius="large"
     panelBackground="translucent" scaling="100%" hasBackground={false}
     className={admin ? 'origin-theme admin-theme' : 'origin-theme product-theme'}>
     {children}

@@ -216,13 +216,6 @@ export default forwardRef(function NamingForm(
     </label>;
   }
   return <section className="form-section simple-form-section wrap" id="form">
-    <div className="intro">
-      <p className="eyebrow"><span>01</span> 命名工作区 / BEGIN HERE</p>
-      <h2>{rename ? <>新名字之前，<br/>先读懂现在的你。</> : <>每一个名字，<br/>始于你的时光。</>}</h2>
-      <p>{rename ? "从现用姓名和真实出生信息出发，先分析，再探索新的名字方向。" : "填好姓氏和出生信息，先遇见几个喜欢的名字。偏好与心意，随时可以调整。"}</p>
-      <div className="workspace-art" aria-hidden="true"><span>{rename ? '新' : born ? '生' : '初'}</span><i/><small>一段时光 · 一份心意</small></div>
-      <div className="simple-flow-note"><ShieldCheck size={16}/><div><b>{rename ? "先分析现名，再推荐新名" : "只需基本信息，即可开始"}</b><span>{rename ? "分析状态免费查看，完整报告联系经营者。" : "无需登录，资料不会自动保存。"}</span></div></div>
-    </div>
     <form id="namingForm" ref={formRef} noValidate aria-busy={locked} onChange={event => {
       if (invalidField.current?.name === event.target.name) clearError();
       capture();
@@ -230,7 +223,7 @@ export default forwardRef(function NamingForm(
       <input type="hidden" name="algorithm" value="literary_v3" />
       <input type="hidden" name="purpose" value={rename ? "rename" : "newborn"} />
       <input type="hidden" name="mode" value={born ? "born" : "due_date"} />
-      <div className="workspace-caption"><span><Orbit size={16}/>命名工作区</span><Badge variant="soft" color="iris">免费体验</Badge></div>
+      <div className="workspace-caption"><span><Orbit size={16}/>命名资料</span><Badge variant="soft" color="iris">免费体验</Badge></div>
       <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message && <Callout.Root color="red" size="1"><Callout.Icon><Info size={16}/></Callout.Icon><Callout.Text>{message}</Callout.Text></Callout.Root>}</div>
       <fieldset className="basic-info" disabled={locked}>
         <legend id="basicInfoTitle" tabIndex={-1}>这次为谁取名</legend>
@@ -299,7 +292,7 @@ export default forwardRef(function NamingForm(
       {rename && review && <section className="simple-review" aria-label="现名分析状态与改名推荐">
         <h3 id="currentReviewTitle" tabIndex={-1}>先分析现名，再推荐改名</h3>
         {reviewCurrent ? <>
-          <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来可免费查看改名提案。完整现名分析、出生依据与改名说明，请联系经营者获取。</p><a href="#reportRequest">了解完整报告与联系方式 ↗</a></div>
+          <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来可免费查看改名提案。完整现名分析、出生依据与改名说明，可在生成提案后体验完整报告。</p><a href="#trialQuota">查看免费报告名额 ↗</a></div>
           <div className="review-next"><button type="button" className="secondary" onClick={() => edit(0)}>修改资料</button><button type="button" className="primary" disabled={locked} onClick={() => generate(true)}>{busy ? "正在推荐…" : "查看改名提案"}</button></div>
         </> : <div className="review-stale"><p>姓名或出生资料已修改，请重新分析现名后继续。</p><button type="button" className="primary" disabled={locked} onClick={analyzeCurrentName}>重新分析现用姓名</button></div>}
       </section>}

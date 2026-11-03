@@ -262,7 +262,7 @@ export default function CustomerArea({ result, toast, onSaved }) {
           <span>账号独立保护</span>
         </div>
         <p className="customer-scope">
-          登录后可主动保存和找回名字提案；完整分析报告请联系经营者，本机收藏无需登录。
+          登录后可主动保存和找回名字提案；本机收藏和公开内测体验无需登录。
         </p>
       </div>
       <div className="customer-panel">
@@ -348,9 +348,9 @@ export default function CustomerArea({ result, toast, onSaved }) {
               <strong>
                 {connectionFailed ? "账号服务暂时不可用" : "手机号登录暂未开通"}
               </strong>
-              <p>免费名字提案和本地收藏可直接使用；完整报告请联系经营者。</p>
+              <p>免费名字提案和本地收藏可直接使用；完整报告按公开内测名额体验。</p>
               {result?.candidates?.length ? (
-                <a className="primary" href="#reportRequest">联系获取完整报告</a>
+                <a className="primary" href="#trialQuota">查看内测名额</a>
               ) : (
                 <a className="primary" href="#form">
                   开始免费起名 ↗
@@ -465,7 +465,7 @@ export default function CustomerArea({ result, toast, onSaved }) {
             )}
           </>
         )}
-        {customer && openedProposal && <section className="account-proposal" aria-label="账号名字提案"><h4>已保存的名字提案</h4><button type="button" className="secondary" onClick={()=>setOpenedProposal(null)}>关闭提案</button>{openedProposal.candidates.map(x=><article key={x.name}><b>{x.name}</b><p>{x.pinyin}</p><p>{x.meaning}</p></article>)}<a href="#reportRequest">完整报告请联系经营者 ↗</a></section>}
+        {customer && openedProposal && <section className="account-proposal" aria-label="账号名字提案"><h4>已保存的名字提案</h4><button type="button" className="secondary" onClick={()=>setOpenedProposal(null)}>关闭提案</button>{openedProposal.candidates.map(x=><article key={x.name}><b>{x.name}</b><p>{x.pinyin}</p><p>{x.meaning}</p></article>)}<a href="#form">重新生成并体验完整报告 ↗</a></section>}
       </div>
     </section>
   );

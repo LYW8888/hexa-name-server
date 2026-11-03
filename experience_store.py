@@ -1,4 +1,4 @@
-"""Anonymous generation counters, private feedback, and invitation-bound beta reports."""
+"""Anonymous generation counters, private feedback and quota-limited public reports."""
 import hashlib
 import hmac
 import json
@@ -37,7 +37,53 @@ class Experience:
                 created_at REAL NOT NULL, expires_at REAL NOT NULL, ciphertext BLOB);
               CREATE TABLE IF NOT EXISTS beta_attempts (client_hash TEXT NOT NULL,at REAL NOT NULL);
               CREATE INDEX IF NOT EXISTS beta_attempt_time ON beta_attempts(client_hash,at);
+              CREATE TABLE IF NOT EXISTS beta_quota (
+                id INTEGER PRIMARY KEY CHECK(id=1), total INTEGER NOT NULL CHECK(total>=0),
+                used INTEGER NOT NULL CHECK(used>=0 AND used<=total), enabled INTEGER NOT NULL,
+                revision INTEGER NOT NULL, config_version INTEGER NOT NULL, updated_at REAL NOT NULL);
             ''')
+            # Seed once, including historic invited reports; restarts and purges
+            # never reset the number of reports already provided.
+            historic = db.execute('SELECT COUNT(*) FROM beta_reports').fetchone()[0]
+            db.execute('INSERT OR IGNORE INTO beta_quota VALUES(1,?,?,1,1,1,?)', (max(100, historic), historic, time.time()))
+
+    def quota_snapshot(self, db, *, admin=False):
+        row = db.execute('SELECT * FROM beta_quota WHERE id=1').fetchone()
+        value = {'available': True, 'total': row['total'], 'used': row['used'],
+                 'remaining': row['total'] - row['used'], 'enabled': bool(row['enabled']),
+                 'revision': row['revision'], 'updated_at': row['updated_at']}
+        if admin:
+            value['config_version'] = row['config_version']
+        return value
+
+    def read_quota(self, args, actor):
+        self.fields(args, ())
+        with self.store.connect() as db:
+            return self.quota_snapshot(db)
+
+    def update_quota(self, args, actor):
+        self.fields(args, ('total', 'enabled', 'expected_config_version'))
+        total, enabled, expected = args.get('total'), args.get('enabled'), args.get('expected_config_version')
+        if type(total) is not int or not 0 <= total <= 1000000 or type(enabled) is not bool or type(expected) is not int:
+            self.fail('请填写0–1000000的整数总名额，并确认开放状态。')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            current = self.quota_snapshot(db, admin=True)
+            if expected != current['config_version']:
+                self.fail('另一位管理员已修改名额设置，请刷新后重试。', 409)
+            if total < current['used']:
+                self.fail(f"总名额不能低于已使用的{current['used']}份，已用次数不能重置。", 409)
+            db.execute('UPDATE beta_quota SET total=?,enabled=?,revision=revision+1,config_version=config_version+1,updated_at=? WHERE id=1', (total, int(enabled), time.time()))
+            self.store.audit(db, actor, 'quota.updated', f'total:{total};enabled:{int(enabled)}')
+            return self.quota_snapshot(db, admin=True)
+
+    def check_open(self, db):
+        quota = self.quota_snapshot(db)
+        if not quota['enabled']:
+            self.fail('公开内测暂时暂停，已有报告仍可重复查看。', 409)
+        if quota['remaining'] <= 0:
+            self.fail('免费完整报告体验名额已用尽，已有报告可重复查看。', 409)
+        return quota
 
     def fail(self, message, status=400):
         raise self.Rejected(message, status)
@@ -148,16 +194,15 @@ class Experience:
         return row
 
     def invite(self, args, actor):
-        self.fields(args, ())
-        code, reference, now = 'XM-' + secrets.token_urlsafe(24), str(uuid.uuid4()), time.time()
-        with self.store.connect() as db:
-            self.purge(db)
-            db.execute('INSERT INTO beta_invites(id,code_hash,created_at,expires_at) VALUES(?,?,?,?)', (reference, self.digest('invite', code), now, now + 7 * 86400))
-            self.store.audit(db, actor, 'beta.invited', reference)
-        return {'id': reference, 'code': code, 'expires_at': now + 7 * 86400, 'uses_allowed': 1}
+        self.fail('已改为公开内测，请在后台设置免费总名额，无需邀请码。', 410)
 
-    def beta_payload(self, row):
-        return {'id': row['id'], 'expires_at': row['expires_at'], 'report': self.decrypt(row)}
+    def check_report_access(self, db, row):
+        if row['invite_id'] != 'public-quota':
+            self.active_invite(db, row['invite_id'])
+
+    def beta_payload(self, row, db, *, reused=True):
+        return {'id': row['id'], 'expires_at': row['expires_at'], 'report': self.decrypt(row),
+                'quota': self.quota_snapshot(db), 'reused': reused}
 
     def beta_read(self, args, actor):
         self.fields(args, ('generation_id', 'generation_token'))
@@ -166,70 +211,61 @@ class Experience:
             generation = self.generation(db, args)
             row = db.execute('SELECT * FROM beta_reports WHERE generation_id=? AND ciphertext IS NOT NULL', (generation['id'],)).fetchone()
             if not row:
-                self.fail('请先使用内测邀请码开启本次报告。', 404)
-            self.active_invite(db, row['invite_id'])
+                self.fail('本次尚未开启完整报告，可使用免费体验名额。', 404)
+            self.check_report_access(db, row)
             self.store.audit(db, actor, 'beta.read', row['id'])
-            return self.beta_payload(row)
+            return self.beta_payload(row, db)
 
     def redeem(self, args, actor):
+        # "code" is accepted only for old clients; it grants no access or credit.
         self.fields(args, ('generation_id', 'generation_token', 'code', 'input', 'expected_names', 'consent', 'client'))
         if args.get('consent') is not True:
             self.fail('请确认同意保存本次资料和内测报告，最多30天。')
-        code, data, names = args.get('code'), args.get('input'), args.get('expected_names')
-        if not isinstance(code, str) or not re.fullmatch(r'XM-[A-Za-z0-9_-]{32}', code):
-            self.fail('请填写有效的内测邀请码。')
+        data, names = args.get('input'), args.get('expected_names')
         if not isinstance(data, dict) or set(data) - INPUT_FIELDS or not isinstance(names, list) or len(names) > 11 or any(not isinstance(x, str) or not 2 <= len(x) <= 5 for x in names):
             self.fail('提案资料无效，请重新生成。')
-        now = time.time()
-        # Commit failed-attempt counters too; an invalid code must not roll them back.
         with self.store.connect() as db:
             self.purge(db)
             generation = self.generation(db, args)
-            # Per-generation capability, not a shared office/mobile-network IP.
-            scope = self.digest('beta-attempt', generation['id'])
-            if db.execute('SELECT COUNT(*) FROM beta_attempts WHERE client_hash=? AND at>?', (scope, now - 900)).fetchone()[0] >= 15:
-                self.fail('验证次数较多，请15分钟后重试。', 429)
-            db.execute('INSERT INTO beta_attempts VALUES(?,?)', (scope, now))
-        with self.store.connect() as db:
-            generation = self.generation(db, args)
             if generation['fingerprint'] != self.digest('proposal', proposal_fingerprint(data, names)):
                 self.fail('填写内容或提案已变化，请应用修改后再体验报告。', 409)
-            invite = db.execute('SELECT * FROM beta_invites WHERE code_hash=?', (self.digest('invite', code),)).fetchone()
-            if not invite or invite['revoked']:
-                self.fail('内测邀请码无效或已撤销。', 403)
             existing = db.execute('SELECT * FROM beta_reports WHERE generation_id=?', (generation['id'],)).fetchone()
             if existing:
                 if existing['ciphertext'] is None:
-                    self.fail('内测报告已删除或过期，请重新生成后体验。', 410)
-                if existing['invite_id'] != invite['id']:
-                    self.fail('本轮已有内测报告，请使用原邀请或重新打开已授权报告。', 409)
-                return self.beta_payload(existing)
-            if invite['expires_at'] <= now or invite['uses']:
-                self.fail('邀请码已兑换或过期，请联系经营者获取新的邀请。', 409)
+                    self.fail('本次报告已删除或过期，请重新生成后体验。', 410)
+                self.check_report_access(db, existing)
+                return self.beta_payload(existing, db)
+            self.check_open(db)
+        # Calculate without holding the write lock. A failed or changed report
+        # never consumes a slot. The final check below arbitrates all contenders.
         from server import analyze
         result = analyze(data)
         if [x['name'] for x in result['candidates']] != names:
             self.fail('提案已更新，请重新生成后再体验。', 409)
+        envelope = {'version': 1, 'kind': 'beta_report', 'data': data, **result}
+        ciphertext = self.encrypt(envelope)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             self.purge(db)
             generation = self.generation(db, args)
-            existing = db.execute('SELECT * FROM beta_reports WHERE generation_id=? AND ciphertext IS NOT NULL', (generation['id'],)).fetchone()
+            existing = db.execute('SELECT * FROM beta_reports WHERE generation_id=?', (generation['id'],)).fetchone()
             if existing:
-                if existing['invite_id'] != invite['id']:
-                    self.fail('本轮已使用另一份邀请。', 409)
-                self.active_invite(db, invite['id'])
-                return self.beta_payload(existing)
-            invite = self.active_invite(db, invite['id'])
-            if invite['expires_at'] <= time.time() or invite['uses']:
-                self.fail('邀请码已兑换或过期，请联系经营者。', 409)
+                if existing['ciphertext'] is None:
+                    self.fail('本次报告已删除或过期，请重新生成后体验。', 410)
+                self.check_report_access(db, existing)
+                return self.beta_payload(existing, db)
+            self.check_open(db)
+            changed = db.execute('UPDATE beta_quota SET used=used+1,revision=revision+1,updated_at=? WHERE id=1 AND enabled=1 AND used<total', (time.time(),)).rowcount
+            if changed != 1:
+                self.fail('名额状态已变化，请刷新后重试。', 409)
             reference, now = str(uuid.uuid4()), time.time()
             expires = min(generation['expires_at'], now + RETENTION)
-            envelope = {'version': 1, 'kind': 'beta_report', 'data': data, **result}
-            db.execute('INSERT INTO beta_reports VALUES(?,?,?,?,?,?)', (reference, generation['id'], invite['id'], now, expires, self.encrypt(envelope)))
-            db.execute('UPDATE beta_invites SET uses=1 WHERE id=?', (invite['id'],))
+            db.execute('INSERT INTO beta_reports VALUES(?,?,?,?,?,?)', (reference, generation['id'], 'public-quota', now, expires, ciphertext))
             self.store.audit(db, actor, 'beta.opened', reference)
-            return {'id': reference, 'expires_at': expires, 'report': envelope}
+            # Insert and decrement commit together; response loss is resolved by
+            # the unique generation_id on retry, even after the pool is full.
+            return {'id': reference, 'expires_at': expires, 'report': envelope,
+                    'quota': self.quota_snapshot(db), 'reused': False}
 
     def overview(self, args, actor):
         self.fields(args, ('stage', 'state'))
@@ -259,13 +295,16 @@ class Experience:
                 report = self.decrypt(r)
                 reports.append({'id': r['id'], 'created_at': r['created_at'], 'expires_at': r['expires_at'], 'generation_id': r['generation_id'], 'purpose': report['analysis']['purpose'], 'names': [x['name'] for x in report['candidates']]})
             self.store.audit(db, actor, 'experience.list')
-        return {'summary': summary, 'feedback': feedback, 'generations': generations, 'invites': invites, 'beta_reports': reports, 'limit': 100, 'retention_days': 30}
+            quota = self.quota_snapshot(db, admin=True)
+        return {'summary': summary, 'feedback': feedback, 'generations': generations, 'quota': quota, 'invites': invites, 'beta_reports': reports, 'limit': 100, 'retention_days': 30}
 
     def admin_action(self, action, args, actor):
         if action == 'experience.list':
             return self.overview(args, actor)
         if action == 'beta.invite':
             return self.invite(args, actor)
+        if action == 'quota.update':
+            return self.update_quota(args, actor)
         self.fields(args, ('id', 'state') if action == 'experience.update' else ('id',))
         reference = self.identifier(args.get('id'))
         with self.store.connect() as db:
@@ -283,7 +322,7 @@ class Experience:
                 if not row:
                     self.fail('内测报告不存在或已过期。', 404)
                 self.store.audit(db, actor, action, reference)
-                return self.beta_payload(row)
+                return self.beta_payload(row, db)
             elif action in ('experience.update', 'experience.delete'):
                 if not db.execute('SELECT id FROM feedback WHERE id=? AND ciphertext IS NOT NULL', (reference,)).fetchone():
                     self.fail('反馈不存在或已删除。', 404)

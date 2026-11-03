@@ -410,6 +410,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         route = urlparse(self.path).path
+        if route == '/api/beta-quota':
+            try:
+                return self.json(report_client.call('quota.read', {}, socket_path=getattr(self, 'report_socket', None), timeout=2))
+            except (report_client.ReportUnavailable, report_client.ReportRejected):
+                return self.json({'available': False, 'error': '体验名额暂时无法读取，请稍后重试。'}, 503)
         if route == '/api/report-service':
             return self.json({'available': bool(getattr(self, 'report_socket', None) or os.environ.get('XUMING_REPORTS_SOCKET')), 'retention_days': 30})
         if route == '/api/customer/session':
@@ -443,7 +448,9 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
     def do_POST(self):
         route = urlparse(self.path).path
-        protected = {'/api/report-requests': 'create', '/api/experience-feedback': 'feedback.submit',
+        if route == '/api/report-requests':
+            return self.json({'error': '报告已改为公开内测，请使用完整报告体验入口。'}, 410)
+        protected = {'/api/experience-feedback': 'feedback.submit',
                      '/api/beta-reports': 'beta.redeem', '/api/beta-reports/read': 'beta.read'}
         if route not in ("/api/analyze", "/api/name-review", *protected):
             return self.send_error(404)
@@ -455,7 +462,6 @@ class Handler(SimpleHTTPRequestHandler):
             if not isinstance(payload, dict): raise ValueError("request body must be a JSON object")
             if route in protected:
                 allowed = {
-                    'create': {'request_key', 'input', 'consent', 'expected_names'},
                     'feedback.submit': {'request_key', 'generation_id', 'generation_token', 'stage', 'rating', 'issues', 'comment', 'consent'},
                     'beta.redeem': {'generation_id', 'generation_token', 'code', 'input', 'expected_names', 'consent'},
                     'beta.read': {'generation_id', 'generation_token'},
@@ -467,7 +473,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if not self.headers.get('Content-Type', '').lower().startswith('application/json'):
                     return self.json({'error': '请使用本站提交入口。'}, 415)
                 args = dict(payload)
-                if protected[route] in ('create', 'beta.redeem'):
+                if protected[route] == 'beta.redeem':
                     args['client'] = self.source_client()
                 return self.json(report_client.call(protected[route], args, socket_path=getattr(self, 'report_socket', None)), 201 if protected[route] != 'beta.read' else 200)
             started = monotonic()

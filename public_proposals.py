@@ -15,7 +15,7 @@ def project(result):
         'candidate_count', 'available_candidate_count', 'page_size', 'requested_candidate_count',
     ) if key in analysis}
     public['access'] = 'proposal_only'
-    public['report_delivery'] = 'operator'
+    public['report_delivery'] = 'public_beta'
     if analysis.get('phase') == 'name_review':
         public['review_completed'] = True
     candidates = []

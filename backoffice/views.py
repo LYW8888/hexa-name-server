@@ -260,8 +260,9 @@ def experience(request, action=None, reference=None):
     elif request.method == 'GET' and action == 'reports' and reference:
         command, args = 'beta.admin_read', {'id': str(reference)}
     elif request.method == 'POST' and action == 'invites' and not reference:
-        body(request, ())
-        command, args = 'beta.invite', {}
+        return error('已改为公开内测，请设置免费总名额，无需邀请码。', 410)
+    elif request.method == 'POST' and action == 'quota' and not reference:
+        command, args = 'quota.update', body(request, ('total', 'enabled', 'expected_config_version'))
     elif request.method == 'POST' and action in ('revoke', 'delete', 'update', 'delete-report') and reference:
         args = body(request, ('state',) if action == 'update' else ())
         args['id'] = str(reference)

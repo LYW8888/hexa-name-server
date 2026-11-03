@@ -42,7 +42,7 @@ async function requestReport(
       const proposal = payload?.analysis?.access === 'proposal_only';
       const chart = payload?.analysis?.bazi;
       if (
-        !proposal || payload.analysis.report_delivery !== 'operator' || !Array.isArray(payload.candidates) ||
+        !proposal || !['operator','public_beta'].includes(payload.analysis.report_delivery) || !Array.isArray(payload.candidates) ||
         payload.candidates.some(row => !row || ['name','given','pinyin','meaning'].some(key => typeof row[key] !== 'string' || !row[key]))
       ) {
         throw new Error("服务未返回完整名字提案，请同步更新页面和服务后重试。");
