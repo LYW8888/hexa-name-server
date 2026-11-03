@@ -28,6 +28,26 @@ async function generate(page, options = {}) {
 }
 
 for (const width of [1280, 390]) {
+  test(`首页三个入口同步场景且保留各自资料 ${width}px`, async ({page})=>{
+    await page.setViewportSize({width,height:950});await page.goto('/');
+    const launcher=page.getByRole('group',{name:'快捷选择起名场景'});
+    await launcher.getByRole('button',{name:'预产期起名',exact:true}).click();
+    await expect(page.locator('[name=scenario][value=due_date]')).toBeChecked();
+    await page.locator('[name=surname]').fill('林');await page.locator('[name=dueDate]').fill('2099-12-23');
+    await launcher.getByRole('button',{name:'已出生起名',exact:true}).click();
+    await expect(page.locator('[name=scenario][value=born]')).toBeChecked();await expect(page.locator('[name=dueDate]')).toHaveCount(0);
+    await page.locator('[name=birthDate]').fill('2024-01-05');await page.locator('[name=birthTime]').fill('13:48');
+    await launcher.getByRole('button',{name:'改名',exact:true}).click();
+    await expect(page.locator('[name=currentName]')).toBeVisible();await expect(page.locator('[name=birthDate]')).toHaveValue('');
+    await page.locator('[name=currentName]').fill('欧阳明哲');
+    await launcher.getByRole('button',{name:'预产期起名',exact:true}).click();
+    await expect(launcher.getByRole('button',{name:'预产期起名',exact:true})).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('[name=currentName]')).toHaveCount(0);await expect(page.locator('[name=dueDate]')).toHaveValue('2099-12-23');
+    const request=page.waitForRequest('**/api/analyze');await page.locator('#namingForm button[type=submit]').click();
+    expect((await request).postDataJSON()).toMatchObject({surname:'林',purpose:'newborn',mode:'due_date'});
+    await expect(page.locator('#cards .card')).toHaveCount(3);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  });
   test(`首次预产期起名一页填写、一次生成 ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 950 });
     await page.goto("/");
@@ -303,7 +323,10 @@ test("旧收藏可用，心愿卡与推荐链接不含出生信息", async ({ pa
 test("320px键盘可选择场景和操作导航，减少动态效果生效", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 850 }); await page.emulateMedia({ reducedMotion: "reduce" }); await page.goto("/"); await page.locator("[name=scenario][value=rename]").focus(); await page.keyboard.press("Space"); await expect(page.locator("[name=currentName]")).toBeVisible();
   const button = page.locator("#mobileMenuButton"); await button.focus(); await page.keyboard.press("Enter"); await expect(page.locator("#mobileMenu")).toBeVisible(); await page.keyboard.press("Escape"); await expect(button).toBeFocused();
-  expect(await page.locator(".orb").evaluate(el => getComputedStyle(el, "::before").animationName)).toBe("none"); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  expect(await page.locator(".orb").evaluate(el => getComputedStyle(el, "::before").animationName)).toBe("none");
+  expect(await page.locator('.celestial-glyph').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+  expect(await page.locator('.celestial-stars').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 
 test("清理旧版本缓存，匿名使用不要求登录购买", async ({ page }) => {

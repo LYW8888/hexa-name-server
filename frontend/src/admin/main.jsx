@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import DesignSystem from '../ui/DesignSystem.jsx';
+import CelestialArt, { BrandMark } from '../ui/CelestialArt.jsx';
 import { Badge, Button, Card, Callout, IconButton, Spinner, TextField } from '@radix-ui/themes';
 import { ArrowUpRight, Eye, EyeOff, FileText, Headphones, History, KeyRound, LayoutDashboard, LockKeyhole, RefreshCw, ShieldCheck, Truck, Users, Wallet, Info } from 'lucide-react';
 import "./style.css";
@@ -249,7 +250,7 @@ function App() {
       </main>
     );
   if (!user) return <main className="auth-page">
-    <section className="auth-intro"><a className="auth-brand" href="/"><span>序</span>序名 <small>WORKSPACE</small></a><Badge size="2" variant="soft"><ShieldCheck size={14}/>独立管理工作台</Badge><h1>认真对待<br/>每一个<span>新开始。</span></h1><p>让名字有据可循，<br/>让每份心意都有妥善的交付。</p><div className="auth-intro-foot"><LockKeyhole size={16}/><span>岗位授权 · 动态码验证 · 操作留痕</span></div></section>
+    <section className="auth-intro"><a className="auth-brand" href="/"><BrandMark/>序名 <small>WORKSPACE</small></a><div className="auth-celestial"><CelestialArt compact/></div><Badge size="2" variant="soft"><ShieldCheck size={14}/>独立管理工作台</Badge><h1>守护每一份心意，<br/><span>认真回应每个名字。</span></h1><p>让名字有据可循，<br/>让每份心意都有妥善的交付。</p><div className="auth-intro-foot"><LockKeyhole size={16}/><span>岗位授权 · 动态码验证 · 操作留痕</span></div></section>
     <Card asChild className="auth-card"><section>
       <div className="auth-card-icon"><ShieldCheck size={25}/></div><p className="kicker">WELCOME BACK</p><h2>登录经营工作台</h2><p className="muted">使用你的账号、密码与验证器动态码。</p>{message}
       <form onSubmit={login}>
@@ -274,7 +275,7 @@ function App() {
     <div className="admin-shell">
       <aside>
         <a className="admin-brand" href="/">
-          序
+          <BrandMark/>
           <span>
             序名<small>经营工作台</small>
           </span>
@@ -293,7 +294,7 @@ function App() {
         </nav>
         <div className="identity">
           <b>{user.username}</b>
-          <Badge color="jade" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}</Badge><span>动态码验证 · 独立会话</span>
+          <Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}</Badge><span>动态码验证 · 独立会话</span>
           <button onClick={logout} disabled={busy}>
             退出登录
           </button>
@@ -327,7 +328,7 @@ function App() {
             {tab === "reports" && user.role === "owner" && <ReportsManager api={api} notify={setNotice} />}
             {tab === "overview" && (
               <>
-                <Card className="workspace-welcome"><div><Badge color="jade" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>把每一份心意，交付妥当。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('reports')}>处理报告<ArrowUpRight size={16}/></Button>}</Card>
+                <Card className="workspace-welcome"><div><Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>每一份心意，都有妥善的回音。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('reports')}>处理报告<ArrowUpRight size={16}/></Button>}</Card>
                 <div className="summary-grid">
                   {Object.entries(summary || {}).map(([role, item]) => (
                     <section className="surface metric-card" key={role}>
@@ -483,7 +484,7 @@ function App() {
                         {rows.map((row) => (
                           <tr key={row.id}>
                             <td>{row.username}</td>
-                            <td><Badge variant="soft" color={row.is_superadmin?'jade':'gray'}>{row.is_superadmin?'超级管理员':roles[row.role]}</Badge></td>
+                            <td><Badge variant="soft" color={row.is_superadmin?'iris':'gray'}>{row.is_superadmin?'超级管理员':roles[row.role]}</Badge></td>
                             <td>{row.active ? "启用" : "已停用"}</td>
                             <td>
                               <Confirm

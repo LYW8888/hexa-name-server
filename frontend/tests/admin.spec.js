@@ -154,10 +154,10 @@ test('客户只看提案，经营者凭编号导出完整报告并人工交付',
   await page.getByRole('button',{name:'查看完整报告',exact:true}).click();const workspace=page.getByRole('region',{name:'经营者完整报告'});
   await expect(workspace).toContainText('真太阳时');await expect(workspace.locator('.report-preview')).toContainText('四柱阴阳五行与生克关系');
   if(process.env.XUMING_CAPTURE_REPORTS==='1') {
-    await client.locator('#cards').screenshot({path:'../reports/images/free-proposals-mobile.png',style:'.site-header{visibility:hidden!important}'});
-    await section.screenshot({path:'../reports/images/report-contact-mobile.png',style:'.site-header{visibility:hidden!important}'});
+    await client.locator('#cards').screenshot({path:'../reports/images/celestial-proposals-mobile.png',style:'.site-header{visibility:hidden!important}'});
+    await section.screenshot({path:'../reports/images/celestial-contact-mobile.png',style:'.site-header{visibility:hidden!important}'});
     await page.setViewportSize({width:1280,height:950});
-    await workspace.screenshot({path:'../reports/images/operator-report-desktop.png'});
+    await workspace.screenshot({path:'../reports/images/celestial-admin-report.png'});
     await page.setViewportSize({width:390,height:950});
   }
   let pending=page.waitForEvent('download');await workspace.getByRole('button',{name:'导出完整报告'}).click();
@@ -190,9 +190,10 @@ test('随机超级管理员首次登录、密码确认及初始化凭据清理',
   expect(bundle.username).toMatch(/^sa_[0-9a-f]{16}$/);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');
+  await expect(page.getByRole('heading',{name:'登录经营工作台',exact:true})).toBeVisible();
   if(process.env.XUMING_CAPTURE_REPORTS==='1') {
-    await page.setViewportSize({width:1440,height:950});await page.screenshot({path:'../reports/images/modern-admin-login-desktop.png'});
-    await page.setViewportSize({width:390,height:950});await page.screenshot({path:'../reports/images/modern-admin-login-mobile.png'});
+    await page.setViewportSize({width:1440,height:950});await page.screenshot({path:'../reports/images/celestial-admin-login-desktop.png'});
+    await page.setViewportSize({width:390,height:950});await page.screenshot({path:'../reports/images/celestial-admin-login-mobile.png'});
   }
   await page.locator('[name=username]').fill(bundle.username);await page.locator('[name=password]').fill(bundle.password);
   await page.getByRole('button',{name:'显示密码',exact:true}).click();await expect(page.locator('[name=password]')).toHaveAttribute('type','text');
@@ -206,7 +207,7 @@ test('随机超级管理员首次登录、密码确认及初始化凭据清理',
   await expect.poll(async()=>{try{await stat(bundle.initial_file);return true;}catch{return false;}}).toBe(false);
   const session=await(await page.request.get('/api/session')).json();expect(session.user.is_superadmin).toBe(true);expect(session.user.must_change_password).toBe(false);
   expect((await page.request.get('/api/ops/finance/list')).status()).toBe(403);expect((await page.request.get('/initial-superadmin.json')).status()).toBe(404);
-  if(process.env.XUMING_CAPTURE_REPORTS==='1'){await page.setViewportSize({width:1440,height:950});await page.screenshot({path:'../reports/images/modern-admin-overview.png'});}
+  if(process.env.XUMING_CAPTURE_REPORTS==='1'){await page.setViewportSize({width:1440,height:950});await page.screenshot({path:'../reports/images/celestial-admin-overview.png'});}
   await page.getByRole('button',{name:'员工与权限',exact:true}).click();const rootRow=page.getByRole('row').filter({hasText:bundle.username});await expect(rootRow.getByRole('button',{name:'停用',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'退出登录',exact:true}).click();expect((await page.request.get('/api/reports')).status()).toBe(401);expect(errors).toEqual([]);
 });

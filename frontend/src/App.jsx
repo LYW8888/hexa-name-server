@@ -314,7 +314,7 @@ export default function App() {
         onAccount={() => scroll("#account")}
       />
       <main id="top">
-        <Hero onBegin={() => formController.current?.resume()} />
+        <Hero activeScenario={draft?.purpose === 'rename' ? 'rename' : draft?.mode || 'due_date'} busy={busy} onBegin={scenario => scenario ? formController.current?.startScenario(scenario) : formController.current?.resume()} />
         <NamingForm
           ref={formController}
           onDraftChange={setDraft}

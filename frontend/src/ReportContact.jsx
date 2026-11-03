@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { copyText } from "./utils.js";
-import { Badge, Button, Card, Spinner } from '@radix-ui/themes';
+import { Button, Card, Spinner } from '@radix-ui/themes';
 import { ArrowUpRight, CheckCheck, Copy, FileCheck2, MessageCircle } from 'lucide-react';
 
 export default function ReportContact({ result, contact, toast }) {
@@ -37,8 +37,9 @@ export default function ReportContact({ result, contact, toast }) {
     finally {clearTimeout(timer);submitting.current=false;setBusy(false);}
   }
   return <section id="reportRequest" className="report-contact" aria-label="联系获取完整报告">
-    <div className="report-contact-heading"><Badge size="2" variant="soft" className="contact-badge">03 · 把名字的依据讲清楚</Badge><p className="eyebrow">BEYOND THE NAME</p><h3>名字之外，<br/>还有一份认真。</h3>
-      <p>免费提供名字提案。完整现名分析、四柱排盘、五行喜用、古籍出处与选名说明，由经营者核对后人工交付。</p></div>
+    <div className="report-contact-heading"><p className="eyebrow"><span>03</span> 完整报告 / BEYOND THE NAME</p><h3>名字的背后，<br/>每一处都有来处。</h3>
+      <p>喜欢一个名字，也值得了解它的依据。完整现名分析、四柱排盘、五行喜用、古籍出处与选名说明，由经营者核对后人工交付。</p><div className="report-contents"><span><FileCheck2 size={15}/>出生与选名依据</span><span><FileCheck2 size={15}/>逐名解读与出处</span><span><FileCheck2 size={15}/>人工核对与交付</span></div></div>
+    <div className="contact-console"><div className="contact-console-title"><span className="contact-presence"/><b>与经营者聊聊你的名字</b><ArrowUpRight size={18}/></div>
     <div className="contact-channels">
       {contact?.wechat && <Card asChild><div><MessageCircle size={18}/><span>微信</span><b>{contact.wechat}</b><Button type="button" size="2" variant="soft" className="secondary" onClick={()=>copy(contact.wechat,'微信号')}><Copy size={13}/>复制微信号</Button></div></Card>}
       {contact?.qq && <Card asChild><div><MessageCircle size={18}/><span>QQ</span><b>{contact.qq}</b><Button type="button" size="2" variant="soft" className="secondary" onClick={()=>copy(contact.qq,'QQ号')}><Copy size={13}/>复制QQ号</Button></div></Card>}
@@ -53,5 +54,6 @@ export default function ReportContact({ result, contact, toast }) {
         <small>先登记，再通过微信或QQ联系；不会自动扣费。</small>
       </div> : <p className="contact-direct">{result?.candidates?.length ? '可直接通过微信或QQ联系经营者，确认完整报告的内容、费用与交付时间。' : '先免费生成名字提案，也可以直接联系经营者说明需求。'}</p>}
     {message && <p className="form-message error" role="alert">{message}</p>}
+    </div>
   </section>;
 }

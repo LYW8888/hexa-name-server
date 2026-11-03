@@ -1,0 +1,13 @@
+.brand-mark { width: 36px; height: 36px; flex: 0 0 auto; color: #d5c4a6; }
+.celestial-art.orb {
+  display: block; width: 100%; height: auto; aspect-ratio: 720 / 600; max-width: none; margin: 0;
+  border: 0; border-radius: 0; box-shadow: none; background: none;
+}
+.celestial-art.orb::before, .celestial-art.orb::after { content: none; animation: none; }
+.celestial-glyph { animation: celestial-drift 10s ease-in-out infinite; }
+.celestial-stars { animation: celestial-light 8s ease-in-out infinite; }
+@keyframes celestial-drift { 50% { translate: 0 -7px; } }
+@keyframes celestial-light { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  .celestial-glyph, .celestial-stars { animation: none; }
+}

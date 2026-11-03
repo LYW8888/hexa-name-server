@@ -1,17 +1,18 @@
 import React, { useState } from "react";
-import {Badge, Button, Card, Dialog, IconButton} from "@radix-ui/themes";
-import {ArrowDown, ArrowUpRight, CalendarDays, Check, FileText, Heart, Menu, Sparkles} from "lucide-react";
+import {Button, Dialog, IconButton} from "@radix-ui/themes";
+import {ArrowDown, ArrowUpRight, Baby, CalendarDays, Check, FileText, Heart, Menu, Orbit, Sparkles, UserRound} from "lucide-react";
+import CelestialArt, { BrandMark } from './ui/CelestialArt.jsx';
 
 export function Header({ count, onSaved, onAccount }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const links = [["#form","开始起名"],["#results","名字提案"],["#reportRequest","完整报告"],["#account","我的服务"],["#keepsake","心愿卡"],["#method","命名方法"]];
   return <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
     <header className="site-header">
-      <a className="brand" href="#top"><b>序</b><span>序名<small>ORIGIN & NAME</small></span></a>
+      <a className="brand" href="#top"><BrandMark/><span>序名<small>ORIGIN & NAME</small></span></a>
       <nav aria-label="主导航">
         <a href="#results">名字提案</a><a href="#method">命名方法</a><a href="#reportRequest">完整报告</a>
         <Button variant="ghost" color="gray" className="customer-entry" type="button" onClick={onAccount}>我的服务</Button>
-        <Button id="savedButton" variant="soft" color="jade" type="button" onClick={onSaved}><Heart size={16} aria-hidden="true"/>收藏 <i id="savedCount">{count}</i></Button>
+        <Button id="savedButton" variant="soft" color="iris" type="button" onClick={onSaved}><Heart size={16} aria-hidden="true"/>收藏 <i id="savedCount">{count}</i></Button>
         <Dialog.Trigger><IconButton id="mobileMenuButton" className="mobile-menu-button" variant="ghost" color="gray" aria-label={menuOpen?"关闭导航菜单":"打开导航菜单"}><Menu size={21}/></IconButton></Dialog.Trigger>
       </nav>
     </header>
@@ -22,29 +23,37 @@ export function Header({ count, onSaved, onAccount }) {
     </Dialog.Content>
   </Dialog.Root>;
 }
-export function Hero({ onBegin }) {
+export function Hero({ onBegin, activeScenario = 'due_date', busy = false }) {
   return <>
-    <section className="hero wrap atelier-hero">
-      <div className="hero-copy">
-        <Badge size="2" variant="soft" className="hero-badge"><span className="live-dot"/>新生儿起名 · 改名</Badge>
-        <p className="eyebrow hero-eyebrow">A NAME. A NEW BEGINNING.</p>
-        <h1>名字，<br/>是一生<span className="hero-title-mark">最初的</span><br/><em>礼物。</em></h1>
-        <p className="lede">把出生时光、家族心意和文字之美，放进一个名字。先免费探索喜欢的方向，再读懂它背后的依据。</p>
-        <div className="hero-actions">
-          <Button size="4" className="primary" asChild><a href="#form" onClick={e=>{if(onBegin){e.preventDefault();onBegin();}}}>开始探索名字<ArrowUpRight size={18}/></a></Button>
-          <a className="under" href="#method">了解命名方法<ArrowDown size={15}/></a>
+    <section className="hero celestial-hero" aria-label="序名 · 星际东方命名">
+      <div className="hero-nebula" aria-hidden="true"/>
+      <div className="wrap celestial-hero-inner">
+        <div className="hero-copy">
+          <div className="hero-kicker"><span className="live-dot"/><span>东方文脉 · 每一个新的开始</span><span className="kicker-line"/></div>
+          <h1>以时光为序，<br/><span>予人生以<em>名。</em></span></h1>
+          <p className="lede">让古籍里的文字之美，遇见你的出生时光。<br className="desktop-break"/>一个名字，承载一份独属于家人的心意。</p>
+          <div className="hero-actions">
+            <Button size="4" className="primary" asChild><a href="#form" onClick={e=>{if(onBegin){e.preventDefault();onBegin();}}}>开始探索名字<ArrowUpRight size={18}/></a></Button>
+            <a className="under" href="#method">了解命名方法<ArrowDown size={15}/></a>
+          </div>
+          <div className="hero-meta"><span><Check size={13}/>免费名字提案</span><span><Check size={13}/>无需注册</span><span><Check size={13}/>完整报告人工交付</span></div>
         </div>
-        <div className="hero-meta"><span><Check size={14}/>免费名字提案</span><span><Check size={14}/>无需注册</span><span><Check size={14}/>手机电脑皆可用</span></div>
-      </div>
-      <div className="hero-visual atelier-art" aria-label="序名东方文字艺术">
-        <div className="visual-heading"><span>THE NAME ATELIER</span><span>序名 · 文字有光</span></div>
-        <div className="orb" aria-hidden="true"><i className="orbit-dot orbit-dot-one"/><i className="orbit-dot orbit-dot-two"/><div className="seal">名<small>ORIGIN</small></div><span className="north">时光</span><span className="east">心意</span><span className="south">新生</span><span className="west">传承</span></div>
-        <div className="art-name-note"><span>名字灵感 · 示例</span><strong>知序<span>景宁</span>予安</strong><small>每一个字，都藏着一份期待。</small></div>
-        <div className="visual-footer"><span>CRAFTED WITH MEANING</span><Sparkles size={15}/></div>
+        <div className="hero-artwork" aria-label="东方字形与星际轨道装饰">
+          <CelestialArt/>
+          <div className="artwork-caption"><span>一字一世界</span><i/><span>一名一新生</span></div>
+          <div className="artwork-annotation"><span>天地之间，文字有光。</span><small>ORIGIN · NAME · POSSIBILITY</small></div>
+        </div>
+        <div className="hero-start-panel">
+          <div className="start-panel-heading"><Orbit size={18}/><span>从你的此刻，开始</span><small>选择起名场景</small></div>
+          <div className="hero-scenarios" role="group" aria-label="快捷选择起名场景">
+            {[["due_date","预产期起名","为即将到来的新生",CalendarDays],["born","已出生起名","从真实出生时光出发",Baby],["rename","改名","先了解现名，再遇新名",UserRound]].map(([value,title,hint,Icon])=><button type="button" key={value} className="hero-scenario" data-scenario={value} aria-label={title} aria-pressed={activeScenario===value} disabled={busy} onClick={()=>onBegin?.(value)}><span className="scenario-icon"><Icon size={21}/></span><span><b>{title}</b><small>{hint}</small></span><ArrowUpRight size={17}/></button>)}
+          </div>
+        </div>
+        <div className="hero-bottom"><span>让传统的智慧，抵达当下的生活。</span><a href="#form" aria-label="前往起名工作区"><ArrowDown size={16}/></a><small>SCROLL TO EXPLORE</small></div>
       </div>
     </section>
-    <section className="trust wrap atelier-trust" aria-label="起名服务流程">
-      {[["01","留下出生时光","预产期、已出生与改名，清晰分开。",CalendarDays],["02","遇见心动的名字","免费比较姓名、读音和简短寓意。",Sparkles],["03","读懂完整的依据","联系经营者，获取核对后的完整报告。",FileText]].map(([n,title,note,Icon])=><Card asChild key={n}><article><div className="trust-card-top"><Icon size={20}/><span>{n}</span></div><b>{title}</b><small>{note}</small></article></Card>)}
+    <section className="service-strip wrap" aria-label="起名服务流程">
+      {[["01","留下出生时光",CalendarDays],["02","遇见心动名字",Sparkles],["03","读懂完整依据",FileText]].map(([n,title,Icon])=><div key={n}><small>{n}</small><Icon size={16}/><span>{title}</span></div>)}
     </section>
   </>;
 }
@@ -53,11 +62,11 @@ export function Plans({ product, toast }) {
   return (
     <section className="pricing" id="pricing">
       <div className="wrap">
-        <p className="eyebrow">CHOOSE YOUR NEXT STEP</p>
+        <p className="eyebrow">命名服务 / YOUR NEXT CHAPTER</p>
         <h2>
-          先体验现有功能，
+          从一个名字，
           <br />
-          陪家人慢慢比较每个名字。
+          到一份完整的心意。
         </h2>
         <p className="pricing-lede">
           名字提案免费查看。想了解完整出生依据和逐名分析，可以联系经营者获取报告。
@@ -118,11 +127,11 @@ export function Method() {
   return (
     <section className="method" id="method">
       <div className="wrap">
-        <p className="eyebrow">A CLEARER WAY TO NAME</p>
+        <p className="eyebrow">命名方法 / THE WAY WE NAME</p>
         <h2>
-          让传统成为线索，
+          东方的来处，
           <br />
-          让选择回到你手中。
+          当下的选择。
         </h2>
         <div className="method-grid">
           <article>

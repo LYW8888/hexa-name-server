@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Badge, Button, Callout, Card, Spinner, TextField } from '@radix-ui/themes';
-import { Info, MapPin, Sparkles, UserRound } from 'lucide-react';
+import { Baby, CalendarDays, Info, MapPin, Orbit, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { formRequest, inferSurname, nameReviewKey } from "./form-state.js";
 import { longitudeText, matchCity, withPlace } from "./location-state.js";
 import { requestNameReview } from "./analysis.js";
@@ -198,6 +198,11 @@ export default forwardRef(function NamingForm(
   useImperativeHandle(controller, () => ({
     openStep: edit,
     resume: () => edit(0),
+    startScenario: value => {
+      if (locked || !SCENARIOS.some(([code]) => code === value)) return;
+      changeScenario(value);
+      edit(0);
+    },
     submit: () => generate(),
   }));
 
@@ -212,11 +217,11 @@ export default forwardRef(function NamingForm(
   }
   return <section className="form-section simple-form-section wrap" id="form">
     <div className="intro">
-      <p className="eyebrow">A NAME BEGINS HERE</p>
-      <Badge variant="soft" size="2">01 · 从基本信息开始</Badge>
-      <h2>填好基本信息，<br />让名字有个好开始。</h2>
-      <p>偏好可以以后再调，先看看喜欢的名字方向。</p>
-      <div className="simple-flow-note"><b>{rename ? "先分析现名，再推荐新名" : "一页填写，直接生成"}</b><span>{rename ? "填写资料 → 现名分析 → 改名提案" : "填好姓氏和时间即可，城市和偏好按需补充。"}</span></div>
+      <p className="eyebrow"><span>01</span> 命名工作区 / BEGIN HERE</p>
+      <h2>{rename ? <>新名字之前，<br/>先读懂现在的你。</> : <>每一个名字，<br/>始于你的时光。</>}</h2>
+      <p>{rename ? "从现用姓名和真实出生信息出发，先分析，再探索新的名字方向。" : "填好姓氏和出生信息，先遇见几个喜欢的名字。偏好与心意，随时可以调整。"}</p>
+      <div className="workspace-art" aria-hidden="true"><span>{rename ? '新' : born ? '生' : '初'}</span><i/><small>一段时光 · 一份心意</small></div>
+      <div className="simple-flow-note"><ShieldCheck size={16}/><div><b>{rename ? "先分析现名，再推荐新名" : "只需基本信息，即可开始"}</b><span>{rename ? "分析状态免费查看，完整报告联系经营者。" : "无需登录，资料不会自动保存。"}</span></div></div>
     </div>
     <form id="namingForm" ref={formRef} noValidate aria-busy={locked} onChange={event => {
       if (invalidField.current?.name === event.target.name) clearError();
@@ -225,13 +230,14 @@ export default forwardRef(function NamingForm(
       <input type="hidden" name="algorithm" value="literary_v3" />
       <input type="hidden" name="purpose" value={rename ? "rename" : "newborn"} />
       <input type="hidden" name="mode" value={born ? "born" : "due_date"} />
+      <div className="workspace-caption"><span><Orbit size={16}/>命名工作区</span><Badge variant="soft" color="iris">免费体验</Badge></div>
       <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message && <Callout.Root color="red" size="1"><Callout.Icon><Info size={16}/></Callout.Icon><Callout.Text>{message}</Callout.Text></Callout.Root>}</div>
       <fieldset className="basic-info" disabled={locked}>
         <legend id="basicInfoTitle" tabIndex={-1}>这次为谁取名</legend>
         <div className="scenario-choices" role="group" aria-label="起名场景">
-          {SCENARIOS.map(([value, title, hint]) => <Card asChild key={value}><label>
+          {SCENARIOS.map(([value, title, hint], index) => <Card asChild key={value}><label>
             <input type="radio" name="scenario" value={value} checked={scenario === value} onChange={() => changeScenario(value)} />
-            <span>{title}</span><small>{hint}</small>
+            {React.createElement([CalendarDays,Baby,UserRound][index],{size:19,'aria-hidden':true})}<span>{title}</span><small>{hint}</small>
           </label></Card>)}
         </div>
         <div className="grid basic-fields">
