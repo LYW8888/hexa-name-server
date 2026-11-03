@@ -3,10 +3,11 @@ import { createRoot } from "react-dom/client";
 import DesignSystem from '../ui/DesignSystem.jsx';
 import CelestialArt, { BrandMark } from '../ui/CelestialArt.jsx';
 import { Badge, Button, Card, Callout, IconButton, Spinner, TextField } from '@radix-ui/themes';
-import { ArrowUpRight, Eye, EyeOff, FileText, Headphones, History, KeyRound, LayoutDashboard, LockKeyhole, RefreshCw, ShieldCheck, Truck, Users, Wallet, Info } from 'lucide-react';
+import { ArrowUpRight, Eye, EyeOff, FileText, Headphones, History, KeyRound, LayoutDashboard, LockKeyhole, RefreshCw, ShieldCheck, Truck, Users, Wallet, Info, MessageSquareText } from 'lucide-react';
 import "./style.css";
 import './modern.css';
 import ReportsManager from "./ReportsManager.jsx";
+import ExperienceManager from './ExperienceManager.jsx';
 
 const roles = {
   owner: "经营者",
@@ -85,6 +86,7 @@ function App() {
     [summary, setSummary] = useState(null),
     [enrollment, setEnrollment] = useState(null);
   const csrf = useRef(""),
+    experienceController = useRef(null),
     refreshEpoch = useRef(0),
     viewKey = useRef("");
   viewKey.current = `${user?.id || ""}:${tab}`;
@@ -266,7 +268,7 @@ function App() {
   const tabs = [
     ["overview", "工作总览"],
     ...(user.role === "owner"
-      ? [["reports", "完整报告"], ["users", "员工与权限"]]
+      ? [["reports", "完整报告"], ["experience", "体验反馈与内测"], ["users", "员工与权限"]]
       : [["workspace", `${roles[user.role]}工作台`]]),
     ["audit", "操作记录"],
     ["password", "修改密码"],
@@ -288,7 +290,7 @@ function App() {
               aria-current={tab === key ? "page" : undefined}
               onClick={() => setTab(key)}
             >
-              <span className="nav-label">{React.createElement(({overview:LayoutDashboard,reports:FileText,users:Users,audit:History,password:KeyRound,workspace:({support:Headphones,finance:Wallet,delivery:Truck})[user.role]})[key],{size:18,'aria-hidden':true})}{label}</span><ArrowUpRight size={14} aria-hidden="true"/>
+              <span className="nav-label">{React.createElement(({overview:LayoutDashboard,reports:FileText,experience:MessageSquareText,users:Users,audit:History,password:KeyRound,workspace:({support:Headphones,finance:Wallet,delivery:Truck})[user.role]})[key],{size:18,'aria-hidden':true})}{label}</span><ArrowUpRight size={14} aria-hidden="true"/>
             </button>
           ))}
         </nav>
@@ -312,7 +314,7 @@ function App() {
           </div>
           <button
             disabled={busy || user.must_change_password}
-            onClick={() => run(refresh)}
+            onClick={() => run(tab==='experience'?()=>experienceController.current?.refresh():refresh)}
           >
             <RefreshCw size={15} aria-hidden="true"/>刷新数据
           </button>
@@ -326,6 +328,7 @@ function App() {
         ) : (
           <>
             {tab === "reports" && user.role === "owner" && <ReportsManager api={api} notify={setNotice} />}
+            {tab === "experience" && user.role === "owner" && <ExperienceManager ref={experienceController} api={api} notify={setNotice}/>}
             {tab === "overview" && (
               <>
                 <Card className="workspace-welcome"><div><Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>每一份心意，都有妥善的回音。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('reports')}>处理报告<ArrowUpRight size={16}/></Button>}</Card>

@@ -188,3 +188,35 @@
 @media(prefers-reduced-motion:reduce) {
   .admin-theme *, .admin-theme *::before, .admin-theme *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
 }
+.experience-admin-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:20px; }
+.experience-admin-heading>button { flex-shrink:0; }
+.experience-stats { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:23px 0 14px; }
+.experience-stats>div { border:1px solid #414b64;background:#111b2c;border-radius:7px;padding:18px; }
+.experience-stats small { font-size:11px;color:#aebdd5; }
+.experience-stats b { display:block;font-size:25px;font-weight:500;color:#e2d7c3;margin-top:13px; }
+.beta-invite-admin { padding:23px 0;border-top:1px solid #40485e;border-bottom:1px solid #40485e;margin:23px 0; }
+.beta-invite-admin h3 { font-size:19px;color:#ddd9e5;font-weight:500; }
+.beta-invite-admin .enrollment code { display:block;margin:16px 0;color:#e3d3ed; }
+.experience-manager details { margin-top:23px;border-top:1px solid #424b62;padding-top:17px; }
+.experience-manager summary { color:#c4b8de;font-size:13px;cursor:pointer; }
+.experience-filters { display:flex;align-items:end;flex-wrap:wrap;gap:15px; }
+.experience-filters label { min-width:150px;flex:1;margin:0; }
+.experience-filters>button { min-height:46px; }
+.experience-feedback-list { display:grid;gap:15px;margin-top:24px; }
+.experience-feedback-item { padding:22px;border:1px solid #454d65;border-radius:8px;background:#121c2d; }
+.experience-feedback-heading { display:flex;align-items:center;justify-content:space-between;gap:15px; }
+.experience-feedback-heading strong { font-size:15px;font-weight:500;color:#e5dbcb; }
+.experience-feedback-heading span { font-size:11px;color:#c5b9db;background:#342e45;border-radius:4px;padding:4px 8px; }
+.experience-feedback-item p { font-size:12px;color:#b4c1d8;line-height:1.9; }
+.experience-feedback-item .mono { max-width:none; }
+.feedback-comment { white-space:pre-wrap;overflow-wrap:anywhere; }
+.experience-feedback-item .row-actions button { font-size:11px; }
+@media(max-width:700px){
+  .experience-admin-heading { flex-wrap:wrap;gap:12px; }
+  .experience-stats { grid-template-columns:repeat(2,minmax(0,1fr));gap:9px; }
+  .experience-stats>div { padding:16px 12px; }
+  .experience-stats b { font-size:23px; }
+  .experience-feedback-item { padding:18px 14px; }
+  .experience-filters label { min-width:110px; }
+  .experience-filters>button { width:100%; }
+}

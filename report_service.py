@@ -71,6 +71,8 @@ class Store:
                 action TEXT NOT NULL, request_id TEXT NOT NULL);
             ''')
         os.chmod(self.path, 0o600)
+        from experience_store import Experience
+        self.experience = Experience(self, Rejected)
 
     @contextmanager
     def connect(self):
@@ -92,6 +94,7 @@ class Store:
         db.execute('UPDATE requests SET ciphertext=NULL WHERE expires_at<=? AND ciphertext IS NOT NULL', (now,))
         db.execute('DELETE FROM requests WHERE created_at<?', (now - 90 * 86400,))
         db.execute('DELETE FROM audit WHERE at<?', (now - 90 * 86400,))
+        self.experience.purge(db)
 
     def create(self, args, actor):
         if set(args) - {'request_key', 'input', 'consent', 'expected_names', 'client'} or args.get('consent') is not True:
@@ -156,8 +159,14 @@ class Store:
             raise Rejected('请求格式无效。')
         if action == 'create':
             return self.create(args, actor)
+        public_experience = {'generation.record': self.experience.record, 'feedback.submit': self.experience.submit,
+                             'beta.redeem': self.experience.redeem, 'beta.read': self.experience.beta_read}
+        if action in public_experience:
+            return public_experience[action](args, actor)
         if not admin:
             raise Rejected('无权读取或管理报告。', 403)
+        if action in ('experience.list', 'experience.update', 'experience.delete', 'beta.invite', 'beta.revoke', 'beta.admin_read', 'beta.delete'):
+            return self.experience.admin_action(action, args, actor)
         if action == 'read' and set(args) == {'id'}:
             return self.read(args['id'], actor)
         if action == 'list' and not set(args) - {'query'}:

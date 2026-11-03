@@ -38,6 +38,38 @@ class HttpHandlerTest(unittest.TestCase):
         server.DIST = cls.old_dist
         cls.tmp.cleanup()
 
+    def test_generation_counter_failure_never_breaks_free_generation(self):
+        from unittest.mock import patch
+        import report_client
+        payload={'surname':'林','mode':'due_date','dueDate':'2099-01-01','algorithm':'literary_v3'}
+        with patch('server.report_client.call',side_effect=report_client.ReportUnavailable('not running')):
+            status,_,body=self.request('POST','/api/analyze',json.dumps(payload),{'Content-Type':'application/json'})
+        value=json.loads(body)
+        self.assertEqual(status,200);self.assertFalse(value['experience']['available'])
+        self.assertEqual(value['analysis']['access'],'proposal_only');self.assertEqual(len(value['candidates']),3)
+
+    def test_generation_statistics_never_receive_birth_fields_or_candidate_names(self):
+        from unittest.mock import patch
+        payload={'surname':'林','mode':'due_date','dueDate':'2099-01-01','algorithm':'literary_v3'}
+        with patch('server.report_client.call',return_value={'available':True,'generation_id':'id','generation_token':'private-token'}) as call:
+            status,_,body=self.request('POST','/api/analyze',json.dumps(payload),{'Content-Type':'application/json'})
+            self.assertEqual(status,200)
+            self.assertEqual(call.call_args.args[0],'generation.record')
+            args=call.call_args.args[1]
+            self.assertEqual(set(args),{'metrics','fingerprint','client'})
+            self.assertNotIn('2099-01-01',json.dumps(args));self.assertNotIn('surname',json.dumps(args))
+            self.assertEqual(json.loads(body)['experience']['generation_token'],'private-token')
+
+    def test_feedback_and_beta_endpoints_require_json_same_origin_and_strict_fields(self):
+        from unittest.mock import patch
+        for path in ('/api/experience-feedback','/api/beta-reports','/api/beta-reports/read'):
+            with self.subTest(path=path),patch('server.report_client.call',return_value={'ok':True}) as call:
+                self.assertEqual(self.request('POST',path,'{}',{'Content-Type':'application/json','Origin':'https://other.invalid'})[0],403)
+                self.assertEqual(self.request('POST',path,'{}',{'Content-Type':'text/plain'})[0],415)
+                self.assertEqual(self.request('POST',path,json.dumps({'role':'owner','report':{}}),{'Content-Type':'application/json'})[0],400)
+                call.assert_not_called()
+                self.assertEqual(self.request('GET',path)[0],404)
+
     def request(self, method, path, body=None, headers=None):
         conn = http.client.HTTPConnection('127.0.0.1', self.httpd.server_port, timeout=3)
         try:

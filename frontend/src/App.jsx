@@ -7,6 +7,7 @@ import PRODUCT from "../../data/product.json";
 import Keepsake from "./Keepsake.jsx";
 import CustomerArea from "./CustomerArea.jsx";
 import SavedNames from "./SavedNames.jsx";
+import ExperiencePanel from './ExperiencePanel.jsx';
 import { requestKey, workflowId } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
 import { copyText, friendlyError } from "./utils.js";
@@ -200,7 +201,7 @@ export default function App() {
           payload.analysis,
           payload.candidates,
         );
-      const page = { data, analysis: payload.analysis, candidates };
+      const page = { data, analysis: payload.analysis, candidates, experience: payload.experience || null };
       setSession((previous) =>
         isRegenerate
           ? {
@@ -364,6 +365,7 @@ export default function App() {
           onSave={save}
           onKeepsake={openKeepsake}
         />
+        <ExperiencePanel result={!dirty ? result : null} toast={toast}/>
         <div className="wrap"><ReportContact result={!dirty ? result : null} contact={product.contact} toast={toast} /></div>
         <CustomerArea
           result={result}

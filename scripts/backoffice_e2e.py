@@ -48,6 +48,10 @@ with tempfile.TemporaryDirectory(prefix='xuming-browser-test-') as directory:
     user = get_user_model().objects.create_user('reports_browser', password='Browser-Test-Only-482!')
     StaffProfile.objects.create(user=user,role='owner',must_change_password=False)
     TOTPDevice.objects.create(user=user,confirmed=True,key='00112233445566778899aabbccddeeff00112233')
+    for name in ('experience_desktop','experience_mobile','experience_proposal'):
+        user=get_user_model().objects.create_user(name+'_browser',password='Browser-Test-Only-482!')
+        StaffProfile.objects.create(user=user,role='owner',must_change_password=False)
+        TOTPDevice.objects.create(user=user,confirmed=True,key='00112233445566778899aabbccddeeff00112233')
     # Exercise the real random bootstrap. Deliver its test-only bundle through
     # a private local file, never through a browser route or process logs.
     call_command('bootstrap_superadmin',write_credentials=True,stdout=StringIO())

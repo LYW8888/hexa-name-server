@@ -251,6 +251,28 @@ def reports(request, reference=None, action=None):
     return JsonResponse(result)
 
 
+@staff
+def experience(request, action=None, reference=None):
+    if not own_role(request, 'owner'):
+        return error('体验记录、反馈与内测邀请仅经营者可管理。', 403)
+    if request.method == 'GET' and not action:
+        command, args = 'experience.list', {'stage': request.GET.get('stage', ''), 'state': request.GET.get('state', '')}
+    elif request.method == 'GET' and action == 'reports' and reference:
+        command, args = 'beta.admin_read', {'id': str(reference)}
+    elif request.method == 'POST' and action == 'invites' and not reference:
+        body(request, ())
+        command, args = 'beta.invite', {}
+    elif request.method == 'POST' and action in ('revoke', 'delete', 'update', 'delete-report') and reference:
+        args = body(request, ('state',) if action == 'update' else ())
+        args['id'] = str(reference)
+        command = {'revoke': 'beta.revoke', 'delete': 'experience.delete', 'update': 'experience.update', 'delete-report': 'beta.delete'}[action]
+    else:
+        return HttpResponseNotAllowed(['GET', 'POST'])
+    result = report_client.call(command, args, f'staff:{request.user.pk}', settings.REPORTS_SOCKET)
+    event(request.user, command, reference or '')
+    return JsonResponse(result)
+
+
 def csrf_failure(request, reason=''):
     return error('页面验证已失效，请刷新页面后重试。', 403)
 

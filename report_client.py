@@ -2,6 +2,12 @@
 import json
 import os
 import socket
+import hashlib
+
+
+def proposal_fingerprint(data, names):
+    raw = json.dumps({'input': data, 'names': names}, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
+    return hashlib.sha256(raw).hexdigest()
 
 
 class ReportUnavailable(Exception):
@@ -14,7 +20,7 @@ class ReportRejected(Exception):
         self.status = status
 
 
-def call(action, args, actor='public', socket_path=None):
+def call(action, args, actor='public', socket_path=None, *, timeout=20):
     target = socket_path or os.environ.get('XUMING_REPORTS_SOCKET')
     if not target:
         raise ReportUnavailable('报告登记暂未开通，请通过微信或QQ联系经营者。')
@@ -23,7 +29,7 @@ def call(action, args, actor='public', socket_path=None):
         raise ReportRejected('提交内容过大，请减少文字后重试。')
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-            client.settimeout(20)
+            client.settimeout(timeout)
             client.connect(str(target))
             client.sendall(raw)
             with client.makefile('rb') as stream:

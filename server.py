@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json, os, re, sqlite3
 import ipaddress
+from time import monotonic
 from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -442,7 +443,9 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
     def do_POST(self):
         route = urlparse(self.path).path
-        if route not in ("/api/analyze", "/api/name-review", "/api/report-requests"):
+        protected = {'/api/report-requests': 'create', '/api/experience-feedback': 'feedback.submit',
+                     '/api/beta-reports': 'beta.redeem', '/api/beta-reports/read': 'beta.read'}
+        if route not in ("/api/analyze", "/api/name-review", *protected):
             return self.send_error(404)
         try:
             size = int(self.headers.get("Content-Length", "0"))
@@ -450,20 +453,41 @@ class Handler(SimpleHTTPRequestHandler):
             if size > 64 * 1024: raise ValueError("request too large")
             payload = json.loads(self.rfile.read(size) or b"{}")
             if not isinstance(payload, dict): raise ValueError("request body must be a JSON object")
-            if route == '/api/report-requests':
-                if set(payload) - {'request_key', 'input', 'consent', 'expected_names'}:
+            if route in protected:
+                allowed = {
+                    'create': {'request_key', 'input', 'consent', 'expected_names'},
+                    'feedback.submit': {'request_key', 'generation_id', 'generation_token', 'stage', 'rating', 'issues', 'comment', 'consent'},
+                    'beta.redeem': {'generation_id', 'generation_token', 'code', 'input', 'expected_names', 'consent'},
+                    'beta.read': {'generation_id', 'generation_token'},
+                }[protected[route]]
+                if set(payload) - allowed:
                     raise ValueError('请求包含无效字段。')
                 if self.headers.get('Origin') and urlparse(self.headers['Origin']).netloc != self.headers.get('Host'):
-                    return self.json({'error': '请在本站提交报告申请。'}, 403)
+                    return self.json({'error': '请在本站提交。'}, 403)
                 if not self.headers.get('Content-Type', '').lower().startswith('application/json'):
-                    return self.json({'error': '请使用本站报告申请入口。'}, 415)
-                client = self.client_address[0]
-                if os.environ.get('XUMING_TRUST_PROXY') == '1' and ipaddress.ip_address(client).is_loopback:
-                    try: client = str(ipaddress.ip_address(self.headers.get('X-Real-IP', client)))
-                    except ValueError: return self.json({'error':'来源地址无效。'},400)
-                return self.json(report_client.call('create', {**payload, 'client': client}, socket_path=getattr(self, 'report_socket', None)), 201)
+                    return self.json({'error': '请使用本站提交入口。'}, 415)
+                args = dict(payload)
+                if protected[route] in ('create', 'beta.redeem'):
+                    args['client'] = self.source_client()
+                return self.json(report_client.call(protected[route], args, socket_path=getattr(self, 'report_socket', None)), 201 if protected[route] != 'beta.read' else 200)
+            started = monotonic()
             result = review_name(payload) if route == "/api/name-review" else analyze(payload)
-            return self.json(public_proposals.project(result))
+            public = public_proposals.project(result)
+            if route == '/api/analyze':
+                # Never send birth facts or names to the anonymous counter, and
+                # a failed counter must not turn successful naming into an error.
+                analysis = result['analysis']
+                try:
+                    metrics = {'purpose': analysis['purpose_code'], 'mode': analysis['mode'], 'algorithm': analysis.get('algorithm', 'legacy_v2'),
+                               'count': len(result['candidates']), 'requested_count': int(analysis.get('requested_candidate_count', 3)),
+                               'length': int(payload.get('length', 2)), 'variant': int(payload.get('variant', 0)),
+                               'duration_ms': min(300000, round((monotonic() - started) * 1000))}
+                    public['experience'] = report_client.call('generation.record', {'metrics': metrics, 'client': self.source_client(),
+                        'fingerprint': report_client.proposal_fingerprint(payload, [x['name'] for x in result['candidates']])},
+                        socket_path=getattr(self, 'report_socket', None), timeout=.8)
+                except (report_client.ReportUnavailable, report_client.ReportRejected, ValueError):
+                    public['experience'] = {'available': False}
+            return self.json(public)
         except report_client.ReportUnavailable as exc:
             return self.json({'error': str(exc)}, 503)
         except report_client.ReportRejected as exc:
@@ -473,6 +497,14 @@ class Handler(SimpleHTTPRequestHandler):
     def json(self, body, status=200):
         raw = json.dumps(body, ensure_ascii=False).encode()
         self.send_response(status); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Content-Length", str(len(raw))); self.end_headers(); self.wfile.write(raw)
+    def source_client(self):
+        client = self.client_address[0]
+        if os.environ.get('XUMING_TRUST_PROXY') == '1' and ipaddress.ip_address(client).is_loopback:
+            try:
+                client = str(ipaddress.ip_address(self.headers.get('X-Real-IP', client)))
+            except ValueError as exc:
+                raise ValueError('来源地址无效。') from exc
+        return client
     def log_message(self, fmt, *args):
         if os.environ.get("NAME_SERVER_LOG", ""):
             super().log_message(fmt, *args)
