@@ -27,7 +27,7 @@ export function Header({ count, onSaved, onAccount }) {
 }
 export function Hero({quota}) {
   return <section className="workspace-welcome wrap" aria-label="序名 · 星际东方命名">
-    <div className="welcome-copy"><p className="eyebrow"><span className="live-dot"/> ORIGIN & NAME · 公开内测</p><h1>一个名字，一段新的可能。</h1><p>从出生时光出发，把东方文脉写进家人的心意。</p><div className="welcome-notes"><span><Check size={13}/>无需注册</span><span><Check size={13}/>名字提案免费</span><span><Check size={13}/>反馈自愿</span></div></div>
+    <div className="welcome-copy"><i className="welcome-constellation" aria-hidden="true"/><p className="eyebrow"><span className="live-dot"/> ORIGIN & NAME · 公开内测</p><h1>一个名字，<span>一段新的可能。</span></h1><p>从出生时光出发，把东方文脉写进家人的心意。</p><div className="welcome-notes"><span><Check size={13}/>无需注册</span><span><Check size={13}/>名字提案免费</span><span><Check size={13}/>反馈自愿</span></div></div>
     <QuotaStatus quota={quota}/>
   </section>;
 }

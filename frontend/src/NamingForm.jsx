@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Badge, Button, Callout, Card, Spinner, TextField } from '@radix-ui/themes';
-import { Baby, CalendarDays, Info, MapPin, Orbit, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { Baby, CalendarDays, Check, Info, MapPin, Orbit, Sparkles, UserRound } from 'lucide-react';
 import { formRequest, inferSurname, nameReviewKey } from "./form-state.js";
 import { longitudeText, matchCity, withPlace } from "./location-state.js";
 import { requestNameReview } from "./analysis.js";
@@ -230,7 +230,7 @@ export default forwardRef(function NamingForm(
         <div className="scenario-choices" role="group" aria-label="起名场景">
           {SCENARIOS.map(([value, title, hint], index) => <Card asChild key={value}><label>
             <input type="radio" name="scenario" value={value} checked={scenario === value} onChange={() => changeScenario(value)} />
-            {React.createElement([CalendarDays,Baby,UserRound][index],{size:19,'aria-hidden':true})}<span>{title}</span><small>{hint}</small>
+            {React.createElement([CalendarDays,Baby,UserRound][index],{size:19,'aria-hidden':true})}<span>{title}</span><small>{hint}</small><Check className="scenario-tick" size={11} aria-hidden="true"/>
           </label></Card>)}
         </div>
         <div className="grid basic-fields">
