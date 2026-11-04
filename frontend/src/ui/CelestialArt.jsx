@@ -2,6 +2,7 @@ import React, { useId } from 'react';
 
 export function BrandMark() {
   return <svg viewBox="0 0 40 40" fill="none" aria-hidden="true" className="brand-mark">
+    <rect x="4" y="4" width="32" height="32" rx="10" stroke="currentColor" strokeWidth=".5" opacity=".3"/>
     <path d="M20 2 24.5 15.5 38 20 24.5 24.5 20 38 15.5 24.5 2 20 15.5 15.5Z" stroke="currentColor" strokeWidth="1"/>
     <path d="m20 10 2.5 7.5L30 20l-7.5 2.5L20 30l-2.5-7.5L10 20l7.5-2.5Z" fill="currentColor"/>
     <path d="m7 7 6 6m14 14 6 6M33 7l-6 6M13 27l-6 6" stroke="currentColor" strokeWidth=".7" opacity=".45"/>
@@ -15,13 +16,13 @@ export default function CelestialArt({ compact = false }) {
   return <svg className={`celestial-art orb${compact ? ' celestial-art-compact' : ''}`} viewBox="0 0 720 600" fill="none" aria-hidden="true">
     <defs>
       <radialGradient id={`${id}halo`}><stop stopColor="#7d78db" stopOpacity=".23"/><stop offset=".52" stopColor="#4c5b9d" stopOpacity=".08"/><stop offset="1" stopColor="#10121d" stopOpacity="0"/></radialGradient>
-      <linearGradient id={`${id}silver`} x1="247" y1="155" x2="464" y2="412" gradientUnits="userSpaceOnUse"><stop stopColor="#fffdf4"/><stop offset=".35" stopColor="#a9b1d5"/><stop offset=".58" stopColor="#eef0fc"/><stop offset=".79" stopColor="#626a8c"/><stop offset="1" stopColor="#b9a888"/></linearGradient>
+      <linearGradient id={`${id}silver`} x1="247" y1="155" x2="464" y2="412" gradientUnits="userSpaceOnUse"><stop stopColor="#c4b1d9"/><stop offset=".35" stopColor="#8ba1bf"/><stop offset=".58" stopColor="#b7a4ce"/><stop offset=".79" stopColor="#8778a2"/><stop offset="1" stopColor="#b88da7"/></linearGradient>
       <linearGradient id={`${id}orbit`} x1="69" y1="440" x2="630" y2="146" gradientUnits="userSpaceOnUse"><stop stopColor="#ac9b7d" stopOpacity="0"/><stop offset=".38" stopColor="#aba3ee" stopOpacity=".45"/><stop offset=".7" stopColor="#e6e0cf" stopOpacity=".9"/><stop offset="1" stopColor="#757fba" stopOpacity="0"/></linearGradient>
       <linearGradient id={`${id}land`} x1="363" y1="432" x2="363" y2="599" gradientUnits="userSpaceOnUse"><stop stopColor="#b2b3da" stopOpacity=".13"/><stop offset="1" stopColor="#111521" stopOpacity="0"/></linearGradient>
       <filter id={`${id}glow`} x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="5"/></filter>
     </defs>
     <ellipse cx="381" cy="285" rx="315" ry="285" fill={`url(#${id}halo)`}/>
-    <g className="celestial-stars" fill="#dadced">{stars.map(([cx,cy,r],i)=><circle key={i} cx={cx} cy={cy} r={r} opacity={i%3===0 ? '.85' : '.4'}/>)}</g>
+    <g className="celestial-stars" fill="#b6a0d0">{stars.map(([cx,cy,r],i)=><circle key={i} cx={cx} cy={cy} r={r} opacity={i%3===0 ? '.85' : '.4'}/>)}</g>
     <g stroke="#8e92b6" strokeOpacity=".14" strokeWidth=".7">
       <circle cx="371" cy="278" r="205"/><circle cx="371" cy="278" r="166" strokeDasharray="1 9"/>
       <path d="M371 52v30m0 390v30M145 278h30m392 0h30"/>
@@ -32,7 +33,7 @@ export default function CelestialArt({ compact = false }) {
     </g>
     <g className="celestial-glyph" transform="translate(10 -5) rotate(-9 360 290)">
       <text x="360" y="391" textAnchor="middle" fontFamily="'Noto Serif CJK SC','Songti SC',serif" fontSize="268" fill="#535b7b" opacity=".3" transform="translate(5 5)">名</text>
-      <text x="360" y="391" textAnchor="middle" fontFamily="'Noto Serif CJK SC','Songti SC',serif" fontSize="268" fill={`url(#${id}silver)`} stroke="#dad6ec" strokeWidth=".2">名</text>
+      <text x="360" y="391" textAnchor="middle" fontFamily="'Noto Serif CJK SC','Songti SC',serif" fontSize="268" fill={`url(#${id}silver)`} stroke="#d9c8e8" strokeWidth=".2">名</text>
     </g>
     <path d="M38 486c116 11 181-57 287-32s150 64 222 24 128-39 173-25v147H0V510Z" fill={`url(#${id}land)`}/>
     <path d="M-20 512c144 4 216-71 329-44s160 60 239 13 145-29 192-39" stroke={`url(#${id}orbit)`} strokeWidth=".6"/>

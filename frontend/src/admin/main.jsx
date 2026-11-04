@@ -254,7 +254,7 @@ function App() {
   if (!user) return <main className="auth-page">
     <section className="auth-intro"><a className="auth-brand" href="/"><BrandMark/>序名 <small>WORKSPACE</small></a><div className="auth-celestial"><CelestialArt compact/></div><Badge size="2" variant="soft"><ShieldCheck size={14}/>独立管理工作台</Badge><h1>守护每一份心意，<br/><span>认真回应每个名字。</span></h1><p>让名字有据可循，<br/>让每份心意都有妥善的交付。</p><div className="auth-intro-foot"><LockKeyhole size={16}/><span>岗位授权 · 动态码验证 · 操作留痕</span></div></section>
     <Card asChild className="auth-card"><section>
-      <div className="auth-card-icon"><ShieldCheck size={25}/></div><p className="kicker">WELCOME BACK</p><h2>登录经营工作台</h2><p className="muted">使用你的账号、密码与验证器动态码。</p>{message}
+      <div className="auth-mobile-brand"><BrandMark/><span>序名<small>经营工作台</small></span></div><div className="auth-card-icon"><ShieldCheck size={25}/></div><p className="kicker">WELCOME BACK</p><h2>登录经营工作台</h2><p className="muted">使用你的账号、密码与验证器动态码。</p>{message}
       <form onSubmit={login}>
         <Field label="员工账号"><TextField.Root size="3" name="username" autoComplete="username" required maxLength={64} placeholder="输入管理员或员工账号"><TextField.Slot><Users size={17}/></TextField.Slot></TextField.Root></Field>
         <Field label="密码"><TextField.Root size="3" name="password" type={showPassword?'text':'password'} autoComplete="current-password" required maxLength={256} placeholder="输入密码"><TextField.Slot><KeyRound size={17}/></TextField.Slot><TextField.Slot side="right"><IconButton type="button" variant="ghost" color="gray" size="1" aria-label={showPassword?'隐藏密码':'显示密码'} onClick={()=>setShowPassword(x=>!x)}>{showPassword?<EyeOff size={16}/>:<Eye size={16}/>}</IconButton></TextField.Slot></TextField.Root></Field>

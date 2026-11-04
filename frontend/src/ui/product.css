@@ -13,13 +13,8 @@ html { scroll-padding-top:96px; }
 body { background:var(--paper); color:var(--ink); font:14px/1.8 var(--sans); }
 .origin-theme { min-height:100vh; --default-font-family:var(--sans); --heading-font-family:var(--serif); }
 .product-theme { color:var(--ink); background:transparent; }
-.origin-theme.product-theme {
-  position:relative; isolation:isolate;
-  background:radial-gradient(ellipse 680px 600px at 2% 4%,#e7ddfa99,transparent 80%),
-    radial-gradient(ellipse 730px 650px at 96% 12%,#d5edf599,transparent 80%),
-    radial-gradient(ellipse 650px 500px at 55% 0%,#ffe8f08c,transparent 80%),
-    radial-gradient(ellipse 900px 700px at 80% 78%,#f3e6f68c,transparent 85%),#f6f6fc;
-}
+.origin-theme.product-theme { position:relative; isolation:isolate; background:var(--dream-canvas); }
+
 .product-theme .wrap { width:min(1376px,calc(100% - 80px)); max-width:none; margin-inline:auto; padding-inline:0; }
 .product-theme ::selection { background:#dedbf7; color:#3d3866; }
 .product-theme :is(button,a,summary):focus-visible { outline:2px solid var(--dream-focus); outline-offset:4px; border-radius:6px; }
@@ -378,3 +373,15 @@ body { background:var(--paper); color:var(--ink); font:14px/1.8 var(--sans); }
 .experience-content .rt-Button:not(.primary):hover,.experience-actions>.rt-Button:not(.primary):hover { background:#f5effb; border-color:#c7b3db; }
 .product-theme input::-webkit-calendar-picker-indicator { opacity:.42; cursor:pointer; width:17px; height:17px; }
 .product-theme input::-webkit-datetime-edit-day-field:focus,.product-theme input::-webkit-datetime-edit-month-field:focus,.product-theme input::-webkit-datetime-edit-year-field:focus,.product-theme input::-webkit-datetime-edit-hour-field:focus,.product-theme input::-webkit-datetime-edit-minute-field:focus,.product-theme input::-webkit-datetime-edit-ampm-field:focus { background:#eee6f8; color:#876b9b; border-radius:4px; outline:none; }
+
+/* Supporting pages and the printable keepsake belong to the same sky. */
+.product-theme .keepsake>.wrap { width:100%; padding:0; }
+.product-theme .keepsake-layout { gap:32px; align-items:start; }
+.product-theme :is(.customer-unavailable,.customer-save,.customer-consent,.account-proposal,.customer-record) { border-color:#e5d9ee; border-radius:14px; background:#fcf9ffaf; }
+.product-theme .customer-status { background:#f1e8fa; color:#9878aa; }
+.product-theme .customer-points span { background:#faf4ff; border-color:#e4d5ee; color:#9b7aad; }
+.product-theme .customer-delete { color:#ac7592; }
+.product-theme .keepsake-preview { background:linear-gradient(135deg,#fff9ffde,#f3faffdc); }
+.product-theme .keepsake-preview canvas { display:block; max-width:100%; border:1px solid #e6daee; border-radius:16px; }
+.product-theme .candidate-provenance figure { border-color:#d6c1e5; background:linear-gradient(135deg,#fbf6ff,#f4faff); }
+.product-theme .candidate-provenance blockquote { color:#80638e; }

@@ -4,8 +4,8 @@
   "description": "结合出生时光、姓氏与家庭心意的命名参考工具",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b0e18",
-  "theme_color": "#0b0e18",
+  "background_color": "#f6f4fc",
+  "theme_color": "#f6f4fc",
   "lang": "zh-CN",
-  "icons": []
+  "icons": [{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
 }
