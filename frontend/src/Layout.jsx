@@ -3,8 +3,6 @@ import {Button, Dialog, IconButton} from "@radix-ui/themes";
 import {ArrowUpRight, Check, Heart, Menu} from "lucide-react";
 import { BrandMark } from './ui/CelestialArt.jsx';
 
-import QuotaStatus from './QuotaStatus.jsx';
-
 export function Header({ count, onSaved, onAccount }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const links = [["#form","开始起名"],["#results","名字提案"],["#trialQuota","体验名额"],["#account","我的服务"],["#keepsake","心愿卡"],["#method","命名方法"]];
@@ -25,10 +23,9 @@ export function Header({ count, onSaved, onAccount }) {
     </Dialog.Content>
   </Dialog.Root>;
 }
-export function Hero({quota}) {
-  return <section className="workspace-welcome wrap" aria-label="序名 · 星际东方命名">
-    <div className="welcome-copy"><i className="welcome-constellation" aria-hidden="true"/><p className="eyebrow"><span className="live-dot"/> ORIGIN & NAME · 公开内测</p><h1>一个名字，<span>一段新的可能。</span></h1><p>从出生时光出发，把东方文脉写进家人的心意。</p><div className="welcome-notes"><span><Check size={13}/>无需注册</span><span><Check size={13}/>名字提案免费</span><span><Check size={13}/>反馈自愿</span></div></div>
-    <QuotaStatus quota={quota}/>
+export function Hero() {
+  return <section className="workspace-welcome landscape-banner" aria-label="序名 · 月白青黛">
+    <div className="welcome-copy"><p className="eyebrow">山河入梦 · 字里有光</p><h1>以东方心意，<span>予一生好名。</span></h1><p>从出生时光出发，把山河文脉写进名字。</p><div className="welcome-notes"><span><Check size={13}/>无需注册</span><span><Check size={13}/>名字提案免费</span><span><Check size={13}/>反馈自愿</span></div></div>
   </section>;
 }
 export function Method() {

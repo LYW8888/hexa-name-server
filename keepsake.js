@@ -38,18 +38,15 @@
     return lines;
   }
 
-  function draw(canvas, name, wish, link) {
+  function draw(canvas, name, wish, link, artwork) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
     const width = canvas.width, height = canvas.height;
     const background = ctx.createLinearGradient(0, 0, width, height);
-    background.addColorStop(0, '#F3F5F1'); background.addColorStop(.5, '#FCFDF9'); background.addColorStop(1, '#E8EFEB');
+    background.addColorStop(0, '#FAF8F2'); background.addColorStop(.5, '#FFFDF7'); background.addColorStop(1, '#F3F4EB');
     ctx.fillStyle = background; ctx.fillRect(0, 0, width, height);
     ctx.strokeStyle = '#B59C68'; ctx.lineWidth = 2; ctx.strokeRect(48, 48, width - 96, height - 96);
-    ctx.strokeStyle = '#B59C6842'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(width / 2, height * .42, 310, 310, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(width / 2, height * .42, 350, 210, -.45, 0, Math.PI * 2); ctx.stroke();
-    // A decorative star field and ink-wash horizon stay clear of the name.
+    // Small gold points leave the name clear; artwork is bundled on this origin.
     for (let i = 0; i < 30; i++) {
       const x = 75 + (i * 137) % (width - 150), y = 80 + (i * 61) % 275;
       if (x > width * .25 && x < width * .75) continue;
@@ -60,12 +57,11 @@
     moon.addColorStop(0, '#FFFEF6'); moon.addColorStop(.4, '#E9EFDF99'); moon.addColorStop(1, '#DCE5D700');
     ctx.fillStyle = moon; ctx.beginPath(); ctx.arc(width - 160, 252, 65, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#B59C6888'; ctx.beginPath(); ctx.arc(width - 160, 252, 23, 0, Math.PI * 2); ctx.stroke();
-    const hills = ctx.createLinearGradient(0, 730, 0, 890);
-    hills.addColorStop(0, '#809E923B'); hills.addColorStop(1, '#DAE5D900');
-    ctx.fillStyle = hills; ctx.beginPath(); ctx.moveTo(49, 818);
-    for (const [x,y] of [[153,772],[224,802],[327,739],[418,794],[507,764],[615,810],[724,751],[width-49,800],[width-49,889],[49,889]]) ctx.lineTo(x,y);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#9CAD9F55'; ctx.beginPath(); ctx.moveTo(49, 843); ctx.bezierCurveTo(245, 798, 414, 892, width - 49, 826); ctx.stroke();
+    if (artwork?.naturalWidth && artwork.naturalHeight) {
+      // Crop the painted mist and mountain portion, leaving the title unobscured.
+      const cut = artwork.naturalHeight * .4;
+      ctx.drawImage(artwork, 0, cut, artwork.naturalWidth, artwork.naturalHeight-cut, 49, 700, width-98, 235);
+    }
     ctx.fillStyle = '#56877E'; ctx.textAlign = 'center';
     ctx.font = '500 22px sans-serif'; ctx.fillText('A NAME, A WISH', width / 2, 152);
     ctx.fillStyle = '#657C7A'; ctx.font = '500 25px sans-serif'; ctx.fillText('写给未来的一份心意', width / 2, 215);

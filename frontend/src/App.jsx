@@ -9,6 +9,7 @@ import CustomerArea from "./CustomerArea.jsx";
 import SavedNames from "./SavedNames.jsx";
 import ExperiencePanel from './ExperiencePanel.jsx';
 import usePublicQuota from './usePublicQuota.js';
+import QuotaStatus from './QuotaStatus.jsx';
 import { requestKey, workflowId } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
 import { copyText, friendlyError } from "./utils.js";
@@ -317,13 +318,14 @@ export default function App() {
   }
   return (
     <>
+      <div className="reference-shell">
       <Header
         count={favorite.names.length}
         onSaved={showSaved}
         onAccount={() => scroll("#account")}
       />
       <main id="top">
-        <Hero quota={quota}/>
+        <Hero/>
         <div className="workspace-grid wrap">
         <NamingForm
           ref={formController}
@@ -374,6 +376,7 @@ export default function App() {
           onSave={save}
           onKeepsake={openKeepsake}
         />
+        <QuotaStatus quota={quota}/>
         <ExperiencePanel result={!dirty ? result : null} toast={toast} quota={quota}/>
         </div></div>
         <div className="workspace-extras wrap"><details id="accountTools"><summary>我的服务<span>保存与找回免费提案</span></summary><CustomerArea
@@ -386,6 +389,7 @@ export default function App() {
         <ReportContact contact={product.contact} toast={toast}/>
       </main>
       <Footer clear={clear} />
+      </div>
       <SavedNames
         open={savedOpen}
         names={favorite.names}

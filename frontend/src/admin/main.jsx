@@ -6,6 +6,7 @@ import { Badge, Button, Card, Callout, IconButton, Spinner, TextField } from '@r
 import { ArrowUpRight, Eye, EyeOff, FileText, Headphones, History, KeyRound, LayoutDashboard, LockKeyhole, RefreshCw, ShieldCheck, Truck, Users, Wallet, Info, MessageSquareText } from 'lucide-react';
 import "./style.css";
 import './modern.css';
+import '../ui/landscape-theme.css';
 import ReportsManager from "./ReportsManager.jsx";
 import ExperienceManager from './ExperienceManager.jsx';
 

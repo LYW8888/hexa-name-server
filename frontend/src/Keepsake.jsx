@@ -1,24 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { copyText } from './utils.js';
+import landscapeURL from './assets/moon-mountains.png';
 
 export default function Keepsake({ selection, toast }) {
   const [name,setName] = useState(''), [wish,setWish] = useState('愿你心有光亮，行有方向。'), [error,setError] = useState('');
   const input=useRef(null), wishInput=useRef(null), canvas=useRef(null);
+  const [artwork,setArtwork]=useState(null);
+  useEffect(()=>{
+    let active=true;
+    const picture=new Image();
+    picture.onload=()=>{if(active)setArtwork(picture);};
+    picture.src=landscapeURL;
+    return ()=>{active=false;picture.onload=null;};
+  },[]);
   const publicSite=window.Keepsake.siteURL(window.location.href);
   const recommendation=window.Keepsake.recommendationURL(window.location.href);
   useEffect(()=>{ if(selection) { setName(selection.name);setError('');input.current?.focus({preventScroll:true}); } },[selection]);
   useEffect(()=>{
     const state=window.Keepsake.validate(name,wish);
-    function draw(){ if(canvas.current) window.Keepsake.draw(canvas.current,state.name,state.wish,publicSite); }
+    function draw(){ if(canvas.current) window.Keepsake.draw(canvas.current,state.name,state.wish,publicSite,artwork); }
     draw(); let active=true;
     document.fonts?.ready.then(()=>{ if(active)draw(); }).catch(()=>{});
     return ()=>{active=false;};
-  },[name,wish,publicSite]);
+  },[name,wish,publicSite,artwork]);
   function download() {
     const state=window.Keepsake.validate(name,wish);
     if(state.error){setError(state.error);(state.error.includes('祝愿') ? wishInput : input).current?.focus();return;}
     setError('');
-    if(!window.Keepsake.draw(canvas.current,state.name,state.wish,publicSite) || typeof canvas.current.toBlob !== 'function') {toast('当前浏览器无法导出图片，请尝试其他浏览器。','info');return;}
+    if(!window.Keepsake.draw(canvas.current,state.name,state.wish,publicSite,artwork) || typeof canvas.current.toBlob !== 'function') {toast('当前浏览器无法导出图片，请尝试其他浏览器。','info');return;}
     canvas.current.toBlob(blob=>{
       if(!blob){toast('图片生成失败，请稍后重试。','info');return;}
       const url=URL.createObjectURL(blob), link=document.createElement('a');
