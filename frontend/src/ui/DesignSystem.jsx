@@ -6,7 +6,7 @@ import './dream-theme.css';
 import DreamSky from './DreamSky.jsx';
 
 export default function DesignSystem({children, admin=false}) {
-  return <Theme appearance="light" accentColor="iris" grayColor="slate" radius="large"
+  return <Theme appearance="light" accentColor="jade" grayColor="sage" radius="large"
     panelBackground="translucent" scaling="100%" hasBackground={false}
     className={admin ? 'origin-theme dream-theme admin-theme' : 'origin-theme dream-theme product-theme'}>
     <DreamSky/>{children}

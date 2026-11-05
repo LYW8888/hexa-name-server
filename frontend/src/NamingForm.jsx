@@ -223,7 +223,7 @@ export default forwardRef(function NamingForm(
       <input type="hidden" name="algorithm" value="literary_v3" />
       <input type="hidden" name="purpose" value={rename ? "rename" : "newborn"} />
       <input type="hidden" name="mode" value={born ? "born" : "due_date"} />
-      <div className="workspace-caption"><span><Orbit size={16}/>命名资料</span><Badge variant="soft" color="iris">免费体验</Badge></div>
+      <div className="workspace-caption"><span><Orbit size={16}/>命名资料</span><Badge variant="soft" color="jade">免费体验</Badge></div>
       <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message && <Callout.Root color="red" size="1"><Callout.Icon><Info size={16}/></Callout.Icon><Callout.Text>{message}</Callout.Text></Callout.Root>}</div>
       <fieldset className="basic-info" disabled={locked}>
         <legend id="basicInfoTitle" tabIndex={-1}>这次为谁取名</legend>

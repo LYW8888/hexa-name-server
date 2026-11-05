@@ -296,7 +296,7 @@ function App() {
         </nav>
         <div className="identity">
           <b>{user.username}</b>
-          <Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}</Badge><span>动态码验证 · 独立会话</span>
+          <Badge color="jade" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}</Badge><span>动态码验证 · 独立会话</span>
           <button onClick={logout} disabled={busy}>
             退出登录
           </button>
@@ -331,7 +331,7 @@ function App() {
             {tab === "experience" && user.role === "owner" && <ExperienceManager ref={experienceController} api={api} notify={setNotice}/>}
             {tab === "overview" && (
               <>
-                <Card className="workspace-welcome"><div><Badge color="iris" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>每一份心意，都有妥善的回音。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('experience')}>报告与体验<ArrowUpRight size={16}/></Button>}</Card>
+                <Card className="workspace-welcome"><div><Badge color="jade" variant="soft">{user.is_superadmin?'超级管理员':roles[user.role]}工作台</Badge><h2>每一份心意，都有妥善的回音。</h2><p>查看工作状态，处理客户申请。所有数据按岗位授权展示。</p></div>{user.role==='owner'&&<Button size="3" onClick={()=>setTab('experience')}>报告与体验<ArrowUpRight size={16}/></Button>}</Card>
                 <div className="summary-grid">
                   {Object.entries(summary || {}).map(([role, item]) => (
                     <section className="surface metric-card" key={role}>

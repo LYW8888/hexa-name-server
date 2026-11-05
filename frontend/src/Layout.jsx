@@ -14,7 +14,7 @@ export function Header({ count, onSaved, onAccount }) {
       <nav aria-label="主导航">
         <a href="#results">名字提案</a><a href="#method">命名方法</a><a href="#trialQuota">体验名额</a>
         <Button variant="ghost" color="gray" className="customer-entry" type="button" onClick={onAccount}>我的服务</Button>
-        <Button id="savedButton" variant="soft" color="iris" type="button" onClick={onSaved}><Heart size={16} aria-hidden="true"/>收藏 <i id="savedCount">{count}</i></Button>
+        <Button id="savedButton" variant="soft" color="jade" type="button" onClick={onSaved}><Heart size={16} aria-hidden="true"/>收藏 <i id="savedCount">{count}</i></Button>
         <Dialog.Trigger><IconButton id="mobileMenuButton" className="mobile-menu-button" variant="ghost" color="gray" aria-label={menuOpen?"关闭导航菜单":"打开导航菜单"}><Menu size={21}/></IconButton></Dialog.Trigger>
       </nav>
     </header>
