@@ -1,5 +1,7 @@
 import json
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
@@ -224,3 +226,18 @@ class BackofficeTest(TestCase):
     def test_internal_sources_are_not_served(self):
         for path in ('/backoffice/settings.py','/operations/console.py','/auth.sqlite3','/.git/config','/assets/../admin.html'):
             self.assertEqual(self.client.get(path).status_code, 404)
+
+    def test_webp_artwork_is_served_only_from_build_assets(self):
+        with TemporaryDirectory() as directory, override_settings(BASE_DIR=Path(directory)):
+            assets = Path(directory) / 'frontend' / 'dist' / 'assets'
+            assets.mkdir(parents=True)
+            picture = b'RIFF\x04\x00\x00\x00WEBP'
+            (assets / 'mountains-test.webp').write_bytes(picture)
+            (assets / 'private.py').write_text('internal')
+            (Path(directory) / 'outside.webp').write_bytes(picture)
+            response = self.client.get('/assets/mountains-test.webp')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'image/webp')
+            self.assertEqual(b''.join(response.streaming_content), picture)
+            for path in ('/assets/private.py', '/assets/missing.webp', '/assets/../outside.webp', '/outside.webp'):
+                self.assertEqual(self.client.get(path).status_code, 404)

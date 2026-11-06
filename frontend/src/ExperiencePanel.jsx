@@ -95,7 +95,7 @@ export default function ExperiencePanel({result,toast,quota}) {
   if(!result)return null;
   const entry=entries.current.get(result);
   const canOpen=entry?.beta||entry?.uncertain||quota.data?.enabled&&quota.data.remaining>0&&!quota.error;
-  return <section className="experience-panel" aria-label="体验反馈与内测报告">
+  return <section id="experienceReport" className="experience-panel" aria-label="体验反馈与内测报告" tabIndex={-1}>
     <div><FileText size={22}/><div><b>读懂名字背后的依据</b><p>四柱 · 五行生克 · 选字出处 · 逐名解读</p></div></div>
     {experience?.available?<><div className="experience-actions"><Button type="button" className="primary" onClick={viewReport} disabled={busy||!canOpen}>{busy?<Spinner/>:<FileText size={15}/>}查看完整报告（内测）</Button><Button type="button" variant="outline" onClick={()=>feedback(entry?.beta?'report':'proposal')} disabled={busy}><MessageSquareText size={15}/>反馈本次体验</Button></div><p className="claim-consent">点击查看即同意将本次出生资料与完整报告加密保存最多30天，成功保存使用1个名额。同份重复查看不扣次，反馈自愿。{!canOpen&&(quota.error?' 名额待刷新。':quota.data&&!quota.data.enabled?' 内测已暂停。':quota.data?.remaining===0?' 本轮名额已用尽。':' 正在确认名额。')}</p></>:<p>报告记录服务暂不可用，名字提案仍可使用。</p>}
     <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Content className={`experience-dialog ${mode==='report'?'experience-wide':''}`} maxWidth={mode==='report'?'1080px':'590px'}>

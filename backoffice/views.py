@@ -291,7 +291,7 @@ def shell(request):
 
 @require_GET
 def asset(request, name):
-    if not re.fullmatch(r'[A-Za-z0-9_-]+\.(?:js|css|svg|png|woff2?)', name): raise Http404
+    if not re.fullmatch(r'[A-Za-z0-9_-]+\.(?:js|css|svg|png|webp|woff2?)', name): raise Http404
     root = (settings.BASE_DIR / 'frontend' / 'dist' / 'assets').resolve()
     if root.parent != (settings.BASE_DIR / 'frontend' / 'dist').resolve(): raise Http404
     path = (root / name).resolve()

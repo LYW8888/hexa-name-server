@@ -180,6 +180,12 @@ for(const width of [1280,390])test(`内测先看完整报告再自愿低分反�
   const generated=client.waitForResponse('**/api/analyze');
   await client.getByRole('button',{name:width===390?'查看改名提案':'生成名字提案 ✦',exact:true}).click();
   const proposal=await(await generated).json();expect(proposal.experience.available).toBe(true);expect(proposal.analysis).not.toHaveProperty('bazi');
+  await expect(client.locator('#results')).toBeFocused();
+  let claims=0;client.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname==='/api/beta-reports')claims++;});
+  await client.getByRole('link',{name:'报告与反馈',exact:true}).click();
+  await expect(client.locator('#experienceReport')).toBeFocused();
+  await expect(client.getByRole('button',{name:'查看完整报告（内测）',exact:true})).toBeInViewport();
+  expect(claims).toBe(0);
   if(process.env.XUMING_CAPTURE_EXPERIENCE==='1')await captureWorkbench(client,`../reports/images/public-proposals-${width}.png`);
   const betaResponse=client.waitForResponse('**/api/beta-reports');await client.getByRole('button',{name:'查看完整报告（内测）',exact:true}).click();const beta=await(await betaResponse).json();
   const dialog=client.getByRole('dialog');

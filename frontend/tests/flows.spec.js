@@ -194,6 +194,29 @@ test("上一组和下一组使用缓存，比较可跨组保留", async ({ page 
   await page.locator("#regenerate").click(); expect(requests).toBe(1); await expect(page.locator("#candidateComparison")).toContainText("已选 2/3");
 });
 
+for (const width of [1280, 390, 320]) test(`生成后可直接用键盘进入结果和比较 ${width}px`, async ({page})=>{
+  await page.setViewportSize({width,height:950});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.goto('/');await generate(page);
+  await expect(page.locator('#results')).toBeFocused();
+  const shortcuts=page.getByRole('navigation',{name:'提案快捷操作'});
+  await expect(shortcuts.getByRole('link',{name:/查看比较/})).toHaveCount(0);
+  await page.locator('#cards .compare-name').first().click();
+  const compare=shortcuts.getByRole('link',{name:/查看比较/});
+  await compare.focus();await page.keyboard.press('Enter');
+  const panel=page.getByRole('region',{name:'名字比较',exact:true});
+  await expect(panel).toBeFocused();await expect(panel).toBeInViewport();
+  const top=await panel.evaluate(el=>el.getBoundingClientRect().top);
+  const navigationBottom=await page.locator('.site-header').evaluate(el=>el.getBoundingClientRect().bottom);
+  expect(top).toBeGreaterThanOrEqual(navigationBottom);
+  const shortcutBottom=await shortcuts.evaluate(el=>el.getBoundingClientRect().bottom);
+  expect(top).toBeGreaterThanOrEqual(shortcutBottom);
+  await panel.getByRole('button',{name:'清空比较',exact:true}).click();
+  await expect(compare).toHaveCount(0);
+  await shortcuts.getByRole('button',{name:'调整条件',exact:true}).click();
+  await expect(page.locator('#preferencesTitle')).toBeFocused();
+});
+
 test("比较最多三个，可移除后继续选", async ({ page }) => {
   await page.goto("/"); await fillInfo(page); await openSettings(page); await page.locator("[name=candidateCount]").fill("4"); await page.locator("button[type=submit]").click(); await expect(page.locator("#cards .card")).toHaveCount(4);
   for (let i = 0; i < 3; i++) await page.locator("#cards .compare-name").nth(i).click(); await expect(page.locator("#cards .compare-name").nth(3)).toBeDisabled();
@@ -363,6 +386,25 @@ test("表单资料不落本机收藏，离线仍能制作心愿卡", async ({ pa
   await page.locator("#keepsakeName").fill("林安");
   const pending = page.waitForEvent("download"); await page.locator("#downloadKeepsake").click(); const image = await readFile(await (await pending).path());
   expect(image.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+});
+
+test.describe('素材故障恢复',()=>{
+test.use({serviceWorkers:'block'});
+test('心愿卡素材加载失败后可重试，成功后才下载完整图片', async ({page})=>{
+  let reachable=false;
+  await page.route('**/assets/moon-mountains-*.webp',route=>reachable?route.continue():route.abort());
+  await page.goto('/');await page.locator('#keepsakeTools > summary').click();
+  await page.locator('#keepsakeName').fill('林安');
+  const files=[];page.on('download',file=>files.push(file));
+  await page.locator('#downloadKeepsake').click();
+  await expect(page.locator('#toast')).toContainText('山水素材暂未加载成功');
+  await expect(page.locator('#downloadKeepsake')).toBeEnabled();expect(files).toHaveLength(0);
+  reachable=true;
+  const pending=page.waitForEvent('download');await page.locator('#downloadKeepsake').click();
+  const bytes=await readFile(await(await pending).path());
+  expect(bytes.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(files).toHaveLength(1);
+});
 });
 
 test("宝宝与改名对象的出生资料分别保留，不自动混填", async ({ page }) => {

@@ -230,7 +230,7 @@ export default function App() {
           ? `${prefix}${count < requested ? `当前条件下，字库实际匹配 ${count} 个。` : ""}`
           : "当前条件下没有符合要求的候选，请调整名字设置。",
       );
-      if (!isRegenerate) scroll("#results");
+      if (!isRegenerate) scroll("#results", true);
       toast(
         count
           ? isRegenerate
@@ -375,6 +375,7 @@ export default function App() {
           onCopy={copy}
           onSave={save}
           onKeepsake={openKeepsake}
+          reportAvailable={!!result?.experience?.available && !dirty}
         />
         <QuotaStatus quota={quota}/>
         <ExperiencePanel result={!dirty ? result : null} toast={toast} quota={quota}/>

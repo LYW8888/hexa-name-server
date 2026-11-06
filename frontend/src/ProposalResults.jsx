@@ -1,21 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Badge, Button, Card } from '@radix-ui/themes';
-import { ArrowUpRight, Copy, Heart, Layers2, RefreshCw } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Copy, Heart, Layers2, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { BrandMark } from './ui/CelestialArt.jsx';
 import { workflowLabel } from './form-state.js';
 
 export default function ProposalResults({data, analysis, candidates, status, busy, saved, dirty, onApply, onEdit,
-  groupIndex, comparisonKey, hasPrevious, hasNext, onPrevious, onRegenerate, onCopy, onSave, onKeepsake, onSaved}) {
+  groupIndex, comparisonKey, hasPrevious, hasNext, reportAvailable, onPrevious, onRegenerate, onCopy, onSave, onKeepsake, onSaved}) {
   const [selected, setSelected]=useState([]);
   useEffect(()=>setSelected([]),[comparisonKey]);
   function compare(item) {
     setSelected(previous=>previous.some(x=>x.fullName===item.fullName) ? previous.filter(x=>x.fullName!==item.fullName) : previous.length<3 ? [...previous,item] : previous);
   }
-  return <section id="results" className="results-section wrap public-proposals" aria-label="免费名字提案">
+  return <section id="results" className="results-section wrap public-proposals" aria-label="免费名字提案" tabIndex={-1}>
     <div className="section-heading"><div><p className="eyebrow"><span>02</span> 命名结果 / YOUR SHORTLIST</p><h2>你的名字提案</h2></div><Button type="button" variant="outline" color="gray" className="secondary" disabled={busy || !analysis || !hasNext} onClick={onRegenerate}><RefreshCw size={15}/>换一组名字</Button></div>
     <p id="resultStatus" className="results-status" role="status">{status}</p>
     {dirty && <section className="draft-notice" aria-label="尚未应用的修改"><div><b>填写内容已修改</b><p>当前仍是上一份提案，请应用修改后再申请报告。</p></div><button type="button" className="primary" disabled={busy} onClick={onApply}>应用修改并生成</button></section>}
     {analysis && <div id="summary" className="proposal-context"><strong>{data.surname} · {workflowLabel(data)}</strong><span>第{groupIndex+1}组 · {data.length || 2}字名 · 免费提案</span><button type="button" className="edit-context" onClick={()=>onEdit(1)}>修改出生信息</button></div>}
+    {analysis && <nav className="proposal-shortcuts" aria-label="提案快捷操作">
+      {reportAvailable && <a className="report-jump" href="#experienceReport">报告与反馈<ArrowDown size={14}/></a>}
+      {!!selected.length && <a href="#candidateComparison">查看比较<span className="comparison-count" aria-label={`已选${selected.length}个名字`}>{selected.length}</span></a>}
+      <button type="button" onClick={()=>onEdit(2)}><SlidersHorizontal size={14}/>调整条件</button>
+    </nav>}
     <div id="cards" className="cards">
       {candidates.map((item,index)=><Card asChild key={item.fullName}><article className="card proposal-card" tabIndex={-1}>
         <div className="proposal-card-top"><span>名字提案 / {String(index+1).padStart(2,'0')}</span><Badge color="jade" variant="soft" className="proposal-free">免费</Badge></div>
@@ -26,7 +31,7 @@ export default function ProposalResults({data, analysis, candidates, status, bus
       {analysis && !candidates.length && <div className="empty-result"><p>当前条件{data.requiredChars?`（必用字：${data.requiredChars}）`:''}下没有匹配的名字，请调整设置后重试。</p><button type="button" className="secondary" onClick={()=>onEdit(2,'requiredChars')}>调整必用字或避讳</button><button type="button" className="secondary" onClick={()=>onEdit(2,'numerologyMode')}>调整数理筛选</button></div>}
       {!analysis && <div className="empty-result"><BrandMark/><div><h3>下一个好名字，正在等你。</h3><p>填好基本信息，先免费探索名字、读音与寓意。</p></div><a href="#form" className="secondary">前往起名<ArrowUpRight size={15}/></a></div>}
     </div>
-    {!!selected.length && <section id="candidateComparison" className="proposal-comparison" aria-label="名字比较"><div className="comparison-heading"><h3>放在一起，读一读 <small>已选 {selected.length}/3</small></h3><button type="button" onClick={()=>setSelected([])}>清空比较</button></div><div className="proposal-compare-grid">
+    {!!selected.length && <section id="candidateComparison" className="proposal-comparison" aria-label="名字比较" tabIndex={-1}><div className="comparison-heading"><h3>放在一起，读一读 <small>已选 {selected.length}/3</small></h3><button type="button" onClick={()=>setSelected([])}>清空比较</button></div><div className="proposal-compare-grid">
       {selected.map(item=><article key={item.fullName}><h4>{item.fullName}</h4><p>{item.pinyin}</p><p>{item.meaning}</p><button type="button" onClick={()=>compare(item)}>移除{item.fullName}</button></article>)}
     </div></section>}
     {analysis && <div className="proposal-footer"><div><button id="previousGroup" type="button" className="secondary" disabled={busy || !hasPrevious} onClick={onPrevious}>上一组</button><button id="regenerate" type="button" className="secondary" disabled={busy || !hasNext} onClick={onRegenerate}>下一组</button><button type="button" className="secondary" onClick={()=>onEdit(2)}>调整偏好</button><button type="button" className="secondary" onClick={onSaved}>查看收藏</button></div></div>}
