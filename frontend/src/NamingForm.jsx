@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Badge, Button, Callout, Card, Spinner, TextField } from '@radix-ui/themes';
-import { Baby, CalendarDays, Check, Info, MapPin, Orbit, Sparkles, UserRound } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Baby, CalendarDays, Check, Info, MapPin, Orbit, Sparkles, UserRound } from 'lucide-react';
 import { formRequest, inferSurname, nameReviewKey } from "./form-state.js";
 import { longitudeText, matchCity, withPlace } from "./location-state.js";
 import { requestNameReview } from "./analysis.js";
@@ -26,6 +26,9 @@ export default forwardRef(function NamingForm(
   controller,
 ) {
   const [scenario, setScenario] = useState("due_date");
+  const [step, setStep] = useState(0);
+  const [furthest, setFurthest] = useState(0);
+  const lastStep = useRef(0);
   const [newbornSurname, setNewbornSurname] = useState("");
   const [currentName, setCurrentName] = useState("");
   const [surnameOverride, setSurnameOverride] = useState(null);
@@ -88,13 +91,28 @@ export default forwardRef(function NamingForm(
   useLayoutEffect(() => {
     if (review) focus(formRef.current?.querySelector("#currentReviewTitle"));
   }, [review]);
+  useLayoutEffect(() => {
+    if (lastStep.current === step) return;
+    lastStep.current = step;
+    const heading = formRef.current?.querySelector(['#basicInfoTitle','#birthInfoTitle','#preferencesTitle'][step]);
+    if (heading) focus(heading);
+  }, [step]);
 
   function focus(element) {
     if (!element) return;
+    const panel = element.closest('[data-form-step]');
+    if (panel) {
+      const target = Number(panel.dataset.formStep);
+      setStep(target);
+      setFurthest(previous => Math.max(previous, target));
+    }
     for (let parent = element.parentElement; parent && parent !== formRef.current; parent = parent.parentElement)
       if (parent.tagName === "DETAILS") parent.open = true;
-    element.focus({ preventScroll: true });
-    element.scrollIntoView({ behavior: "instant", block: "start" });
+    requestAnimationFrame(() => {
+      element.focus({ preventScroll: true });
+      const target = element.tagName === 'LEGEND' ? formRef.current : element;
+      target?.scrollIntoView({ behavior: "instant", block: "start" });
+    });
   }
   function clearError() {
     invalidField.current?.removeAttribute("aria-invalid");
@@ -113,20 +131,21 @@ export default forwardRef(function NamingForm(
     }
     return false;
   }
-  function validate(includePreferences = true) {
+  function validate(includePreferences = true, onlyStep = null) {
     const form = formRef.current;
-    const fields = [...form.querySelectorAll(includePreferences ? "input,select,textarea" : ".basic-info input,.basic-info select,.birth-info input,.birth-info select,.time-settings input,.time-settings select,.family-options input")];
+    const scope = onlyStep === null ? form : form.querySelector(`[data-form-step="${onlyStep}"]`);
+    const fields = [...scope.querySelectorAll(includePreferences ? "input,select,textarea" : ".basic-info input,.basic-info select,.birth-info input,.birth-info select,.time-settings input,.time-settings select,.family-options input")];
     const invalid = fields.find(field => !field.checkValidity());
     if (invalid) {
       if (invalid.name === "candidateCount") return fail(`方案数量请输入1–${max}的整数。`, invalid);
       const label = invalid.closest("label")?.querySelector(".field-label")?.textContent || invalid.closest("label")?.childNodes[0]?.textContent?.trim() || "必填项";
       return fail(`请填写或检查“${label}”。`, invalid);
     }
-    if (![...surname.trim()].length || [...surname.trim()].length > 2 || [...surname.trim()].some(c => c !== "〇" && !/\p{Script=Han}/u.test(c)))
+    if ((onlyStep === null || onlyStep === 0) && (![...surname.trim()].length || [...surname.trim()].length > 2 || [...surname.trim()].some(c => c !== "〇" && !/\p{Script=Han}/u.test(c))))
       return fail("姓氏请填写1–2个汉字，支持复姓。", form.elements.surname);
-    if (rename && (!currentName.trim().startsWith(surname.trim()) || [...currentName.trim()].length <= [...surname.trim()].length || [...currentName.trim()].some(c => c !== "〇" && !/\p{Script=Han}/u.test(c))))
+    if ((onlyStep === null || onlyStep === 0) && rename && (!currentName.trim().startsWith(surname.trim()) || [...currentName.trim()].length <= [...surname.trim()].length || [...currentName.trim()].some(c => c !== "〇" && !/\p{Script=Han}/u.test(c))))
       return fail("请填写含姓氏的完整现用姓名，并确认识别的姓氏。", form.elements.currentName);
-    if (born) {
+    if (born && (onlyStep === null || onlyStep === 1)) {
       const clock = getClockInZone(zone);
       if (dates.birthDate > clock.date) return fail("实际出生日期不能晚于今天。", form.elements.birthDate);
       if (dates.birthDate === clock.date && dates.birthTime) {
@@ -134,7 +153,7 @@ export default forwardRef(function NamingForm(
         if (hours * 60 + minutes > clock.minutes) return fail("实际出生时间不能晚于当前时间。", form.elements.birthTime);
       }
     }
-    if (includePreferences) {
+    if (includePreferences && (onlyStep === null || onlyStep === 2)) {
       const chars = name => new Set([...(form.elements[name]?.value || "")].filter(c => /\p{Script=Han}/u.test(c)));
       const required = chars("requiredChars");
       const avoided = new Set([...chars("avoidedChars"), ...chars("tabooChars")]);
@@ -148,7 +167,17 @@ export default forwardRef(function NamingForm(
   function changeScenario(value) {
     clearError();
     setScenario(value);
+    setStep(0);
     setAcceptedReview(null);
+  }
+  function next() {
+    if (locked || !validate(true, step)) return;
+    setFurthest(previous => Math.max(previous, step + 1));
+    setStep(previous => Math.min(2, previous + 1));
+  }
+  function visit(target) {
+    if (locked || target > furthest) return;
+    clearError();setStep(target);
   }
   function edit(index = 0, fieldName) {
     clearError();
@@ -219,13 +248,15 @@ export default forwardRef(function NamingForm(
     <form id="namingForm" ref={formRef} noValidate aria-busy={locked} onChange={event => {
       if (invalidField.current?.name === event.target.name) clearError();
       capture();
-    }} onSubmit={event => { event.preventDefault(); rename ? analyzeCurrentName() : generate(); }}>
+    }} onSubmit={event => { event.preventDefault(); step < 2 ? next() : rename ? analyzeCurrentName() : generate(); }}>
       <input type="hidden" name="algorithm" value="literary_v3" />
       <input type="hidden" name="purpose" value={rename ? "rename" : "newborn"} />
       <input type="hidden" name="mode" value={born ? "born" : "due_date"} />
       <div className="workspace-caption"><span><Orbit size={16}/>命名资料</span><Badge variant="soft" color="jade">免费体验</Badge></div>
+      <nav className="naming-steps" aria-label="起名填写步骤"><ol>{['为谁起名','出生信息','心意偏好'].map((title,index)=><li key={title}><button type="button" disabled={locked || index > furthest} aria-current={step===index?'step':undefined} onClick={()=>visit(index)}><i>{index < step ? <Check size={12}/> : index+1}</i><span>{title}</span></button></li>)}</ol></nav>
+      <p className="wizard-guidance" role="status">第 {step+1} 步 / 共 3 步 · {['先确定起名场景，只填当前这一步。','日期用于排盘，出生地可按需填写。','偏好可选，默认准备10个备选名字。'][step]}</p>
       <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message && <Callout.Root color="red" size="1"><Callout.Icon><Info size={16}/></Callout.Icon><Callout.Text>{message}</Callout.Text></Callout.Root>}</div>
-      <fieldset className="basic-info" disabled={locked}>
+      <fieldset className="basic-info" data-form-step="0" hidden={step!==0} disabled={locked}>
         <legend id="basicInfoTitle" tabIndex={-1}>这次为谁取名</legend>
         <div className="scenario-choices" role="group" aria-label="起名场景">
           {SCENARIOS.map(([value, title, hint], index) => <Card asChild key={value}><label>
@@ -237,8 +268,9 @@ export default forwardRef(function NamingForm(
           {rename ? <label id="currentNameField"><span className="field-label">现用姓名</span><input name="currentName" value={currentName} onChange={e => { setCurrentName(e.target.value); if (surnameOverride !== null && !e.target.value.trim().startsWith(surnameOverride)) setSurnameOverride(null); }} required maxLength={20} placeholder="例如：欧阳明哲" /><small className="surname-detection">{surname ? `已识别姓氏：${surname}` : "输入全名后自动识别姓氏"}<button type="button" onClick={() => edit(0, "surname")}>修改姓氏</button></small></label> : surnameField()}
           <label><span className="field-label">性别<span className="optional-label">可选</span></span><select name="gender" value={gender} onChange={e => updatePerson("gender", e.target.value)}><option value="unknown">未知</option><option value="male">男</option><option value="female">女</option></select></label>
         </div>
+        {rename && <details className="surname-options"><summary>校对识别的姓氏</summary>{surnameField()}</details>}
       </fieldset>
-      <fieldset className="birth-info" disabled={locked}>
+      <fieldset className="birth-info" data-form-step="1" hidden={step!==1} disabled={locked}>
         <legend id="birthInfoTitle" tabIndex={-1}>{born ? "出生时间与地点" : "预产期与预计出生地"}</legend>
         <div className="grid birth-fields">
           <label className={!born ? "due-date-field" : ""}><span className="field-label">{born ? "实际出生日期" : "预产期日期"}</span><input type="date" name={born ? "birthDate" : "dueDate"} min="1900-01-01" max="2100-12-31" required value={born ? dates.birthDate : dates.dueDate} onChange={e => setDates(v => ({ ...v, [born ? "birthDate" : "dueDate"]: e.target.value }))} /></label>
@@ -247,30 +279,7 @@ export default forwardRef(function NamingForm(
         </div>
         <p id="placeHelp" className="place-help">{city ? `已匹配${city.name}，${cityCoordinate ? `城市中心约${longitudeText(longitude)}` : longitude !== "" ? `自定义经度${longitudeText(longitude)}` : "请补充经度"}。` : longitude !== "" ? `已填写手动经度${longitudeText(longitude)}。` : place.trim() ? "该地点尚未匹配经度，可保留文字；真太阳时需手动填写经度。" : "可留空；选城市后自动带入时区和经度。"}{timeBasis === "civil" ? "当前按民用时间排盘，不作经度修正。" : "已启用真太阳时，经度将用于排盘修正。"}</p>
         <p className="simple-time-note">{born ? "请按出生记录填写。" : "预产期可填未来日期，默认12:00作参考。"}<button type="button" onClick={() => edit(1, "zone")}>{zoneLabel} · 调整</button></p>
-      </fieldset>
-      <details className="naming-preferences">
-        <summary>偏好与名字设置<span>{length}字名 · {draft.candidateCount || 3}个方案 · 可选</span></summary>
-        <fieldset disabled={locked}>
-          <legend id="preferencesTitle" tabIndex={-1}>按你的心意调整</legend>
-          <div className="grid">
-            <label><span className="field-label">名的字数（不含姓）</span><select name="length" value={length} onChange={e => setLength(e.target.value)}><option value="2">两字名</option><option value="1">单字名</option><option value="3">三字名</option></select></label>
-            <label><span className="field-label">方案数量</span><input name="candidateCount" type="number" min="1" max={max} required defaultValue="3" inputMode="numeric" /><small>可选1–{max}个，条件较严时展示实际数量。</small></label>
-          </div>
-          <div className="grid"><label>喜欢的字<input name="likedChars" maxLength={100} placeholder="例如：安、清（排序偏好）" /></label><label>必须避开的字<input name="avoidedChars" maxLength={100} placeholder="例如：伟、刚" /></label></div>
-          <label>希望名字传达的气质<textarea name="meaning" rows="2" placeholder="例如：清朗、坚韧、自然山水" /></label>
-          <div className="tags"><span>偏好风格</span>{[["classical", "清雅古典"], ["modern", "现代简洁"], ["nature", "自然山水"], ["bright", "明朗开阔"]].map(([value, label]) => <label key={value}><input type="checkbox" name="style" value={value} defaultChecked={value === "classical"} />{label}</label>)}</div>
-          <details className="family-options"><summary>家庭姓氏与读音</summary>
-            {rename && surnameField()}
-            <label>父母姓氏<input name="parents" maxLength={12} placeholder="例如：林、沈" /></label>
-            <label className="inline-check"><input type="checkbox" name="honorParents" value="true" />希望名中呼应父母姓氏</label>
-            <label>姓氏读音<input name="surnameReading" maxLength={32} placeholder="多音姓可填 shàn；留空用常用姓氏读音" /></label>
-          </details>
-          <details className="naming-constraints"><summary>辈分、家族避讳与传统参考</summary>
-            <div className="grid"><label>辈分或必用字<input name="requiredChars" maxLength={30} placeholder="每个字至少出现一次" /></label><label>家族避讳字<input name="tabooChars" maxLength={100} placeholder="只填需要避开的字" /></label></div>
-            <label className="inline-check"><input type="checkbox" name="tabooHomophones" value="true" />同时避开这些字的普通话同音字</label>
-            <label>五格数理<select name="numerologyMode" defaultValue="reference"><option value="reference">展示计算参考</option><option value="strict">严格筛选人格、地格、总格</option><option value="off">关闭五格展示</option></select><small>严格筛选可能减少数量；未知笔画保持未知。</small></label>
-            <label>传统文化选字参考<select name="elementPreference" value={elementPreference} onChange={e => setElementPreference(e.target.value)}><option value="yongshen">按四柱喜用参考（月令扶抑法）</option><option value="auto">按生辰起卦体卦意象</option><option value="none">仅按读音、风格和心意</option>{["木", "火", "土", "金", "水"].map(e => <option key={e} value={e}>自选{e}意象</option>)}</select></label>
-          </details>
+        <details className="birthplace-explainer"><summary>为什么要填出生地？五行相克怎么算？</summary><p>出生地帮助匹配时区；选用真太阳时时，经度还会用于时间修正。仅填写城市不会给名字加分，同一时区、同一时刻按民用时间排盘时，换城市不会改变四柱。</p><p>五行有相生与制约关系。算法结合年月日时、日主旺衰和所选取用方向选字，不按“缺什么就补什么”，也不把“相克”直接等同于坏名字。每个备选名字都可以查看具体说明。</p></details>
           <details className="time-settings"><summary>时区与排盘时间设置</summary>
             <div className="grid"><label>时区<select name="zone" value={zone} onChange={e => setZone(e.target.value)}><option value="Asia/Shanghai">中国标准时间 UTC+8</option><option value="Asia/Taipei">台北时间 UTC+8</option><option value="Asia/Hong_Kong">香港时间 UTC+8</option></select></label>
               {!born && <label>预产期参考时间<input name="dueTime" type="time" value={dates.dueTime} onChange={e => setDates(v => ({ ...v, dueTime: e.target.value }))} /></label>}
@@ -283,13 +292,39 @@ export default forwardRef(function NamingForm(
               <label><span className="field-label">出生地经度</span><input name="longitude" type="number" min="-180" max="180" step="0.000001" required value={longitude} onChange={e => setLongitude(e.target.value)} /><small>东经填正数，西经填负数；0也是有效经度。城市中心为近似值，可按实际地点调整。</small></label>
             </div>}
           </details>
+      </fieldset>
+      <details className="naming-preferences" data-form-step="2" hidden={step!==2} open>
+        <summary>偏好与名字设置<span>{length}字名 · {draft.candidateCount || 10}个方案 · 可选</span></summary>
+        <fieldset disabled={locked}>
+          <legend id="preferencesTitle" tabIndex={-1}>按你的心意调整</legend>
+          <div className="grid">
+            <label><span className="field-label">名的字数（不含姓）</span><select name="length" value={length} onChange={e => setLength(e.target.value)}><option value="2">两字名</option><option value="1">单字名</option><option value="3">三字名</option></select></label>
+            <label><span className="field-label">方案数量</span><input name="candidateCount" type="number" min="1" max={max} required defaultValue="10" inputMode="numeric" /><small>可选1–{max}个，条件较严时展示实际数量。</small></label>
+          </div>
+          <div className="grid"><label>喜欢的字<input name="likedChars" maxLength={100} placeholder="例如：安、清（排序偏好）" /></label><label>必须避开的字<input name="avoidedChars" maxLength={100} placeholder="例如：伟、刚" /></label></div>
+          <label>希望名字传达的气质<textarea name="meaning" rows="2" placeholder="例如：清朗、坚韧、自然山水" /></label>
+          <div className="tags"><span>偏好风格</span>{[["classical", "清雅古典"], ["modern", "现代简洁"], ["nature", "自然山水"], ["bright", "明朗开阔"]].map(([value, label]) => <label key={value}><input type="checkbox" name="style" value={value} defaultChecked={value === "classical"} />{label}</label>)}</div>
+          <details className="family-options"><summary>家庭姓氏与读音</summary>
+
+            <label>父母姓氏<input name="parents" maxLength={12} placeholder="例如：林、沈" /></label>
+            <label className="inline-check"><input type="checkbox" name="honorParents" value="true" />希望名中呼应父母姓氏</label>
+            <label>姓氏读音<input name="surnameReading" maxLength={32} placeholder="多音姓可填 shàn；留空用常用姓氏读音" /></label>
+          </details>
+          <details className="naming-constraints"><summary>辈分、家族避讳与传统参考</summary>
+            <div className="grid"><label>辈分或必用字<input name="requiredChars" maxLength={30} placeholder="每个字至少出现一次" /></label><label>家族避讳字<input name="tabooChars" maxLength={100} placeholder="只填需要避开的字" /></label></div>
+            <label className="inline-check"><input type="checkbox" name="tabooHomophones" value="true" />同时避开这些字的普通话同音字</label>
+            <label>五格数理<select name="numerologyMode" defaultValue="reference"><option value="reference">展示计算参考</option><option value="strict">严格筛选人格、地格、总格</option><option value="off">关闭五格展示</option></select><small>严格筛选可能减少数量；未知笔画保持未知。</small></label>
+            <label>传统文化选字参考<select name="elementPreference" value={elementPreference} onChange={e => setElementPreference(e.target.value)}><option value="yongshen">按四柱喜用参考（月令扶抑法）</option><option value="auto">按生辰起卦体卦意象</option><option value="none">仅按读音、风格和心意</option>{["木", "火", "土", "金", "水"].map(e => <option key={e} value={e}>自选{e}意象</option>)}</select></label>
+          </details>
+
         </fieldset>
       </details>
-      <div className="simple-submit">
-        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : <Sparkles size={17}/>}<span>{reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看分析状态" : "分析现用姓名" : "生成名字提案 ✦"}</span></Button>
-        <small>无需登录。资料不会自动保存。</small>
+      <div className="simple-submit wizard-actions">
+        {step>0 && <button type="button" className="secondary wizard-back" disabled={locked} onClick={()=>visit(step-1)}><ArrowLeft size={15}/>上一步</button>}
+        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : step<2 ? <ArrowRight size={17}/> : <Sparkles size={17}/>}<span>{step<2 ? `下一步：${step===0?'出生信息':'心意偏好'}` : reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看分析状态" : "分析现用姓名" : "生成名字提案 ✦"}</span></Button>
+        <small>{step<2?'仅校验当前步骤，返回修改不会丢失已填信息。':'无需登录；资料不会自动保存。名字详情免费查看。'}</small>
       </div>
-      {rename && review && <section className="simple-review" aria-label="现名分析状态与改名推荐">
+      {rename && review && <section className="simple-review" data-form-step="2" hidden={step!==2} aria-label="现名分析状态与改名推荐">
         <h3 id="currentReviewTitle" tabIndex={-1}>先分析现名，再推荐改名</h3>
         {reviewCurrent ? <>
           <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来可免费查看改名提案。完整现名分析、出生依据与改名说明，可在生成提案后体验完整报告。</p><a href="#trialQuota">查看免费报告名额 ↗</a></div>

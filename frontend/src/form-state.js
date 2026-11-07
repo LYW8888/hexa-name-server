@@ -31,7 +31,7 @@ export function requestKey(data = {}) {
     gender: "unknown",
     zone: "Asia/Shanghai",
     length: "2",
-    candidateCount: "3",
+    candidateCount: "10",
     dueTime: "12:00",
     elementPreference: "yongshen",
     timeBasis: "civil",

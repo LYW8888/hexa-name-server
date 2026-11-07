@@ -1,19 +1,21 @@
 import { test, expect } from "@playwright/test";
+import {basic,birth,preferences} from "./wizard.js";
 async function generate(page) {
   await page.locator("[name=surname]").fill("林");
+  await birth(page);
   await page.locator("[name=dueDate]").fill("2099-01-01");
   await page.locator("[name=place]").fill("杭州");
-  await page.locator(".naming-preferences > summary").click();
   await page.locator(".time-settings > summary").click();
   await page.locator("[name=timeBasis]").selectOption("apparent_solar");
   await expect(page.locator("[name=longitude]")).toHaveValue("120.16");
+  await preferences(page);
   await page.locator(".naming-constraints > summary").click();
   await page.locator("[name=elementPreference]").selectOption("水");
   await page
     .locator("button[type=submit]")
     .filter({ hasText: "生成名字提案" })
     .click();
-  await expect(page.locator("#cards .card")).toHaveCount(3);
+  await expect(page.locator("#cards .card")).toHaveCount(10);
 }
 async function login(page, phone) {
   const account = page.getByRole("region", { name: "我的服务" });
@@ -50,6 +52,10 @@ test("免费提案免登录，主动保存后只找回提案，可删除", async
   await account.getByRole('button',{name:'查看名字提案'}).click();
   const value=await(await pending).json();expect(value.report.analysis.access).toBe('proposal_only');expect(value.report.analysis).not.toHaveProperty('bazi');
   await expect(account.getByRole('region',{name:'账号名字提案'})).toContainText('重新生成并体验完整报告');
+  const savedNames=account.getByRole('region',{name:'账号名字提案'});
+  await savedNames.locator('article').first().getByText('查看名字详情与出处',{exact:true}).click();
+  await expect(savedNames.locator('article').first()).toContainText('怎样契合本次出生信息');
+  await expect(savedNames.locator('article').first()).toContainText('相生相克，具体怎么理解');
   await expect(page.locator('#downloadReport')).toHaveCount(0);
   await account.getByRole("button", { name: "删除", exact: true }).click();
   await account.getByRole("button", { name: "确认删除", exact: true }).click();
@@ -105,7 +111,7 @@ test("短信未开通时保持免登录免费流程", async ({ page }) => {
   );
   await expect(page.locator("[name=customerPhone]")).toHaveCount(0);
   await generate(page);
-  await expect(page.locator("#cards .card")).toHaveCount(3);
+  await expect(page.locator("#cards .card")).toHaveCount(10);
 });
 
 test("账号服务失败后可重试，保留已生成的免费方案", async ({ page }) => {
@@ -120,7 +126,7 @@ test("账号服务失败后可重试，保留已生成的免费方案", async ({
   failed = false;
   await account.getByRole("button", { name: "刷新账号状态" }).click();
   await expect(account.locator("[name=customerPhone]")).toBeVisible();
-  await expect(page.locator("#cards .card")).toHaveCount(3);
+  await expect(page.locator("#cards .card")).toHaveCount(10);
 });
 
 test("翻回同一组保存会复用记录，删除后可重新保存", async ({ page }) => {

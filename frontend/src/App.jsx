@@ -221,7 +221,7 @@ export default function App() {
           : { pages: [page], index: 0, id: previous.id + 1 },
       );
       const count = candidates.length,
-        requested = Number(data.candidateCount || 3);
+        requested = Number(data.candidateCount || 10);
       const prefix = isRegenerate
         ? `已换到第 ${Number(data.variant) + 1} 组，共 ${count} 个名字。`
         : `已生成 ${count} 个名字提案，可比较、收藏，并按剩余名额体验完整报告。`;

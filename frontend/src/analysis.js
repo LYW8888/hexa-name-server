@@ -1,3 +1,4 @@
+import {validNameDetail} from './name-detail-contract.js';
 const TIMEOUT_MESSAGE = "排盘服务响应超时，请检查网络后重新生成。";
 
 async function requestReport(
@@ -49,6 +50,9 @@ async function requestReport(
       }
       if (chart || payload.analysis.mingli || payload.analysis.naming_reference || payload.candidates.some(row => row.ranking || row.citations))
         throw new Error("服务返回了错误的访问范围，请联系维护人员。");
+      if (payload.candidates.some(row => row.details && !validNameDetail(row.details)) ||
+          (payload.analysis.details_version && payload.candidates.some(row=>!validNameDetail(row.details))))
+        throw new Error('名字详情资料不完整，请同步更新页面和服务后重试。');
       if (data.algorithm && payload.analysis.algorithm !== data.algorithm)
         throw new Error("命名服务版本与页面不一致，请刷新后重试。维护人员需同步更新前后端。");
       if (data.purpose && (payload.analysis.purpose_code !== data.purpose || payload.analysis.mode !== data.mode))

@@ -1,4 +1,5 @@
-"""Explicit public projection: report calculations never cross this boundary."""
+"""Public names and bounded explanations; full report calculations stay private."""
+import name_explanations
 
 INPUT_FIELDS = frozenset({
     'surname', 'mode', 'purpose', 'gender', 'zone', 'dueDate', 'dueTime', 'birthDate', 'birthTime',
@@ -16,11 +17,15 @@ def project(result):
     ) if key in analysis}
     public['access'] = 'proposal_only'
     public['report_delivery'] = 'public_beta'
+    public['details_version'] = name_explanations.VERSION
     if analysis.get('phase') == 'name_review':
         public['review_completed'] = True
     candidates = []
     for row in result['candidates']:
         item = {key: row[key] for key in ('name', 'given', 'pinyin', 'meaning')}
         item['pinyin'] = row.get('pronunciation', {}).get('evaluation', {}).get('full_pinyin') or row['pinyin']
+        detail = name_explanations.project(row.get('details'))
+        if detail:
+            item['details'] = detail
         candidates.append(item)
     return {'analysis': public, 'candidates': candidates}

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createHmac, randomUUID } from "node:crypto";
+import {basic,birth,preferences,submitNaming} from "./wizard.js";
 function token(secretKey=Buffer.from("00112233445566778899aabbccddeeff00112233", "hex")) {
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
@@ -146,8 +147,8 @@ test('后台名额设置与最后一份并发争抢，响应丢失可恢复',asy
   await page.locator('[name=quotaTotal]').fill(String(start.quota.used+1));const saved=page.waitForResponse('**/api/experience/quota');await page.getByRole('button',{name:'保存名额设置'}).click();expect((await saved).status()).toBe(200);
   const contexts=await Promise.all([browser.newContext(),browser.newContext()]);const clients=await Promise.all(contexts.map(c=>c.newPage()));
   const identities=await Promise.all(clients.map(async(client,i)=>{
-    await client.goto('http://127.0.0.1:4196/');await client.locator('[name=surname]').fill(i?'李':'林');await client.locator('[name=dueDate]').fill('2099-09-09');
-    const pending=client.waitForResponse('**/api/analyze');await client.locator('#namingForm button[type=submit]').click();return(await(await pending).json()).experience;
+    await client.goto('http://127.0.0.1:4196/');await basic(client); await client.locator('[name=surname]').fill(i?'李':'林');await birth(client); await client.locator('[name=dueDate]').fill('2099-09-09');
+    const pending=client.waitForResponse('**/api/analyze');await submitNaming(client);return(await(await pending).json()).experience;
   }));
   let release;const gate=new Promise(r=>release=r);let arrived=0;
   for(const client of clients)await client.route('**/api/beta-reports',async route=>{if(++arrived===2)release();await gate;const response=await route.fetch();if(response.ok())await route.fulfill({status:503,json:{error:'响应丢失，请重试确认'}});else await route.fulfill({response});});
@@ -170,17 +171,23 @@ for(const width of [1280,390])test(`内测先看完整报告再自愿低分反�
   const errors=[];client.on('pageerror',e=>errors.push(e.message));
   await client.goto('http://127.0.0.1:4196/');
   if(width===390){
-    await client.locator('[name=scenario][value=rename]').locator('..').click();await client.locator('[name=currentName]').fill('欧阳明哲');
-    await client.locator('[name=birthDate]').fill('1998-08-13');await client.locator('[name=birthTime]').fill('13:48');
-    await client.getByRole('button',{name:'分析现用姓名',exact:true}).click();await expect(client.locator('#currentReviewTitle')).toBeVisible();
+    await client.locator('[name=scenario][value=rename]').locator('..').click();await basic(client); await client.locator('[name=currentName]').fill('欧阳明哲');
+    await birth(client); await client.locator('[name=birthDate]').fill('1998-08-13');await birth(client); await client.locator('[name=birthTime]').fill('13:48');
+    await preferences(client);await client.getByRole('button',{name:'分析现用姓名',exact:true}).click();await expect(client.locator('#currentReviewTitle')).toBeVisible();
   }else{
-    await client.locator('[name=surname]').fill('林');await client.locator('[name=dueDate]').fill('2099-12-23');
+    await basic(client); await client.locator('[name=surname]').fill('林');await birth(client); await client.locator('[name=dueDate]').fill('2099-12-23');
   }
   if(process.env.XUMING_CAPTURE_EXPERIENCE==='1')await captureWorkbench(client,`../reports/images/public-workbench-${width}.png`);
   const generated=client.waitForResponse('**/api/analyze');
-  await client.getByRole('button',{name:width===390?'查看改名提案':'生成名字提案 ✦',exact:true}).click();
+  await preferences(client);await client.getByRole('button',{name:width===390?'查看改名提案':'生成名字提案 ✦',exact:true}).click();
   const proposal=await(await generated).json();expect(proposal.experience.available).toBe(true);expect(proposal.analysis).not.toHaveProperty('bazi');
   await expect(client.locator('#results')).toBeFocused();
+  const freeBefore=await(await page.request.get('/api/experience')).json();
+  await client.locator('#cards .name-detail-entry').first().click();
+  await expect(client.getByRole('dialog')).toContainText('出处，写清每一处来由');
+  await client.getByRole('button',{name:'关闭名字详情',exact:true}).click();
+  const freeAfter=await(await page.request.get('/api/experience')).json();expect(freeAfter.quota.used).toBe(freeBefore.quota.used);
+  await expect(client.locator('#cards .name-detail-entry').first()).toBeFocused();
   let claims=0;client.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname==='/api/beta-reports')claims++;});
   await client.getByRole('link',{name:'报告与反馈',exact:true}).click();
   await expect(client.locator('#experienceReport')).toBeFocused();
@@ -232,7 +239,7 @@ for(const width of [1280,390])test(`内测先看完整报告再自愿低分反�
 test('普通提案也能低分反馈，提交反馈不会解锁报告',async({page,browser})=>{
   test.setTimeout(60000);await login(page,'experience_proposal');
   const context=await browser.newContext({viewport:{width:390,height:950}}),client=await context.newPage();await client.goto('http://127.0.0.1:4196/');
-  await client.locator('[name=surname]').fill('李');await client.locator('[name=dueDate]').fill('2099-06-18');const pending=client.waitForResponse('**/api/analyze');await client.locator('#namingForm button[type=submit]').click();const proposal=await(await pending).json();
+  await basic(client); await client.locator('[name=surname]').fill('李');await birth(client); await client.locator('[name=dueDate]').fill('2099-06-18');const pending=client.waitForResponse('**/api/analyze');await submitNaming(client);const proposal=await(await pending).json();
   await client.getByRole('button',{name:'反馈本次体验',exact:true}).click();const dialog=client.getByRole('dialog');await expect(dialog).toContainText('评价范围：免费名字提案');
   await dialog.locator('[name=experienceRating][value="2"]').locator('..').click();await dialog.locator('[name=experienceComment]').fill('想要更容易比较名字。');await dialog.getByRole('button',{name:'提交体验反馈',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('反馈已提交');
   expect((await client.request.post('http://127.0.0.1:4196/api/beta-reports/read',{data:{generation_id:proposal.experience.generation_id,generation_token:proposal.experience.generation_token}})).status()).toBe(404);
@@ -247,7 +254,7 @@ test('延迟名额响应与切换提案不覆盖新状态，等待窗口可关�
   test.setTimeout(60000);await login(page,'experience_async');
   const context=await browser.newContext(),client=await context.newPage();await client.goto('http://127.0.0.1:4196/');
   await expect(client.locator('[data-quota=remaining]')).not.toHaveText('—');
-  await client.locator('[name=surname]').fill('林');await client.locator('[name=dueDate]').fill('2099-01-01');await client.locator('#namingForm button[type=submit]').click();await expect(client.locator('#cards .card')).toHaveCount(3);
+  await basic(client); await client.locator('[name=surname]').fill('林');await birth(client); await client.locator('[name=dueDate]').fill('2099-01-01');await submitNaming(client);await expect(client.locator('#cards .card')).toHaveCount(10);
   let releaseQuota,quotaStarted,releaseClaim,claimStarted;
   const quotaGate=new Promise(r=>releaseQuota=r),quotaReady=new Promise(r=>quotaStarted=r),claimGate=new Promise(r=>releaseClaim=r),claimReady=new Promise(r=>claimStarted=r);
   let held=false;
@@ -257,7 +264,7 @@ test('延迟名额响应与切换提案不覆盖新状态，等待窗口可关�
   await client.route('**/api/beta-reports',async route=>{const response=await route.fetch();saved=await response.json();claimStarted();await claimGate;await route.fulfill({response});});
   await client.getByRole('button',{name:'查看完整报告（内测）',exact:true}).click();await claimReady;
   await client.getByRole('button',{name:'关闭体验窗口'}).click();
-  await client.locator('[name=surname]').fill('李');await client.locator('#namingForm button[type=submit]').click();await expect(client.locator('#summary')).toContainText('李');await expect(client.locator('#cards .card')).toHaveCount(3);
+  await basic(client); await client.locator('[name=surname]').fill('李');await submitNaming(client);await expect(client.locator('#summary')).toContainText('李');await expect(client.locator('#cards .card')).toHaveCount(10);
   releaseClaim();await expect(client.locator('[data-quota=used]')).toHaveText(String(saved.quota.used));releaseQuota();
   await expect(client.getByRole('region',{name:'内测完整报告',exact:true})).toHaveCount(0);await expect(client.locator('#summary')).toContainText('李');
   await expect(client.locator('[data-quota=used]')).toHaveText(String(saved.quota.used));

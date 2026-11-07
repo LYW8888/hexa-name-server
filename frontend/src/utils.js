@@ -269,6 +269,14 @@ export function reportText(lastRequest, lastAnalysis, lastCandidates, reference 
     lines.push(`- 拼音：${item.pinyin}`);
     readingNotes(item.pronunciation).forEach((note) => lines.push(`- ${note}`));
     lines.push(`- 寓意：${item.meaning}`);
+    if(item.details) {
+      lines.push(`- 选名契合：${item.details.fit.explanation}`);
+      item.details.benefits.forEach(value=>lines.push(`- 推荐理由·${value.title}：${value.text}`));
+      item.details.considerations.forEach(value=>lines.push(`- 选名取舍·${value.title}：${value.text}`));
+      item.details.elements.pairs.forEach(value=>lines.push(`- 字间五行：${value.from}、${value.to} · ${value.label}；${value.text}`));
+      lines.push(`- 生克口径：${item.details.elements.usage}`);
+      lines.push(`- 出生地作用：${item.details.birthplace.explanation}`);
+    }
     lines.push(...candidateEvidenceLines(item));
     if (item.rename_comparison) lines.push(`- 与现名比较：${item.rename_comparison.detail}`);
     lines.push(`- 标签：${item.tags.join("、")}`);

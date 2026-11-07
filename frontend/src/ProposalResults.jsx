@@ -1,16 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Badge, Button, Card } from '@radix-ui/themes';
 import { ArrowDown, ArrowUpRight, Copy, Heart, Layers2, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { BrandMark } from './ui/CelestialArt.jsx';
 import { workflowLabel } from './form-state.js';
+import NameDetail from './NameDetail.jsx';
 
 export default function ProposalResults({data, analysis, candidates, status, busy, saved, dirty, onApply, onEdit,
   groupIndex, comparisonKey, hasPrevious, hasNext, reportAvailable, onPrevious, onRegenerate, onCopy, onSave, onKeepsake, onSaved}) {
   const [selected, setSelected]=useState([]);
+  const [detail,setDetail]=useState(null),detailTrigger=useRef(null);
   useEffect(()=>setSelected([]),[comparisonKey]);
+  useEffect(()=>setDetail(null),[candidates]);
   function compare(item) {
     setSelected(previous=>previous.some(x=>x.fullName===item.fullName) ? previous.filter(x=>x.fullName!==item.fullName) : previous.length<3 ? [...previous,item] : previous);
   }
+  function openDetail(item,event) { detailTrigger.current=event.currentTarget;setDetail(item); }
   return <section id="results" className="results-section wrap public-proposals" aria-label="免费名字提案" tabIndex={-1}>
     <div className="section-heading"><div><p className="eyebrow"><span>02</span> 命名结果 / YOUR SHORTLIST</p><h2>你的名字提案</h2></div><Button type="button" variant="outline" color="gray" className="secondary" disabled={busy || !analysis || !hasNext} onClick={onRegenerate}><RefreshCw size={15}/>换一组名字</Button></div>
     <p id="resultStatus" className="results-status" role="status">{status}</p>
@@ -25,6 +29,8 @@ export default function ProposalResults({data, analysis, candidates, status, bus
       {candidates.map((item,index)=><Card asChild key={item.fullName}><article className="card proposal-card" tabIndex={-1}>
         <div className="proposal-card-top"><span>名字提案 / {String(index+1).padStart(2,'0')}</span><Badge color="jade" variant="soft" className="proposal-free">免费</Badge></div>
         <div className="name-specimen"><span className="specimen-glyph" aria-hidden="true">{[...item.fullName].at(-1)}</span><h3>{item.fullName}</h3><p className="pinyin">{item.pinyin}</p></div><p className="meaning"><small>一份心意</small>{item.meaning}</p>
+        <p className="proposal-source-preview">{item.details?.source.citations.length ? `${item.details.source.label} · ${[...new Set(item.details.source.citations.map(c=>`《${c.work}》`))].join('、')}` : '现代字义组合'}</p>
+        <Button type="button" variant="outline" className="name-detail-entry" aria-label={`查看${item.fullName}的名字详情`} onClick={event=>openDetail(item,event)}>查看名字详情<ArrowUpRight size={15}/></Button>
         <div className="proposal-actions"><Button type="button" size="1" variant={saved.includes(item.fullName)?'solid':'soft'} color="jade" className="save" aria-pressed={saved.includes(item.fullName)} onClick={()=>onSave(item)}><Heart size={14}/>{saved.includes(item.fullName)?'已收藏':'收藏'}</Button><Button type="button" size="1" variant="ghost" color="gray" onClick={()=>onCopy(item.fullName)}><Copy size={14}/>复制名字</Button>
           <Button type="button" size="1" variant="ghost" color="gray" className="compare-name" aria-pressed={selected.some(x=>x.fullName===item.fullName)} disabled={selected.length>=3 && !selected.some(x=>x.fullName===item.fullName)} onClick={()=>compare(item)}><Layers2 size={13}/>加入比较</Button><Button type="button" size="1" variant="ghost" color="gray" className="make-keepsake" onClick={()=>onKeepsake(item.fullName)}>名字卡</Button></div>
       </article></Card>)}
@@ -32,9 +38,10 @@ export default function ProposalResults({data, analysis, candidates, status, bus
       {!analysis && <div className="empty-result"><BrandMark/><div><h3>下一个好名字，正在等你。</h3><p>填好基本信息，先免费探索名字、读音与寓意。</p></div><a href="#form" className="secondary">前往起名<ArrowUpRight size={15}/></a></div>}
     </div>
     {!!selected.length && <section id="candidateComparison" className="proposal-comparison" aria-label="名字比较" tabIndex={-1}><div className="comparison-heading"><h3>放在一起，读一读 <small>已选 {selected.length}/3</small></h3><button type="button" onClick={()=>setSelected([])}>清空比较</button></div><div className="proposal-compare-grid">
-      {selected.map(item=><article key={item.fullName}><h4>{item.fullName}</h4><p>{item.pinyin}</p><p>{item.meaning}</p><button type="button" onClick={()=>compare(item)}>移除{item.fullName}</button></article>)}
+      {selected.map(item=><article key={item.fullName}><h4>{item.fullName}</h4><p>{item.pinyin}</p><p>{item.meaning}</p><button type="button" className="name-detail-entry" aria-label={`查看${item.fullName}的名字详情`} onClick={event=>openDetail(item,event)}>名字详情<ArrowUpRight size={13}/></button><button type="button" onClick={()=>compare(item)}>移除{item.fullName}</button></article>)}
     </div></section>}
     {analysis && <div className="proposal-footer"><div><button id="previousGroup" type="button" className="secondary" disabled={busy || !hasPrevious} onClick={onPrevious}>上一组</button><button id="regenerate" type="button" className="secondary" disabled={busy || !hasNext} onClick={onRegenerate}>下一组</button><button type="button" className="secondary" onClick={()=>onEdit(2)}>调整偏好</button><button type="button" className="secondary" onClick={onSaved}>查看收藏</button></div></div>}
-    <p className="proposal-scope">先比较姓名、读音与寓意。想了解四柱、五行与逐名依据，可在下方免费体验完整报告。</p>
+    <p className="proposal-scope">每个名字都可免费查看出处与选名说明。完整四柱、旺衰与排盘口径，可在下方体验报告中查看。</p>
+    <NameDetail item={detail} data={data} saved={detail ? saved.includes(detail.fullName) : false} onSave={onSave} onClose={()=>setDetail(null)} returnFocus={detailTrigger.current}/>
   </section>;
 }

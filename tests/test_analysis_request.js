@@ -37,3 +37,10 @@ test('scenario mismatch and missing original-name evidence cannot be displayed a
 });
 
 test('public client rejects full analysis even if labelled as a proposal',async()=>{const {requestAnalysis}=await load();await assert.rejects(requestAnalysis({}, {fetcher:async()=>new Response(JSON.stringify({...complete,analysis:{...complete.analysis,bazi:{pillars:[]}}}))}),/错误的访问范围/);});
+
+test('client rejects malformed per-name explanations instead of opening a broken detail page',async()=>{
+ const {requestAnalysis}=await load();
+ const row={name:'陈清和',given:'清和',pinyin:'chén qīng hé',meaning:'清朗平和',details:{version:'name-explanation-v1',source:{citations:{}}}};
+ await assert.rejects(requestAnalysis({}, {fetcher:async()=>new Response(JSON.stringify({...complete,candidates:[row]}))}),/名字详情资料不完整/);
+ await assert.rejects(requestAnalysis({}, {fetcher:async()=>new Response(JSON.stringify({...complete,analysis:{...complete.analysis,details_version:'name-explanation-v1'},candidates:[{...row,details:null}]}))}),/名字详情资料不完整/);
+});

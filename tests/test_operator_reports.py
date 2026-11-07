@@ -32,11 +32,11 @@ class ReportStoreTest(unittest.TestCase):
     def create(self):
         return self.store.dispatch('create', self.args, 'public', False)
 
-    def test_public_projection_keeps_only_names_and_never_report_evidence(self):
+    def test_public_projection_keeps_named_explanations_but_never_full_report(self):
         value = public_proposals.project(self.full)
         self.assertEqual(value['analysis']['access'], 'proposal_only')
         self.assertEqual(public_proposals.project(value), value)
-        self.assertEqual(set(value['candidates'][0]), {'name','given','pinyin','meaning'})
+        self.assertEqual(set(value['candidates'][0]), {'name','given','pinyin','meaning','details'})
         for field in ('bazi','mingli','gua','source_audit','traditional','name_review','naming_reference'):
             self.assertNotIn(field, value['analysis'])
         for field in ('citations','numerology','ranking','element_evidence','score','source'):

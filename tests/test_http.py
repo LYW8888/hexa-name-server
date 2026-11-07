@@ -132,7 +132,7 @@ class HttpHandlerTest(unittest.TestCase):
         data = json.loads(body)
         self.assertEqual(data['analysis']['access'], 'proposal_only')
         self.assertNotIn('bazi',data['analysis'])
-        self.assertEqual(set(data['candidates'][0]),{'name','given','pinyin','meaning'})
+        self.assertEqual(set(data['candidates'][0]),{'name','given','pinyin','meaning','details'})
         for raw in (b'[]', b'null', b'{', json.dumps({**valid, 'styles': [{}]}).encode()):
             with self.subTest(body=raw):
                 status, _, body = self.request('POST', '/api/analyze', raw, {'Content-Type': 'application/json'})

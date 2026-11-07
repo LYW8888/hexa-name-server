@@ -20,6 +20,7 @@ import mingli
 import solar_time
 import classical_sources
 import public_proposals
+import name_explanations
 import report_client
 
 ROOT = Path(__file__).resolve().parent
@@ -319,7 +320,7 @@ def analyze(payload: dict, *, recommend: bool = True) -> dict:
         f"候选按{naming_reference['label']}、字形部首、读音和文字偏好计算匹配值。"
         f"采用{'真太阳钟' if chart['time_correction']['applied'] else '民用时钟'}确定日/时柱；月令格局与扶抑喜用按{assessment['version']}试算。年、月、日、时均纳入计算；经典引用与序名分析参数可在依据中查看。"
     )
-    return {
+    response = {
         "analysis": {
             "primary": None,
             "support": None,
@@ -358,6 +359,9 @@ def analyze(payload: dict, *, recommend: bool = True) -> dict:
         },
         "candidates": result[:effective_count],
     }
+    for candidate in response['candidates']:
+        candidate['details'] = name_explanations.build(candidate, response['analysis'])
+    return response
 
 
 def review_name(payload: dict) -> dict:

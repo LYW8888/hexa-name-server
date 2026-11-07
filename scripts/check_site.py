@@ -66,7 +66,7 @@ def check_site(base_url, timeout=10, expected_modules=None):
     result=json_request('/api/analyze',{'algorithm':'literary_v3','surname':'林','mode':'due_date','dueDate':'2099-01-01','dueTime':'12:00','place':'杭州','gender':'unknown','length':2,'candidateCount':3})
     analysis=result.get('analysis')
     candidates=result.get('candidates')
-    if not isinstance(analysis,dict) or analysis.get('access')!='proposal_only' or not isinstance(candidates,list) or len(candidates)!=3 or any(not isinstance(item,dict) or set(item)!={'name','given','pinyin','meaning'} or len(item['given'])!=2 for item in candidates):
+    if not isinstance(analysis,dict) or analysis.get('access')!='proposal_only' or not isinstance(candidates,list) or len(candidates)!=3 or any(not isinstance(item,dict) or not {'name','given','pinyin','meaning'}<=set(item) or bool(set(item)-{'name','given','pinyin','meaning','details'}) or len(item['given'])!=2 for item in candidates):
         raise CheckFailure('起名接口未返回限定范围的3个免费名字提案，请确认前后端来自同一提交。')
     if any(key in analysis for key in ('bazi','mingli','gua','name_review','naming_reference')):
         raise CheckFailure('免费接口仍暴露完整报告，请更新访问控制。')

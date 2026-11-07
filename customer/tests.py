@@ -198,7 +198,7 @@ class CustomerTest(TestCase):
         self.assertEqual(report['analysis']['access'],'proposal_only')
         self.assertEqual(report['data']['requiredChars'],'安')
         self.assertTrue(all('安' in x['given'] and '宁' not in x['given'] for x in report['candidates']))
-        self.assertTrue(all(set(x)=={'name','given','pinyin','meaning'} for x in report['candidates']))
+        self.assertTrue(all(set(x)=={'name','given','pinyin','meaning','details'} for x in report['candidates']))
         self.assertNotIn('安'.encode(),bytes(ServiceRecord.objects.get().encrypted_report))
 
     def test_legacy_free_report_is_projected_even_when_full_snapshot_was_saved(self):

@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {NameExplanation} from './NameDetail.jsx';
 const FIELDS = [
   "algorithm", "requiredChars", "tabooChars", "tabooHomophones", "surnameReading", "numerologyMode",
   "surname",
@@ -465,7 +466,7 @@ export default function CustomerArea({ result, toast, onSaved }) {
             )}
           </>
         )}
-        {customer && openedProposal && <section className="account-proposal" aria-label="账号名字提案"><h4>已保存的名字提案</h4><button type="button" className="secondary" onClick={()=>setOpenedProposal(null)}>关闭提案</button>{openedProposal.candidates.map(x=><article key={x.name}><b>{x.name}</b><p>{x.pinyin}</p><p>{x.meaning}</p></article>)}<a href="#form">重新生成并体验完整报告 ↗</a></section>}
+        {customer && openedProposal && <section className="account-proposal" aria-label="账号名字提案"><h4>已保存的名字提案</h4><button type="button" className="secondary" onClick={()=>setOpenedProposal(null)}>关闭提案</button>{openedProposal.candidates.map(x=><article key={x.name}><b>{x.name}</b><p>{x.pinyin}</p><p>{x.meaning}</p><details><summary>查看名字详情与出处</summary><NameExplanation detail={x.details} name={x.name} prefix={`account-${x.name}`}/></details></article>)}<a href="#form">重新生成并体验完整报告 ↗</a></section>}
       </div>
     </section>
   );

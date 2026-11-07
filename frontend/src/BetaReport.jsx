@@ -4,6 +4,7 @@ import CandidateEvidence from './CandidateEvidence.jsx';
 import NameReview from './NameReview.jsx';
 import {reportText, downloadReportFile} from './utils.js';
 import {workflowLabel} from './form-state.js';
+import {NameExplanation} from './NameDetail.jsx';
 
 export default function BetaReport({value, toast}) {
   const {data,analysis,candidates}=value.report;
@@ -19,7 +20,7 @@ export default function BetaReport({value, toast}) {
     <TraditionalAnalysis value={analysis.mingli} audit={analysis.source_audit} relationships={analysis.traditional.relationships}/>
     <section className="beta-gua"><h4>出生信息起卦</h4><p>本卦：{analysis.gua.hexagram} · 动{analysis.gua.moving_line}爻 · 变卦：{analysis.gua.changed_hexagram}</p><p>{analysis.naming_reference.label}</p></section>
     <h4>逐名解读与古籍出处</h4>
-    {candidates.map(item=><article className="beta-name" key={item.name}><h3>{item.name}</h3><p>{item.pronunciation?.evaluation?.full_pinyin||item.pinyin}</p><p>{item.meaning}</p><CandidateEvidence item={item}/></article>)}
+    {candidates.map(item=><article className="beta-name" key={item.name}><h3>{item.name}</h3><p>{item.pronunciation?.evaluation?.full_pinyin||item.pinyin}</p><p>{item.meaning}</p><CandidateEvidence item={item}/>{item.details&&<details className="beta-name-details"><summary>查看这个名字的选名理由与五行契合</summary><NameExplanation detail={item.details} name={item.name} prefix={`beta-${item.name}`}/></details>}</article>)}
     {!candidates.length&&<p>当前条件没有匹配的名字；可结合本报告调整必用字、避讳或筛选条件。</p>}
     <details className="beta-complete-text"><summary>查看完整文字报告、计算口径与逐项说明</summary><pre>{reportText(data,analysis,rows,value.id)}</pre></details>
   </section>;
