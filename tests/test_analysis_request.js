@@ -44,3 +44,14 @@ test('client rejects malformed per-name explanations instead of opening a broken
  await assert.rejects(requestAnalysis({}, {fetcher:async()=>new Response(JSON.stringify({...complete,candidates:[row]}))}),/名字详情资料不完整/);
  await assert.rejects(requestAnalysis({}, {fetcher:async()=>new Response(JSON.stringify({...complete,analysis:{...complete.analysis,details_version:'name-explanation-v1'},candidates:[{...row,details:null}]}))}),/名字详情资料不完整/);
 });
+
+test('current-name preview must describe the submitted name and all three distinct everyday findings',async()=>{
+ const {requestNameReview}=await load();
+ const data={purpose:'rename',mode:'born',currentName:'欧阳明明'};
+ const preview={version:'existing-name-preview-v1',full_name:data.currentName,findings:['structure','reading','distinction'].map(id=>({id,title:id,detail:'实际现名观察'}))};
+ const analysis={...complete.analysis,purpose_code:'rename',mode:'born',current_name:data.currentName,review_completed:true,phase:'name_review'};
+ const fetcher=value=>async()=>new Response(JSON.stringify({analysis:{...analysis,review_preview:value},candidates:[]}));
+ assert.equal((await requestNameReview(data,{fetcher:fetcher(preview)})).analysis.review_preview.full_name,data.currentName);
+ for(const value of [{...preview,full_name:'另一姓名'},{...preview,findings:preview.findings.slice(0,2)},{...preview,findings:[preview.findings[0],preview.findings[0],preview.findings[2]]},{...preview,findings:[...preview.findings.slice(0,2),{id:'birth',title:'出生四柱',detail:'private'}]}])
+  await assert.rejects(requestNameReview(data,{fetcher:fetcher(value)}),/现名简报资料不完整/);
+});

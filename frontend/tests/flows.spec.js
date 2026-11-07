@@ -32,6 +32,92 @@ async function generate(page, options = {}) {
   await expect(page.locator("#cards .card")).toHaveCount(10);
 }
 
+for (const width of [1280,390]) test(`起名旅程从即时反馈引导到读名收藏与比较 ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:950});await page.goto('/');
+  let claims=0;page.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/beta-reports')claims++;});
+  await page.locator('[name=surname]').fill('陈');
+  await expect(page.locator('.identity-result')).toContainText('为陈姓宝宝准备预产期起名');
+  await expect(page.locator('.journey-welcome')).toContainText('为陈姓宝宝准备预产期起名');
+  await page.getByRole('button',{name:'下一步：出生信息',exact:true}).click();
+  await expect(page.getByRole('region',{name:'本次出生依据'})).toHaveCount(0);
+  await page.locator('[name=dueDate]').fill('2099-05-18');
+  const birthPreview=page.getByRole('region',{name:'本次出生依据'});
+  await expect(birthPreview).toContainText('预产期参考 2099-05-18 12:00');
+  await expect(birthPreview).toContainText('出生后可按实际时刻重新分析');
+  const response=page.waitForResponse('**/api/analyze');await page.getByRole('button',{name:'生成起名方向与提案',exact:true}).click();
+  const payload=await(await response).json();await expect(page.locator('#cards .card')).toHaveCount(10);
+  const direction=page.getByRole('region',{name:'本次起名方向'});
+  await expect(direction).toContainText(payload.candidates[0].details.fit.label);
+  await expect(direction).toContainText('预产期参考');
+  const guide=page.locator('.selection-guide');
+  await guide.getByRole('button',{name:'从第一个名字开始了解',exact:true}).click();
+  const dialog=page.getByRole('dialog');
+  await expect(dialog.locator('.name-detail-heading')).toContainText(payload.candidates[0].name);
+  await dialog.getByRole('button',{name:'收藏这个名字',exact:true}).click();
+  await expect(dialog.locator('.detail-next-hint')).toContainText('已留作备选');
+  await dialog.getByRole('button',{name:'继续看下一个名字',exact:true}).click();
+  await expect(dialog.locator('.name-detail-heading')).toContainText(payload.candidates[1].name);
+  await expect(dialog.locator('.name-detail-heading').getByRole('heading')).toBeFocused();
+  await expect(dialog.locator('.name-detail-heading')).toBeInViewport();
+  await dialog.getByRole('button',{name:'收藏这个名字',exact:true}).click();
+  await page.keyboard.press('Escape');
+  await expect(guide).toContainText('已有2个名字可以比较');
+  await guide.getByRole('button',{name:'比较备选名字',exact:true}).click();
+  const panel=page.getByRole('region',{name:'名字比较',exact:true});await expect(panel).toBeFocused();await expect(panel).toBeInViewport();
+  await expect(panel.locator('article')).toHaveCount(2);
+  await expect(panel).toContainText(payload.candidates[0].name);await expect(panel).toContainText('出处：');
+  expect(claims).toBe(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('改名先展示可核对的现名简报，修改事实必须重新分析',async({page})=>{
+  await page.setViewportSize({width:390,height:950});await page.goto('/');
+  await fillInfo(page,{scenario:'rename',currentName:'欧阳明明',date:'1998-08-13',time:'13:48',place:'',complete:false});
+  const response=page.waitForResponse('**/api/name-review');await page.getByRole('button',{name:'分析现用姓名',exact:true}).click();
+  const payload=await(await response).json();
+  await expect(page.locator('.current-name-preview')).toContainText('名内重复：明');
+  for(const row of payload.analysis.review_preview.findings)await expect(page.locator('.current-name-preview')).toContainText(row.detail);
+  expect(payload.analysis).not.toHaveProperty('name_review');expect(payload.analysis).not.toHaveProperty('bazi');
+  await expect(page.locator('#cards .card')).toHaveCount(0);
+  await page.locator('[name=birthTime]').fill('13:49');await expect(page.locator('.current-name-preview')).toHaveCount(0);
+  await page.getByRole('button',{name:'重新分析现用姓名',exact:true}).click();await expect(page.locator('.current-name-preview')).toBeVisible();
+  await page.getByRole('button',{name:'查看改名提案',exact:true}).click();await expect(page.locator('#cards .card')).toHaveCount(10);
+  await expect(page.getByRole('region',{name:'本次起名方向'})).toContainText('你的改名方向');
+  await expect(page.getByRole('region',{name:'本次起名方向'})).toContainText('已先分析现名「欧阳明明」');
+});
+
+test('跨组收藏延续本次选名引导，切换场景不串用备选进度',async({page})=>{
+  await page.goto('/');await generate(page);
+  const first=await page.locator('#cards h3').first().textContent();await page.locator('#cards .save').first().click();
+  const response=page.waitForResponse('**/api/analyze');await page.getByRole('button',{name:'换一组名字',exact:true}).click();await response;
+  await expect(page.locator('#cards h3').first()).not.toHaveText(first);
+  const second=await page.locator('#cards h3').first().textContent();await page.locator('#cards .save').first().click();
+  const guide=page.locator('.selection-guide');await expect(guide).toContainText('已有2个名字可以比较');
+  await guide.getByRole('button',{name:'比较备选名字',exact:true}).click();
+  const panel=page.getByRole('region',{name:'名字比较',exact:true});await expect(panel).toContainText(first);await expect(panel).toContainText(second);
+  await selectScenario(page,'born');await expect(page.locator('.selection-guide')).toHaveCount(0);await expect(page.locator('.naming-direction')).toHaveCount(0);
+  await expect(page.locator('#cards .card')).toHaveCount(0);
+});
+
+test('未收藏也能比较并复制名单，不要求领取报告或提交反馈',async({page})=>{
+  await page.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.copiedNames=text;}}});});
+  await page.goto('/');await generate(page);
+  const names=(await page.locator('#cards h3').allTextContents()).slice(0,2);
+  for(let index=0;index<2;index++)await page.locator('#cards .compare-name').nth(index).click();
+  await page.locator('.selection-guide').getByRole('button',{name:'比较备选名字',exact:true}).click();
+  await page.locator('.selection-guide').getByRole('button',{name:'复制备选给家人',exact:true}).click();
+  expect(await page.evaluate(()=>window.copiedNames)).toBe(names.join('、'));
+  await expect(page.locator('#savedCount')).toHaveText('0');await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('出生信息变动后旧方向保留标识，下一步引导等待应用修改',async({page})=>{
+  await page.goto('/');await generate(page);await birth(page);await page.locator('[name=dueDate]').fill('2099-12-24');
+  await expect(page.getByRole('region',{name:'尚未应用的修改'})).toBeVisible();
+  await expect(page.locator('.selection-guide')).toHaveCount(0);
+  await expect(page.locator('.naming-direction')).toContainText('2099-12-23');
+  const response=page.waitForResponse('**/api/analyze');await page.getByRole('button',{name:'应用修改并生成',exact:true}).click();await response;
+  await expect(page.locator('.naming-direction')).toContainText('2099-12-24');await expect(page.locator('.selection-guide')).toBeVisible();
+});
+
 for (const width of [1280, 390]) {
   test(`三种场景切换且保留各自资料 ${width}px`, async ({page})=>{
     await page.setViewportSize({width,height:950});await page.goto('/');
@@ -62,7 +148,7 @@ for (const width of [1280, 390]) {
     page.on("request", request => { if (request.url().endsWith("/api/analyze")) calls++; });
     await fillInfo(page);
     const request = page.waitForRequest("**/api/analyze");
-    await page.getByRole("button", { name: "生成名字提案 ✦", exact: true }).click();
+    await page.getByRole("button", { name: "生成起名方向与提案", exact: true }).click();
     const input = (await request).postDataJSON();
     await expect(page.locator("#cards .card")).toHaveCount(10);
     expect(calls).toBe(1);
@@ -171,7 +257,7 @@ for(const width of [1280,390])test(`最少填写姓氏和预产期即可生成�
   await page.locator('[name=dueDate]').fill('2099-12-23');
   for(const selector of ['.birth-location','.naming-preferences'])await expect(page.locator(selector)).not.toHaveAttribute('open','');
   await expect(page.locator('[name=place]')).toBeHidden();await expect(page.locator('[name=meaning]')).toBeHidden();
-  const response=page.waitForResponse('**/api/analyze');await page.getByRole('button',{name:'生成名字提案 ✦',exact:true}).click();
+  const response=page.waitForResponse('**/api/analyze');await page.getByRole('button',{name:'生成起名方向与提案',exact:true}).click();
   const input=(await response).request().postDataJSON();
   expect(input).toMatchObject({surname:'陈',mode:'due_date',candidateCount:'10',dueTime:'12:00',gender:'unknown',place:'',timeBasis:'civil'});
   expect(input).not.toHaveProperty('longitude');await expect(page.locator('#cards .card')).toHaveCount(10);
@@ -180,9 +266,9 @@ for(const width of [1280,390])test(`最少填写姓氏和预产期即可生成�
 test('精简已出生流程仍校验准确时间，出生地保持可选',async({page})=>{
   await page.setViewportSize({width:390,height:950});await page.goto('/');await selectScenario(page,'born');
   await page.locator('[name=surname]').fill('陈');await page.getByRole('button',{name:'下一步：出生信息',exact:true}).click();
-  await page.locator('[name=birthDate]').fill('2024-02-10');await page.getByRole('button',{name:'生成名字提案 ✦',exact:true}).click();
+  await page.locator('[name=birthDate]').fill('2024-02-10');await page.getByRole('button',{name:'生成起名方向与提案',exact:true}).click();
   await expect(page.locator('[name=birthTime]')).toBeFocused();await expect(page.locator('#cards .card')).toHaveCount(0);
-  await page.locator('[name=birthTime]').fill('09:30');await page.getByRole('button',{name:'生成名字提案 ✦',exact:true}).click();
+  await page.locator('[name=birthTime]').fill('09:30');await page.getByRole('button',{name:'生成起名方向与提案',exact:true}).click();
   await expect(page.locator('#cards .card')).toHaveCount(10);await expect(page.locator('.birth-location')).not.toHaveAttribute('open','');
 });
 
@@ -323,6 +409,11 @@ test("未覆盖必用字返回空候选，修改入口直接定位", async ({ pa
 
 test("单字必用只有一个结果，看完不循环", async ({ page }) => {
   await page.goto("/"); await fillInfo(page); await openSettings(page); await page.locator("[name=length]").selectOption("1"); await openDetail(page, ".naming-constraints"); await page.locator("[name=requiredChars]").fill("安"); await submit(page); await expect(page.locator("#cards .card")).toHaveCount(1); await expect(page.locator("#regenerate")).toBeDisabled();
+  const guide=page.locator('.selection-guide');await guide.getByRole('button',{name:'从第一个名字开始了解',exact:true}).click();
+  const dialog=page.getByRole('dialog');await expect(dialog.getByRole('button',{name:'继续看下一个名字',exact:true})).toHaveCount(0);
+  await dialog.getByRole('button',{name:'收藏这个名字',exact:true}).click();await page.keyboard.press('Escape');
+  await expect(guide.getByRole('button',{name:'继续了解下一个名字',exact:true})).toHaveCount(0);
+  await guide.getByRole('button',{name:'查看收藏名单',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('本机收藏');
 });
 
 test("五格严格筛选与未知笔画可以调整", async ({ page }) => {

@@ -25,7 +25,7 @@ export function Header({ count, onSaved, onAccount }) {
 }
 export function Hero() {
   return <section className="workspace-welcome landscape-banner" aria-label="序名 · 月白青黛">
-    <div className="welcome-copy"><p className="eyebrow">山河入梦 · 字里有光</p><h1>以东方心意，<span>予一生好名。</span></h1><p>从出生时光出发，把山河文脉写进名字。</p><div className="welcome-notes"><span><Check size={13}/>无需注册</span><span><Check size={13}/>名字提案免费</span><span><Check size={13}/>反馈自愿</span></div></div>
+    <div className="welcome-copy"><p className="eyebrow">山河入梦 · 字里有光</p><h1>以东方心意，<span>予一生好名。</span></h1><p>一步步了解名字的来由，留下适合家人的那一个。</p><div className="welcome-notes"><span><Check size={13}/>两步填写</span><span><Check size={13}/>名字详情免费</span><span><Check size={13}/>无需注册</span></div></div>
   </section>;
 }
 export function Method() {

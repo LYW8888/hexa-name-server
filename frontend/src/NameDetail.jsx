@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Button, Dialog, IconButton} from '@radix-ui/themes';
 import {ArrowLeft, BookOpen, Check, Heart, MapPin, Sparkles, X} from 'lucide-react';
 import {workflowLabel} from './form-state.js';
@@ -34,13 +34,22 @@ export function NameExplanation({detail, name, prefix="nameDetail"}) {
   </div>;
 }
 
-export default function NameDetail({item, data, saved, onSave, onClose, returnFocus}) {
+export default function NameDetail({item, data, saved, onSave, onClose, returnFocus, onNext}) {
+  const content = useRef(null), title = useRef(null), previousName = useRef(null);
+  useEffect(()=>{
+    if(item){
+      content.current?.scrollTo({top:0,behavior:'instant'});
+      if(previousName.current && previousName.current!==item.fullName)title.current?.focus({preventScroll:true});
+    }
+    previousName.current=item?.fullName || null;
+  },[item?.fullName]);
   function jump(id){document.getElementById(id)?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}
-  return <Dialog.Root open={!!item} onOpenChange={open=>{if(!open)onClose();}}><Dialog.Content className="name-detail-dialog" maxWidth="960px" onCloseAutoFocus={event=>{event.preventDefault();if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});else document.getElementById('results')?.focus({preventScroll:true});}}>
-    {item&&<div className="product-theme name-detail-content"><header className="name-detail-heading"><div><p className="eyebrow">序名 · {workflowLabel(data)} · 名字详情</p><Dialog.Title>{item.fullName}<small>{item.pinyin}</small></Dialog.Title><Dialog.Description>免费查看出处、选名理由与本次契合说明。</Dialog.Description></div><Dialog.Close><IconButton variant="ghost" aria-label="关闭名字详情"><X size={20}/></IconButton></Dialog.Close></header>
+  return <Dialog.Root open={!!item} onOpenChange={open=>{if(!open)onClose();}}><Dialog.Content ref={content} className="name-detail-dialog" maxWidth="960px" onCloseAutoFocus={event=>{event.preventDefault();if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});else document.getElementById('results')?.focus({preventScroll:true});}}>
+    {item&&<div className="product-theme name-detail-content"><header className="name-detail-heading"><div><p className="eyebrow">序名 · {workflowLabel(data)} · 名字详情</p><Dialog.Title ref={title} tabIndex={-1}>{item.fullName}<small>{item.pinyin}</small></Dialog.Title><Dialog.Description>免费查看出处、选名理由与本次契合说明。</Dialog.Description></div><Dialog.Close><IconButton variant="ghost" aria-label="关闭名字详情"><X size={20}/></IconButton></Dialog.Close></header>
       <nav className="name-detail-nav" aria-label="名字详情章节"><div className="name-detail-nav-sections">{[['nameDetailBenefits','推荐理由'],['nameDetailSources','古籍出处'],['nameDetailFit','出生契合'],['nameDetailElements','五行生克'],['nameDetailPlace','出生地']].map(([id,label])=><button type="button" key={id} onClick={()=>jump(id)}>{label}</button>)}</div><Dialog.Close><button type="button" className="detail-return" aria-label="返回备选列表"><ArrowLeft size={15}/>返回</button></Dialog.Close></nav>
       <NameExplanation detail={item.details} name={item.fullName}/>
-      <footer className="name-detail-footer"><Dialog.Close><Button variant="outline"><ArrowLeft size={15}/>返回备选名字</Button></Dialog.Close><Button className="primary" aria-pressed={saved} onClick={()=>onSave(item)}><Heart size={16}/>{saved?'已收藏此名':'收藏这个名字'}</Button></footer>
+      <p className="detail-next-hint" role="status">{saved ? '这个名字已留作备选。可以继续了解其他名字，回到列表后比较。' : '试着连姓读几遍，喜欢就收藏，再看看下一个名字。'}</p>
+      <footer className="name-detail-footer"><Dialog.Close><Button variant="outline"><ArrowLeft size={15}/>返回备选名字</Button></Dialog.Close><Button className={saved?'':'primary'} variant={saved?'outline':'solid'} aria-pressed={saved} onClick={()=>onSave(item)}><Heart size={16}/>{saved?'已收藏此名':'收藏这个名字'}</Button>{onNext && <Button className={saved?'primary':''} variant={saved?'solid':'outline'} onClick={onNext}>继续看下一个名字</Button>}</footer>
     </div>}
   </Dialog.Content></Dialog.Root>;
 }

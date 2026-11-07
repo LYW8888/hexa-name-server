@@ -13,7 +13,7 @@ async function generate(page) {
   await page.locator("[name=elementPreference]").selectOption("水");
   await page
     .locator("button[type=submit]")
-    .filter({ hasText: "生成名字提案" })
+    .filter({ hasText: "生成起名方向与提案" })
     .click();
   await expect(page.locator("#cards .card")).toHaveCount(10);
 }

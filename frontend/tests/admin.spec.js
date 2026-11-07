@@ -179,7 +179,7 @@ for(const width of [1280,390])test(`内测先看完整报告再自愿低分反�
   }
   if(process.env.XUMING_CAPTURE_EXPERIENCE==='1')await captureWorkbench(client,`../reports/images/public-workbench-${width}.png`);
   const generated=client.waitForResponse('**/api/analyze');
-  await preferences(client);await client.getByRole('button',{name:width===390?'查看改名提案':'生成名字提案 ✦',exact:true}).click();
+  await preferences(client);await client.getByRole('button',{name:width===390?'查看改名提案':'生成起名方向与提案',exact:true}).click();
   const proposal=await(await generated).json();expect(proposal.experience.available).toBe(true);expect(proposal.analysis).not.toHaveProperty('bazi');
   await expect(client.locator('#results')).toBeFocused();
   const freeBefore=await(await page.request.get('/api/experience')).json();

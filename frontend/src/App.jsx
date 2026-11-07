@@ -14,7 +14,7 @@ import { requestKey, workflowId } from "./form-state.js";
 import { requestAnalysis } from "./analysis.js";
 import { copyText, friendlyError } from "./utils.js";
 
-const DEFAULT_STATUS = "完成信息后，这里会出现可比较的名字方向。";
+const DEFAULT_STATUS = "两步准备出生依据，再看懂方向、读名字、留下备选。";
 function stored() {
   let names = [],
     details = Object.create(null);
@@ -68,6 +68,7 @@ export default function App() {
     [message, setMessage] = useState("");
   const [session, setSession] = useState({ pages: [], index: 0, id: 0 }),
     [draft, setDraft] = useState(null),
+    [formStep, setFormStep] = useState(0),
     [status, setStatus] = useState(DEFAULT_STATUS),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(null);
@@ -224,7 +225,7 @@ export default function App() {
         requested = Number(data.candidateCount || 10);
       const prefix = isRegenerate
         ? `已换到第 ${Number(data.variant) + 1} 组，共 ${count} 个名字。`
-        : `已生成 ${count} 个名字提案，可比较、收藏，并按剩余名额体验完整报告。`;
+        : `已整理起名方向和 ${count} 个名字提案。先了解名字来由，再留下喜欢的备选。`;
       setStatus(
         count
           ? `${prefix}${count < requested ? `当前条件下，字库实际匹配 ${count} 个。` : ""}`
@@ -330,6 +331,7 @@ export default function App() {
         <NamingForm
           ref={formController}
           onDraftChange={setDraft}
+          onStepChange={setFormStep}
           onGenerate={generate}
           busy={busy}
           counts={counts}
@@ -338,9 +340,12 @@ export default function App() {
           toast={toast}
         />
         <div className="workspace-output"><Results
+          draft={draft}
+          formStep={formStep}
           data={result?.data}
           analysis={result?.analysis}
           candidates={result?.candidates || []}
+          journeyCandidates={result ? [...new Map(session.pages.flatMap(page=>page.candidates).map(item=>[item.fullName,item])).values()] : []}
           status={sameContext ? status : "已切换起名场景或姓名，请完成当前流程后生成对应方案。"}
           busy={busy}
           saved={favorite.names}

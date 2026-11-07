@@ -154,6 +154,10 @@ class HttpHandlerTest(unittest.TestCase):
         self.assertEqual(value['analysis']['current_name'],'李景和')
         self.assertTrue(value['analysis']['review_completed'])
         self.assertNotIn('name_review',value['analysis'])
+        preview = value['analysis']['review_preview']
+        self.assertEqual(preview['full_name'], '李景和')
+        self.assertEqual({row['id'] for row in preview['findings']}, {'structure','reading','distinction'})
+        self.assertNotIn('出生四柱', str(preview))
         for data in ({**payload,'currentName':''},{**payload,'purpose':'newborn'},{**payload,'dueDate':'2099-01-01'}):
             with self.subTest(data=data):
                 status, _, _ = self.request('POST','/api/name-review',json.dumps(data),{'Content-Type':'application/json'})

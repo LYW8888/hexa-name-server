@@ -14,6 +14,7 @@ import { longitudeText, matchCity, withPlace } from "./location-state.js";
 import { requestNameReview } from "./analysis.js";
 import LOCATIONS from "../../data/locations.json";
 import { friendlyError, getClockInZone } from "./utils.js";
+import {birthGuide, identityGuide} from './journey-state.js';
 
 const SCENARIOS = [
   ["due_date", "预产期起名", "宝宝还没出生"],
@@ -22,7 +23,7 @@ const SCENARIOS = [
 ];
 
 export default forwardRef(function NamingForm(
-  { onGenerate, busy, counts, message, setMessage, onDraftChange },
+  { onGenerate, busy, counts, message, setMessage, onDraftChange, onStepChange },
   controller,
 ) {
   const [scenario, setScenario] = useState("due_date");
@@ -63,6 +64,9 @@ export default forwardRef(function NamingForm(
   const locked = busy || reviewBusy;
   const reviewCurrent = rename && !!review && nameReviewKey(draft) === review.key;
   const max = Math.max(1, Math.min(11, Number(counts[length]) || 11));
+  const guideData = {...draft, ...dates, surname, currentName, purpose:rename?'rename':'newborn', mode:born?'born':'due_date', zone, timeBasis, longitude};
+  const identity = identityGuide(guideData), basis = birthGuide(guideData);
+  useEffect(()=>onStepChange?.(step), [step, onStepChange]);
 
   const capture = useCallback(() => {
     if (!formRef.current) return;
@@ -269,14 +273,17 @@ export default forwardRef(function NamingForm(
           <label><span className="field-label">性别<span className="optional-label">可选</span></span><select name="gender" value={gender} onChange={e => updatePerson("gender", e.target.value)}><option value="unknown">未知</option><option value="male">男</option><option value="female">女</option></select></label>
         </div>
         {rename && <details className="surname-options"><summary>校对识别的姓氏</summary>{surnameField()}</details>}
+        {identity.ready && <div className="identity-result" role="status"><Check size={16}/><div><strong>{identity.title}</strong><p>{identity.note}</p></div></div>}
       </fieldset>
       <fieldset className="birth-info" data-form-step="1" hidden={step!==1} disabled={locked}>
         <legend id="birthInfoTitle" tabIndex={-1}>{born ? "出生日期与时间" : "预产期日期"}</legend>
+        <p className="identity-chip"><Check size={12}/>{rename ? currentName : `${surname}姓宝宝`} · {rename?'改名':born?'已出生起名':'预产期起名'}</p>
         <div className="grid birth-fields">
           <label className={!born ? "due-date-field" : ""}><span className="field-label">{born ? "实际出生日期" : "预产期日期"}</span><input type="date" name={born ? "birthDate" : "dueDate"} min="1900-01-01" max="2100-12-31" required value={born ? dates.birthDate : dates.dueDate} onChange={e => setDates(v => ({ ...v, [born ? "birthDate" : "dueDate"]: e.target.value }))} /></label>
           {born && <label><span className="field-label">准确出生时间</span><input name="birthTime" type="time" required value={dates.birthTime} onChange={e => setDates(v => ({ ...v, birthTime: e.target.value }))} /></label>}
         </div>
         <p className="simple-time-note">{born ? "请按出生记录填写。" : "预产期可填未来日期，默认12:00作参考。"}</p>
+        {basis.ready && <section className="birth-feedback" aria-label="本次出生依据"><strong><Check size={14}/>{basis.title}</strong><p>{basis.summary}</p><small>{basis.note}</small></section>}
         <details className="birth-location"><summary>出生地与时间校正（可选）<span>{place.trim() || zoneLabel} · {timeBasis === 'apparent_solar' ? '真太阳时' : '民用时间'}</span></summary>
           <div className="grid location-fields">
             <label className={born ? "place-field full-width" : "place-field"}><span className="field-label">{born ? "出生城市或地区" : "预计出生城市或地区"}<span className="optional-label">可选</span></span><TextField.Root size="3" name="place" value={place} onChange={e => setCity(e.target.value)} list="birthCities" placeholder="选城市可自动带入时区与经度" autoComplete="off" aria-describedby="placeHelp"><TextField.Slot><MapPin size={16}/></TextField.Slot></TextField.Root><datalist id="birthCities">{LOCATIONS.cities.map(c => <option key={c.id} value={c.name} />)}</datalist></label>
@@ -323,11 +330,13 @@ export default forwardRef(function NamingForm(
       </details>
       {rename && review && <section className="simple-review" data-form-step="1" hidden={step!==1} aria-label="现名分析状态与改名推荐">
         <h3 id="currentReviewTitle" tabIndex={-1}>先分析现名，再推荐改名</h3>
-        {reviewCurrent ? <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来查看改名提案；每个候选都有免费详情。完整现名分析可在报告中查看。</p></div> : <div className="review-stale"><p>姓名或出生资料已修改，请重新分析现名后继续。</p></div>}
+        {reviewCurrent ? <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong>
+          {review.payload.analysis.review_preview && <dl className="current-name-preview" aria-label="现名简报">{review.payload.analysis.review_preview.findings.map(row=><div key={row.id}><dt>{row.title}</dt><dd>{row.detail}</dd></div>)}</dl>}
+          <p>接下来保留姓氏，排除现用全名，结合读音与个人心意比较改名提案。完整现名分析可在报告中查看。</p></div> : <div className="review-stale"><p>姓名或出生资料已修改，请重新分析现名后继续。</p></div>}
       </section>}
       <div className="simple-submit wizard-actions">
         {step>0 && <button type="button" className="secondary wizard-back" disabled={locked} onClick={()=>visit(0)}><ArrowLeft size={15}/>上一步</button>}
-        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : step===0 ? <ArrowRight size={17}/> : <Sparkles size={17}/>}<span>{step===0 ? '下一步：出生信息' : reviewBusy ? '正在分析现名…' : busy ? '正在生成…' : rename ? reviewCurrent ? '查看改名提案' : review ? '重新分析现用姓名' : '分析现用姓名' : '生成名字提案 ✦'}</span></Button>
+        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : step===0 ? <ArrowRight size={17}/> : <Sparkles size={17}/>}<span>{step===0 ? '下一步：出生信息' : reviewBusy ? '正在分析现名…' : busy ? '正在生成…' : rename ? reviewCurrent ? '查看改名提案' : review ? '重新分析现用姓名' : '分析现用姓名' : '生成起名方向与提案'}</span></Button>
         <small>{step===0?'返回修改会保留资料。':'无需登录 · 名字详情免费'}</small>
       </div>
       <p className="generation-progress" role="status" hidden={!locked}>{reviewBusy ? "正在整理现名分析与出生依据…" : "正在整理名字与取字依据…"}</p>

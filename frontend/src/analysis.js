@@ -63,6 +63,11 @@ async function requestReport(
       }
       if (endpoint === "/api/name-review" && (payload.analysis.phase !== "name_review" || payload.candidates.length))
         throw new Error("现名分析接口返回了错误阶段的数据，请更新服务后重试。");
+      const preview = payload.analysis.review_preview;
+      if (preview && (preview.version !== 'existing-name-preview-v1' || preview.full_name !== data.currentName?.trim() ||
+        !Array.isArray(preview.findings) || preview.findings.length !== 3 || new Set(preview.findings.map(row=>row?.id)).size !== 3 ||
+        preview.findings.some(row=>!row || !['structure','reading','distinction'].includes(row.id) || typeof row.title !== 'string' || typeof row.detail !== 'string')))
+        throw new Error('现名简报资料不完整，请同步更新页面和服务后重试。');
       return payload;
     } catch (error) {
       if (controller.signal.aborted) throw new Error(TIMEOUT_MESSAGE);

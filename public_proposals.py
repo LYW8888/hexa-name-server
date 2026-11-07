@@ -9,6 +9,23 @@ INPUT_FIELDS = frozenset({
 })
 
 
+def review_preview(value):
+    """Only everyday name facts, with no chart, numerology or private findings."""
+    if not isinstance(value, dict) or not isinstance(value.get('findings'), list):
+        return None
+    findings = [
+        {key: row[key] for key in ('id', 'title', 'detail')}
+        for row in value.get('findings', [])
+        if isinstance(row, dict) and row.get('id') in ('structure', 'reading', 'distinction')
+        and all(isinstance(row.get(key), str) for key in ('id', 'title', 'detail'))
+    ]
+    if len(findings) != 3 or {row['id'] for row in findings} != {'structure', 'reading', 'distinction'}:
+        return None
+    if not isinstance(value.get('full_name'), str):
+        return None
+    return {'version': 'existing-name-preview-v1', 'full_name': value['full_name'], 'findings': findings}
+
+
 def project(result):
     analysis = result['analysis']
     public = {key: analysis[key] for key in (
@@ -20,6 +37,9 @@ def project(result):
     public['details_version'] = name_explanations.VERSION
     if analysis.get('phase') == 'name_review':
         public['review_completed'] = True
+        preview = review_preview(analysis.get('name_review') or analysis.get('review_preview'))
+        if preview:
+            public['review_preview'] = preview
     candidates = []
     for row in result['candidates']:
         item = {key: row[key] for key in ('name', 'given', 'pinyin', 'meaning')}
