@@ -94,7 +94,7 @@ export default forwardRef(function NamingForm(
   useLayoutEffect(() => {
     if (lastStep.current === step) return;
     lastStep.current = step;
-    const heading = formRef.current?.querySelector(['#basicInfoTitle','#birthInfoTitle','#preferencesTitle'][step]);
+    const heading = formRef.current?.querySelector(['#basicInfoTitle','#birthInfoTitle'][step]);
     if (heading) focus(heading);
   }, [step]);
 
@@ -153,7 +153,7 @@ export default forwardRef(function NamingForm(
         if (hours * 60 + minutes > clock.minutes) return fail("实际出生时间不能晚于当前时间。", form.elements.birthTime);
       }
     }
-    if (includePreferences && (onlyStep === null || onlyStep === 2)) {
+    if (includePreferences && (onlyStep === null || onlyStep === 1)) {
       const chars = name => new Set([...(form.elements[name]?.value || "")].filter(c => /\p{Script=Han}/u.test(c)));
       const required = chars("requiredChars");
       const avoided = new Set([...chars("avoidedChars"), ...chars("tabooChars")]);
@@ -173,7 +173,7 @@ export default forwardRef(function NamingForm(
   function next() {
     if (locked || !validate(true, step)) return;
     setFurthest(previous => Math.max(previous, step + 1));
-    setStep(previous => Math.min(2, previous + 1));
+    setStep(1);
   }
   function visit(target) {
     if (locked || target > furthest) return;
@@ -248,13 +248,13 @@ export default forwardRef(function NamingForm(
     <form id="namingForm" ref={formRef} noValidate aria-busy={locked} onChange={event => {
       if (invalidField.current?.name === event.target.name) clearError();
       capture();
-    }} onSubmit={event => { event.preventDefault(); step < 2 ? next() : rename ? analyzeCurrentName() : generate(); }}>
+    }} onSubmit={event => { event.preventDefault(); step === 0 ? next() : rename ? reviewCurrent ? generate(true) : analyzeCurrentName() : generate(); }}>
       <input type="hidden" name="algorithm" value="literary_v3" />
       <input type="hidden" name="purpose" value={rename ? "rename" : "newborn"} />
       <input type="hidden" name="mode" value={born ? "born" : "due_date"} />
       <div className="workspace-caption"><span><Orbit size={16}/>命名资料</span><Badge variant="soft" color="jade">免费体验</Badge></div>
-      <nav className="naming-steps" aria-label="起名填写步骤"><ol>{['为谁起名','出生信息','心意偏好'].map((title,index)=><li key={title}><button type="button" disabled={locked || index > furthest} aria-current={step===index?'step':undefined} onClick={()=>visit(index)}><i>{index < step ? <Check size={12}/> : index+1}</i><span>{title}</span></button></li>)}</ol></nav>
-      <p className="wizard-guidance" role="status">第 {step+1} 步 / 共 3 步 · {['先确定起名场景，只填当前这一步。','日期用于排盘，出生地可按需填写。','偏好可选，默认准备10个备选名字。'][step]}</p>
+      <nav className="naming-steps" aria-label="起名填写步骤"><ol>{['为谁起名','出生信息'].map((title,index)=><li key={title}><button type="button" disabled={locked || index > furthest} aria-current={step===index?'step':undefined} onClick={()=>visit(index)}><i>{index < step ? <Check size={12}/> : index+1}</i><span>{title}</span></button></li>)}</ol></nav>
+      <p className="wizard-guidance" role="status">{step===0?'先确定起名场景，性别可保持未知。':rename?'填写真实出生信息，先分析现名再推荐。':born?'填写实际出生日期与时间即可。':'填写预产期即可，其他设置可选。'}</p>
       <div id="formMessage" tabIndex={-1} className="form-message error" role="alert" hidden={!message}>{message && <Callout.Root color="red" size="1"><Callout.Icon><Info size={16}/></Callout.Icon><Callout.Text>{message}</Callout.Text></Callout.Root>}</div>
       <fieldset className="basic-info" data-form-step="0" hidden={step!==0} disabled={locked}>
         <legend id="basicInfoTitle" tabIndex={-1}>这次为谁取名</legend>
@@ -271,16 +271,19 @@ export default forwardRef(function NamingForm(
         {rename && <details className="surname-options"><summary>校对识别的姓氏</summary>{surnameField()}</details>}
       </fieldset>
       <fieldset className="birth-info" data-form-step="1" hidden={step!==1} disabled={locked}>
-        <legend id="birthInfoTitle" tabIndex={-1}>{born ? "出生时间与地点" : "预产期与预计出生地"}</legend>
+        <legend id="birthInfoTitle" tabIndex={-1}>{born ? "出生日期与时间" : "预产期日期"}</legend>
         <div className="grid birth-fields">
           <label className={!born ? "due-date-field" : ""}><span className="field-label">{born ? "实际出生日期" : "预产期日期"}</span><input type="date" name={born ? "birthDate" : "dueDate"} min="1900-01-01" max="2100-12-31" required value={born ? dates.birthDate : dates.dueDate} onChange={e => setDates(v => ({ ...v, [born ? "birthDate" : "dueDate"]: e.target.value }))} /></label>
           {born && <label><span className="field-label">准确出生时间</span><input name="birthTime" type="time" required value={dates.birthTime} onChange={e => setDates(v => ({ ...v, birthTime: e.target.value }))} /></label>}
-          <label className={born ? "place-field full-width" : "place-field"}><span className="field-label">{born ? "出生城市或地区" : "预计出生城市或地区"}<span className="optional-label">可选</span></span><TextField.Root size="3" name="place" value={place} onChange={e => setCity(e.target.value)} list="birthCities" placeholder="选城市可自动带入时区与经度" autoComplete="off" aria-describedby="placeHelp"><TextField.Slot><MapPin size={16}/></TextField.Slot></TextField.Root><datalist id="birthCities">{LOCATIONS.cities.map(c => <option key={c.id} value={c.name} />)}</datalist></label>
         </div>
-        <p id="placeHelp" className="place-help">{city ? `已匹配${city.name}，${cityCoordinate ? `城市中心约${longitudeText(longitude)}` : longitude !== "" ? `自定义经度${longitudeText(longitude)}` : "请补充经度"}。` : longitude !== "" ? `已填写手动经度${longitudeText(longitude)}。` : place.trim() ? "该地点尚未匹配经度，可保留文字；真太阳时需手动填写经度。" : "可留空；选城市后自动带入时区和经度。"}{timeBasis === "civil" ? "当前按民用时间排盘，不作经度修正。" : "已启用真太阳时，经度将用于排盘修正。"}</p>
-        <p className="simple-time-note">{born ? "请按出生记录填写。" : "预产期可填未来日期，默认12:00作参考。"}<button type="button" onClick={() => edit(1, "zone")}>{zoneLabel} · 调整</button></p>
-        <details className="birthplace-explainer"><summary>为什么要填出生地？五行相克怎么算？</summary><p>出生地帮助匹配时区；选用真太阳时时，经度还会用于时间修正。仅填写城市不会给名字加分，同一时区、同一时刻按民用时间排盘时，换城市不会改变四柱。</p><p>五行有相生与制约关系。算法结合年月日时、日主旺衰和所选取用方向选字，不按“缺什么就补什么”，也不把“相克”直接等同于坏名字。每个备选名字都可以查看具体说明。</p></details>
-          <details className="time-settings"><summary>时区与排盘时间设置</summary>
+        <p className="simple-time-note">{born ? "请按出生记录填写。" : "预产期可填未来日期，默认12:00作参考。"}</p>
+        <details className="birth-location"><summary>出生地与时间校正（可选）<span>{place.trim() || zoneLabel} · {timeBasis === 'apparent_solar' ? '真太阳时' : '民用时间'}</span></summary>
+          <div className="grid location-fields">
+            <label className={born ? "place-field full-width" : "place-field"}><span className="field-label">{born ? "出生城市或地区" : "预计出生城市或地区"}<span className="optional-label">可选</span></span><TextField.Root size="3" name="place" value={place} onChange={e => setCity(e.target.value)} list="birthCities" placeholder="选城市可自动带入时区与经度" autoComplete="off" aria-describedby="placeHelp"><TextField.Slot><MapPin size={16}/></TextField.Slot></TextField.Root><datalist id="birthCities">{LOCATIONS.cities.map(c => <option key={c.id} value={c.name} />)}</datalist></label>
+          </div>
+          <p id="placeHelp" className="place-help">{city ? `已匹配${city.name}，${cityCoordinate ? `城市中心约${longitudeText(longitude)}` : longitude !== "" ? `自定义经度${longitudeText(longitude)}` : "请补充经度"}。` : longitude !== "" ? `已填写手动经度${longitudeText(longitude)}。` : place.trim() ? "该地点尚未匹配经度，可保留文字；真太阳时需手动填写经度。" : "可留空；选城市后自动带入时区和经度。"}{timeBasis === "civil" ? "当前按民用时间排盘，不作经度修正。" : "已启用真太阳时，经度将用于排盘修正。"}</p>
+          <details className="birthplace-explainer"><summary>出生地如何影响排盘？</summary><p>出生地帮助匹配时区；选用真太阳时时，经度还会用于时间修正。同一时区、同一时刻按民用时间排盘时，换城市不会改变四柱。无需填写详细地址。</p></details>
+          <div className="time-settings">
             <div className="grid"><label>时区<select name="zone" value={zone} onChange={e => setZone(e.target.value)}><option value="Asia/Shanghai">中国标准时间 UTC+8</option><option value="Asia/Taipei">台北时间 UTC+8</option><option value="Asia/Hong_Kong">香港时间 UTC+8</option></select></label>
               {!born && <label>预产期参考时间<input name="dueTime" type="time" value={dates.dueTime} onChange={e => setDates(v => ({ ...v, dueTime: e.target.value }))} /></label>}
             </div>
@@ -291,10 +294,11 @@ export default forwardRef(function NamingForm(
               {city && !cityCoordinate && <button type="button" className="restore-coordinate" onClick={() => { setLongitude(String(city.longitude)); if (invalidField.current?.name === "longitude") clearError(); }}>恢复{city.name}城市中心经度</button>}
               <label><span className="field-label">出生地经度</span><input name="longitude" type="number" min="-180" max="180" step="0.000001" required value={longitude} onChange={e => setLongitude(e.target.value)} /><small>东经填正数，西经填负数；0也是有效经度。城市中心为近似值，可按实际地点调整。</small></label>
             </div>}
-          </details>
+          </div>
+        </details>
       </fieldset>
-      <details className="naming-preferences" data-form-step="2" hidden={step!==2} open>
-        <summary>偏好与名字设置<span>{length}字名 · {draft.candidateCount || 10}个方案 · 可选</span></summary>
+      <details className="naming-preferences" data-form-step="1" hidden={step!==1}>
+        <summary>选名偏好（可选）<span>{length}字名 · {draft.candidateCount || 10}个备选</span></summary>
         <fieldset disabled={locked}>
           <legend id="preferencesTitle" tabIndex={-1}>按你的心意调整</legend>
           <div className="grid">
@@ -305,7 +309,6 @@ export default forwardRef(function NamingForm(
           <label>希望名字传达的气质<textarea name="meaning" rows="2" placeholder="例如：清朗、坚韧、自然山水" /></label>
           <div className="tags"><span>偏好风格</span>{[["classical", "清雅古典"], ["modern", "现代简洁"], ["nature", "自然山水"], ["bright", "明朗开阔"]].map(([value, label]) => <label key={value}><input type="checkbox" name="style" value={value} defaultChecked={value === "classical"} />{label}</label>)}</div>
           <details className="family-options"><summary>家庭姓氏与读音</summary>
-
             <label>父母姓氏<input name="parents" maxLength={12} placeholder="例如：林、沈" /></label>
             <label className="inline-check"><input type="checkbox" name="honorParents" value="true" />希望名中呼应父母姓氏</label>
             <label>姓氏读音<input name="surnameReading" maxLength={32} placeholder="多音姓可填 shàn；留空用常用姓氏读音" /></label>
@@ -316,21 +319,17 @@ export default forwardRef(function NamingForm(
             <label>五格数理<select name="numerologyMode" defaultValue="reference"><option value="reference">展示计算参考</option><option value="strict">严格筛选人格、地格、总格</option><option value="off">关闭五格展示</option></select><small>严格筛选可能减少数量；未知笔画保持未知。</small></label>
             <label>传统文化选字参考<select name="elementPreference" value={elementPreference} onChange={e => setElementPreference(e.target.value)}><option value="yongshen">按四柱喜用参考（月令扶抑法）</option><option value="auto">按生辰起卦体卦意象</option><option value="none">仅按读音、风格和心意</option>{["木", "火", "土", "金", "水"].map(e => <option key={e} value={e}>自选{e}意象</option>)}</select></label>
           </details>
-
         </fieldset>
       </details>
-      <div className="simple-submit wizard-actions">
-        {step>0 && <button type="button" className="secondary wizard-back" disabled={locked} onClick={()=>visit(step-1)}><ArrowLeft size={15}/>上一步</button>}
-        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : step<2 ? <ArrowRight size={17}/> : <Sparkles size={17}/>}<span>{step<2 ? `下一步：${step===0?'出生信息':'心意偏好'}` : reviewBusy ? "正在分析现名…" : busy ? "正在生成…" : rename ? reviewCurrent ? "查看分析状态" : "分析现用姓名" : "生成名字提案 ✦"}</span></Button>
-        <small>{step<2?'仅校验当前步骤，返回修改不会丢失已填信息。':'无需登录；资料不会自动保存。名字详情免费查看。'}</small>
-      </div>
-      {rename && review && <section className="simple-review" data-form-step="2" hidden={step!==2} aria-label="现名分析状态与改名推荐">
+      {rename && review && <section className="simple-review" data-form-step="1" hidden={step!==1} aria-label="现名分析状态与改名推荐">
         <h3 id="currentReviewTitle" tabIndex={-1}>先分析现名，再推荐改名</h3>
-        {reviewCurrent ? <>
-          <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来可免费查看改名提案。完整现名分析、出生依据与改名说明，可在生成提案后体验完整报告。</p><a href="#trialQuota">查看免费报告名额 ↗</a></div>
-          <div className="review-next"><button type="button" className="secondary" onClick={() => edit(0)}>修改资料</button><button type="button" className="primary" disabled={locked} onClick={() => generate(true)}>{busy ? "正在推荐…" : "查看改名提案"}</button></div>
-        </> : <div className="review-stale"><p>姓名或出生资料已修改，请重新分析现名后继续。</p><button type="button" className="primary" disabled={locked} onClick={analyzeCurrentName}>重新分析现用姓名</button></div>}
+        {reviewCurrent ? <div id="formNameReview" className="review-proposal-gate"><strong>{currentName}的现名分析已完成</strong><p>接下来查看改名提案；每个候选都有免费详情。完整现名分析可在报告中查看。</p></div> : <div className="review-stale"><p>姓名或出生资料已修改，请重新分析现名后继续。</p></div>}
       </section>}
+      <div className="simple-submit wizard-actions">
+        {step>0 && <button type="button" className="secondary wizard-back" disabled={locked} onClick={()=>visit(0)}><ArrowLeft size={15}/>上一步</button>}
+        <Button size="4" className="primary" type="submit" disabled={locked}>{locked ? <Spinner/> : step===0 ? <ArrowRight size={17}/> : <Sparkles size={17}/>}<span>{step===0 ? '下一步：出生信息' : reviewBusy ? '正在分析现名…' : busy ? '正在生成…' : rename ? reviewCurrent ? '查看改名提案' : review ? '重新分析现用姓名' : '分析现用姓名' : '生成名字提案 ✦'}</span></Button>
+        <small>{step===0?'返回修改会保留资料。':'无需登录 · 名字详情免费'}</small>
+      </div>
       <p className="generation-progress" role="status" hidden={!locked}>{reviewBusy ? "正在整理现名分析与出生依据…" : "正在整理名字与取字依据…"}</p>
     </form>
   </section>;

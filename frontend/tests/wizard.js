@@ -12,14 +12,19 @@ export async function birth(page) {
   await expect(panel).toBeVisible();
 }
 export async function preferences(page) {
-  if(await page.locator('.naming-preferences').isVisible())return;
-  const target=page.locator('.naming-steps button').nth(2);
-  if(await target.isEnabled())await target.click();
-  else {await birth(page);await page.getByRole('button',{name:'下一步：心意偏好',exact:true}).click();}
-  await expect(page.locator('.naming-preferences')).toBeVisible();
+  await birth(page);
+  const details=page.locator('.naming-preferences');
+  if(!await details.evaluate(el=>el.open))await details.locator(':scope > summary').click();
+  await expect(page.locator('[name=length]')).toBeVisible();
+}
+export async function location(page) {
+  await birth(page);
+  const details=page.locator('.birth-location');
+  if(!await details.evaluate(el=>el.open))await details.locator(':scope > summary').click();
+  await expect(page.locator('[name=place]')).toBeVisible();
 }
 export async function submitNaming(page) {
-  for(let count=0;count<3;count++) {
+  for(let count=0;count<2;count++) {
     const action=page.locator('#namingForm button[type=submit]');
     const label=await action.textContent();
     const before=await page.locator('.naming-steps [aria-current=step]').textContent();

@@ -1,7 +1,7 @@
 /* Guided collection and a reading page for each candidate, within the chosen theme. */
 .product-theme [data-form-step][hidden] { display:none!important; }
 .product-theme .naming-steps { display:block; margin:0 0 16px; }
-.product-theme .naming-steps ol { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); padding:0; margin:0; gap:6px; list-style:none; }
+.product-theme .naming-steps ol { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); padding:0; margin:0; gap:6px; list-style:none; }
 .product-theme .naming-steps button { display:grid; justify-items:center; gap:6px; width:100%; padding:8px 2px; border:0; border-bottom:2px solid #DCE3D8; border-radius:0; background:transparent; color:#647B70; font:11px/1.5 var(--sans); }
 .product-theme .naming-steps i { display:grid; place-items:center; width:22px; height:22px; border:1px solid #C7D5C7; border-radius:50%; background:#F1F4E8; color:#5A786B; font-size:10px; font-style:normal; }
 .product-theme .naming-steps [aria-current=step] { color:#284B43; border-color:#56877E; }
@@ -10,6 +10,13 @@
 .product-theme.product-theme #namingForm .birth-info { margin-top:0; }
 .product-theme.product-theme .simple-form-section legend { font-size:16px; margin-bottom:16px; }
 .product-theme.product-theme .naming-preferences { margin:0 0 18px; background:#F8F9F2; }
+.product-theme.product-theme .birth-location { padding:0; margin:0 0 12px; border:1px solid #D0DCD1; border-radius:7px; background:#F8F9F2; }
+.product-theme.product-theme .birth-location>summary { padding:11px 12px; color:#365B55; font-size:12px; cursor:pointer; }
+.product-theme .birth-location>summary>span { display:block; padding-left:14px; margin-top:4px; color:#657B6B; font-size:10px; }
+.product-theme.product-theme .birth-location[open] { padding:0 12px 10px; }
+.product-theme.product-theme .birth-location[open]>summary { padding-inline:0; margin-bottom:12px; }
+.product-theme.product-theme .birth-location .time-settings { margin:14px 0 0; padding:14px 0 0; border:0; border-top:1px solid #D5DECF; border-radius:0; background:transparent; }
+.product-theme.product-theme .simple-review { margin:16px 0; padding-top:15px; }
 .product-theme .birthplace-explainer,.product-theme .surname-options { margin:14px 0; padding:12px; border:1px solid #D4DDD0; border-radius:6px; background:#F8F9F2; }
 .product-theme .birthplace-explainer summary,.product-theme .surname-options summary { color:#466A5B; font-size:12px; cursor:pointer; }
 .product-theme .birthplace-explainer p { margin:11px 0 0; color:#4F655B; font-size:12px; line-height:1.9; }

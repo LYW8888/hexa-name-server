@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
-import {basic,birth,preferences} from "./wizard.js";
+import {basic,birth,preferences,location} from "./wizard.js";
 async function generate(page) {
   await page.locator("[name=surname]").fill("林");
   await birth(page);
   await page.locator("[name=dueDate]").fill("2099-01-01");
+  await location(page);
   await page.locator("[name=place]").fill("杭州");
-  await page.locator(".time-settings > summary").click();
   await page.locator("[name=timeBasis]").selectOption("apparent_solar");
   await expect(page.locator("[name=longitude]")).toHaveValue("120.16");
   await preferences(page);
